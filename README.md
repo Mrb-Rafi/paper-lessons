@@ -1,31 +1,32 @@
-# NCM Interactive Web Book
+# Paper Lessons
 
-An interactive web book that teaches **Next-Concept Modeling (NCM)** — fast, parallel, coarse-to-fine text generation — starting from absolute zero (no prior knowledge of language models assumed) and ending at every equation of the research paper.
+Interactive web books that teach research papers from zero: short chapters, a widget for every idea, every equation unpacked, and self-check quizzes. The home page (`index.html`) lists every lesson; each lesson lives in its own folder.
 
-**Read it:** open `index.html` in a browser, or visit the GitHub Pages site for this repository.
+| Lesson | Folder | Paper |
+|---|---|---|
+| AlphaFold | [`alphafold_lessons/`](alphafold_lessons/) | Jumper et al., *Highly accurate protein structure prediction with AlphaFold*, Nature 2021 |
+| Next-Concept Modeling | [`ncm_lessons/`](ncm_lessons/) | Kumbong, Khare et al., *Next-Concept Modeling*, arXiv:2610.14162, 2026 |
 
-## What's inside
+Everything is static (no build step) and is served by GitHub Pages from the root of `main`. To preview locally, run `python -m http.server` here and open http://localhost:8000.
 
-- 26 chapters in four parts: Foundations → The NCM tokenizer → The NCM generator → Evidence, plus an equation cheat sheet and glossary.
-- ~45 interactive widgets: softmax and sampling, embeddings, attention masks, vector quantization with live k-means, residual and multiscale residual quantization, a working toy NCM tokenizer and coarse-to-fine sampler that run in the browser, loss weighting, conditioning corruption, classifier-free guidance, MBR decoding, a cost model, the ELBO, metrics (perplexity, entropy, BLEU, ROUGE), a results explorer for the paper's tables, and a replay of the paper's Sudoku solving trajectory.
-- 50 self-check quiz questions.
-
-## Sources
-
-- Paper: Kumbong, Khare, Mlauzi, Woen, Ding, Buchanan, Arora, Mirhoseini, Ré. *Next-Concept Modeling: Fast, Parallel Coarse-to-Fine Text Generation*. [arXiv:2610.14162](https://arxiv.org/abs/2610.14162), 2026.
-- Code: [github.com/HazyResearch/ncm](https://github.com/HazyResearch/ncm) (MIT). Figures in `assets/img/` marked as coming from that repository are used under its MIT license (`assets/img/LICENSE-NCM-repo.txt`).
-
-This is an independent educational companion, not an official publication of the paper's authors. Numbers quoted from the paper come from arXiv v1; toy-model numbers come from the small model that runs in the page.
-
-## Structure
+## Layout
 
 ```
-index.html                 the book
-assets/css/book.css        styles (light and dark)
-assets/js/core.js          navigation, progress, quizzes, chart helpers
-assets/js/toyncm.js        the in-browser toy multiscale residual VQ + sampler
-assets/js/widgets-*.js     interactive widgets per part
-assets/img/                figures from the NCM repository (MIT)
+index.html            home page (renders the catalogue)
+home/lessons.js       the catalogue: one entry per lesson
+home/home.css         home page styles
+<name>_lessons/       one self-contained web book per paper
+  index.html          the book
+  assets/css/book.css, assets/js/core.js, assets/js/widgets-*.js, assets/img/
+  README.md           what the book covers, its sources and licences
 ```
 
-No build step; it is a static site. Math is rendered with KaTeX from a CDN.
+## Adding a lesson
+
+1. Put the paper's PDF in a new folder `<name>_lessons/` (PDFs are git-ignored).
+2. Build the book in that folder in the same format as the existing ones: copy `core.js` and `book.css`, give `core.js` its own namespace and localStorage prefix (e.g. `xyzbook:`), and keep the "← All lessons" link (`href="../"`) in the top bar and the footer.
+3. Add a `cover.jpg` (about 800 px wide) under `assets/img/`, using only images you may reuse (check the paper's licence and credit it).
+4. Append an entry to `home/lessons.js` (fields are documented at the top of that file) and a row to the table above.
+5. Commit and push to `main`; GitHub Pages republishes automatically.
+
+Each lesson is an independent educational companion, not an official publication of the paper's authors.

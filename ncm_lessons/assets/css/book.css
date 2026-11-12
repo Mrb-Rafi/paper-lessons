@@ -272,3 +272,6 @@ table.data tr.ours td { background: var(--accent-soft); font-weight: 600; }
 .glossary dd { margin: 2px 0 0 0; color: var(--ink-soft); }
 
 footer.book-foot { max-width: calc(var(--content-w) + 64px); margin: 0 auto; padding: 32px; font-family: var(--font-ui); font-size: 13.5px; color: var(--muted); border-top: 1px solid var(--line); }
+
+.home-link { display: inline-flex; align-items: center; text-decoration: none; font-size: 13px; white-space: nowrap; }
+@media (max-width: 480px) { .topbar .brand span:last-child { display: none; } }

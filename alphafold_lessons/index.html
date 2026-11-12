@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AlphaFold Interactive Web Book</title>
+<meta name="description" content="An interactive web book that teaches AlphaFold — highly accurate protein structure prediction — from absolute zero, with live widgets for every idea and every equation.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5fa8'/%3E%3Cpath d='M7 22c3-10 6 2 9-8s6 4 9-4' stroke='white' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="assets/css/book.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="icon-btn" id="menuBtn" aria-label="Open contents">☰</button>
+  <a class="brand" href="#top"><span class="mark">AF</span><span>Interactive Web Book</span></a>
+  <a class="icon-btn home-link" href="../" title="All lessons">← All lessons</a>
+  <div class="spacer"></div>
+  <div class="progress-wrap" title="Chapters marked as read"><div class="progress-bar" id="progressBar"></div></div>
+  <span class="progress-label" id="progressLabel"></span>
+  <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode" title="Light / dark">◐</button>
+</div>
+
+<div class="layout">
+<nav class="sidebar" id="toc" aria-label="Contents"></nav>
+<main>
+
+<!-- ============================================================ COVER -->
+<div class="hero" id="top">
+  <div class="eyebrow">An Interactive Web Book</div>
+  <h1>AlphaFold,<br><em>from zero.</em></h1>
+  <p class="sub">How a neural network learned to read a protein’s amino-acid sequence and draw its 3-D shape with near-experimental accuracy — a 50-year-old problem. No background needed: we start from “what is a protein?” and end at every equation behind the paper.</p>
+  <p class="meta">Based on <a href="https://doi.org/10.1038/s41586-021-03819-2">Jumper, Evans, Pritzel et al., “Highly accurate protein structure prediction with AlphaFold”, <i>Nature</i> 596, 583–589 (2021)</a> and the open-source code at <a href="https://github.com/deepmind/alphafold">github.com/deepmind/alphafold</a>. This book is an independent educational companion, not an official publication of the authors or of DeepMind.</p>
+  <div class="hero-demo"><div data-widget="heroDemo"></div></div>
+  <div class="btn-row">
+    <a class="btn primary" href="#ch-protein">Start reading →</a>
+    <a class="btn" id="resumeBtn" href="#">Resume where you left off</a>
+    <a class="btn" href="https://doi.org/10.1038/s41586-021-03819-2">The paper</a>
+    <a class="btn" href="https://github.com/deepmind/alphafold">The code</a>
+  </div>
+</div>
+
+<!-- ============================================================ HOW TO READ -->
+<section class="chapter" id="ch-howto" data-title="How to read this book" data-part="Front matter" data-nonum>
+  <header>
+    <div class="kicker">Front matter</div>
+    <h2 class="title">How to read this book</h2>
+    <p class="lede">Twenty-six short chapters, five parts, and about forty things you can poke.</p>
+  </header>
+  <p>This book assumes you know <strong>nothing</strong> about biology or machine learning. You will need only school arithmetic and a little geometry. Every new idea comes with a picture or a widget you can play with, and every equation is unpacked symbol by symbol.</p>
+  <div class="roadmap">
+    <div class="card"><b>Part I · Proteins</b><span>Chapters 1–5. What proteins are, why their shape matters, why predicting it is hard, and how we describe 3-D shapes with numbers.</span></div>
+    <div class="card"><b>Part II · Learning machines</b><span>Chapters 6–7. Just enough machine learning: losses, gradient descent, softmax, attention.</span></div>
+    <div class="card"><b>Part III · Evolution as evidence</b><span>Chapters 8–11. Alignments, coevolution, the pre-AlphaFold recipe, and how accuracy is scored.</span></div>
+    <div class="card"><b>Part IV · The AlphaFold network</b><span>Chapters 12–23. The Evoformer, triangles, frames, invariant point attention, the structure module, FAPE, recycling, training and confidence.</span></div>
+    <div class="card"><b>Part V · Evidence</b><span>Chapters 24–26. CASP14 and recent-PDB results, ablations, limits and legacy.</span></div>
+  </div>
+  <h3>Signposts</h3>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>Plain-language pictures of what is going on. Read these even if you skip everything else.</p></div>
+  <div class="callout math"><div class="ct">∑ The math</div><p>The precise statement, with every symbol explained. Most of AlphaFold’s equations live in the paper’s <a href="https://doi.org/10.1038/s41586-021-03819-2">Supplementary Information</a> (“SI”), which gives 32 algorithms in pseudocode; we cite them as “SI Alg. n”.</p></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Where this idea appears in the AlphaFold paper, with numbers taken directly from it. Tags like <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper Fig. 3</a> link to the paper.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>Where the official implementation does it, with file names from <a href="https://github.com/deepmind/alphafold">deepmind/alphafold</a>.</p></div>
+  <p>Widgets look like the box at the top of this page: a title with a ▶ mark, a one-line instruction, then controls. 3-D views can be rotated by dragging. Your progress (chapters you mark as read, light/dark choice) is remembered in your own browser only.</p>
+  <div class="callout warn"><div class="ct">⚠ About the toy protein</div><p>Many widgets use a <b>toy protein</b> that lives in your browser: a 50-residue bundle of three α-helices built from ideal geometry. Its “evolution” is a small statistical-physics model with a simplified four-letter chemistry (big hydrophobic, small, positive, negative), sampled by Monte Carlo so that residues touching in 3-D co-vary. The geometry, superposition, metrics (RMSD, GDT, lDDT, TM-score), frames and FAPE are computed exactly as defined. <b>No widget runs the trained AlphaFold network</b> — animations of the network’s behaviour are labelled as illustrations. Paper-scale numbers always come from the paper.</p></div>
+</section>
+
+<!-- ============================================================ PART I -->
+<section class="chapter" id="ch-protein" data-title="What is a protein?" data-part="Part I · Proteins">
+  <header>
+    <div class="kicker">Proteins</div>
+    <h2 class="title">What is a protein?</h2>
+    <p class="lede">A chain of small building blocks that folds itself into a machine.</p>
+  </header>
+  <p>Almost everything a living cell does is done by <strong>proteins</strong>. They digest food, copy DNA, carry oxygen in your blood, detect light in your eyes, and form the spikes viruses use to enter cells. The paper opens with exactly this: “Proteins are essential to life, and understanding their structure can facilitate a mechanistic understanding of their function” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper abstract</a>.</p>
+  <p>Chemically, a protein is a <strong>chain</strong>. Each link is one of 20 kinds of <strong>amino acid</strong>. Once linked into a chain, an amino acid is called a <strong>residue</strong>. All residues share the same <strong>backbone</strong> (a nitrogen N, a central carbon Cα — “C-alpha” — and a carbon C), and differ in their <strong>side chain</strong>, which sticks out from the Cα.</p>
+  <div class="widget" data-widget="aminoAcids"></div>
+  <p>The list of residues, written one letter each, is the protein’s <strong>sequence</strong> (biologists call it the <em>primary structure</em>). The gene for the protein, written in DNA, encodes exactly this sequence. Sequencing DNA is now cheap and fast, so we know the sequences of <em>billions</em> of proteins.</p>
+  <div class="callout intuition"><div class="ct">💡 Shape is function</div><p>A protein does not stay a floppy string. In water it folds into a specific 3-D shape — its <strong>structure</strong> — in which oily (hydrophobic) side chains huddle together inside and water-loving ones face outward. The shape decides the job: an enzyme’s pocket fits its target molecule; an antibody’s loops grip a virus. To understand or design a protein’s function, you want its structure.</p></div>
+  <p>The number of residues is written \(N_\text{res}\) in the paper. Typical proteins have a few hundred; the longest single chain the paper shows has 2,180 <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper Fig. 1d</a>.</p>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What is a residue?","o":["A leftover after folding","One amino acid once it is part of a protein chain","A type of side chain"],"a":1},
+    {"q":"Which part differs between the 20 amino acids?","o":["The backbone N–Cα–C","The side chain","The peptide bond"],"a":1,"e":"All share the same backbone; the side chain gives each its chemistry."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-folding" data-title="The protein folding problem" data-part="Part I · Proteins">
+  <header>
+    <div class="kicker">Proteins</div>
+    <h2 class="title">The protein folding problem</h2>
+    <p class="lede">The sequence decides the shape. But how?</p>
+  </header>
+  <p>In the 1960s Christian Anfinsen showed that a protein, unfolded in the test tube, refolds into the same shape by itself: all the information needed is in its sequence (the paper’s ref. 9). This raised the <strong>protein folding problem</strong>. Its prediction part — “predicting the three-dimensional structure that a protein will adopt based solely on its amino acid sequence” — “has been an important open research problem for more than 50 years” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper abstract</a>.</p>
+  <h3>Why not just try every shape?</h3>
+  <div class="widget" data-widget="levinthal"></div>
+  <p>So nature does not search blindly, and neither can a computer. The <strong>physics route</strong> simulates the forces between atoms and lets the protein fold in silico. It is “theoretically very appealing” but has “proved highly challenging for even moderate-sized proteins” because of the cost of simulation and the difficulty of writing down accurate enough physics <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 583</a>. Here is the flavour of the physics route at its very simplest:</p>
+  <div class="widget" data-widget="hpFold"></div>
+  <p>Real proteins live in continuous 3-D space, have 20 residue types and complex forces — the number of shapes explodes far beyond anything enumerable. The second route, which AlphaFold follows, is the <strong>evolutionary route</strong>: learn the answer from the hundreds of thousands of structures already solved and from the evolutionary record written in sequence databases (Part III).</p>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What did Anfinsen’s experiment suggest?","o":["Proteins need a helper to fold","The sequence contains the information needed to reach the folded shape","Folding is random"],"a":1},
+    {"q":"In the HP model, what lowers the energy?","o":["Polar residues touching water","Non-bonded contacts between hydrophobic residues","Long straight chains"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-gap" data-title="Why predict? The structure gap" data-part="Part I · Proteins">
+  <header>
+    <div class="kicker">Proteins</div>
+    <h2 class="title">Why predict? The structure gap</h2>
+    <p class="lede">We read sequences by the billion but solve structures by the handful.</p>
+  </header>
+  <p>Structures are determined experimentally, mainly by three techniques: <strong>X-ray crystallography</strong> (grow a crystal of the protein and shoot X-rays at it), <strong>cryo-electron microscopy</strong> (freeze it and image it with electrons) and <strong>NMR</strong> spectroscopy. Each solved structure is deposited in the <strong>Protein Data Bank (PDB)</strong>. Each one is precious: the paper notes it can take “months to years of painstaking effort” per structure.</p>
+  <div class="widget" data-widget="gapChart"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Through an enormous experimental effort, the structures of around 100,000 unique proteins have been determined, but this represents a small fraction of the billions of known protein sequences.” Accurate computation is “needed to address this gap and to enable large-scale structural bioinformatics.” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper abstract</a></p></div>
+  <p>There is a second reason prediction matters: the PDB is also the <strong>training data</strong>. AlphaFold learns from PDB structures released before 30 April 2018 <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Methods</a>, then is tested on structures released later, which it has never seen.</p>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Roughly how many unique protein structures had been solved when the paper was written?","o":["About 1,000","About 100,000","About 2 billion"],"a":1},
+    {"q":"Why must test structures be released after the training cut-off?","o":["To keep the PDB small","So the model is evaluated on structures it could not have memorised","Because older structures are wrong"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-geometry" data-title="Coordinates, distances, contacts" data-part="Part I · Proteins">
+  <header>
+    <div class="kicker">Proteins</div>
+    <h2 class="title">Coordinates, distances and contact maps</h2>
+    <p class="lede">A structure is just a list of 3-D points — and there are several ways to write it down.</p>
+  </header>
+  <p>A <strong>vector</strong> is an ordered list of numbers. A point in space is a vector of three numbers \(x = (x_1, x_2, x_3)\), measured in <strong>ångströms</strong> (Å; 1 Å = 10<sup>−10</sup> m, roughly the size of an atom). A protein structure is the list of coordinates of all its atoms. For many purposes one point per residue is enough: the Cα atom. We write \(x_i \in \mathbb{R}^3\) for residue \(i\)’s Cα — “\(x_i\) is a list of 3 real numbers”.</p>
+  <div class="callout math"><div class="ct">∑ Distance and dot product</div>
+  \[ \lVert a - b \rVert = \sqrt{(a_1-b_1)^2 + (a_2-b_2)^2 + (a_3-b_3)^2} \qquad\qquad a \cdot b = a_1 b_1 + a_2 b_2 + a_3 b_3 \]
+  <p>The left one is the ordinary (Euclidean) <strong>distance</strong>. The right one, the <strong>dot product</strong>, is large when the vectors point the same way; it is the basic operation of attention (Chapter 7). Neighbouring Cα atoms along a chain are always about 3.8 Å apart.</p></div>
+  <p>Coordinates depend on where you put the origin and which way the axes point: rotate the whole molecule and every coordinate changes, though the protein has not. <strong>Distances</strong> do not have this problem. Collect all pairwise distances \(d_{ij} = \lVert x_i - x_j \rVert\) in a table and you get the <strong>distance matrix</strong>; mark the pairs closer than a threshold (8 Å is common) and you get the <strong>contact map</strong>.</p>
+  <div class="widget" data-widget="distMap"></div>
+  <div class="callout intuition"><div class="ct">💡 Three ways to describe one shape</div><p>(1) Coordinates — complete, but depend on an arbitrary frame of reference. (2) Distances — independent of rotation and translation, but (we will see) blind to mirror images. (3) Local frames and angles (next chapter and Chapter 17) — the language AlphaFold’s structure module speaks. A large part of AlphaFold’s design is about moving between these descriptions.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"If you rotate a whole protein, what happens to its distance matrix?","o":["It changes","It stays exactly the same","It becomes the contact map"],"a":1},
+    {"q":"In a contact map, a filled cell (i, j) means…","o":["residues i and j are the same type","residues i and j are closer than a threshold","residue i comes before j"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-backbone" data-title="The backbone and its angles" data-part="Part I · Proteins">
+  <header>
+    <div class="kicker">Proteins</div>
+    <h2 class="title">The backbone and its angles</h2>
+    <p class="lede">Bond lengths are fixed; the freedom is in the twists.</p>
+  </header>
+  <p>Chemical bonds have nearly fixed lengths and angles. What varies are <strong>torsion</strong> (dihedral) angles — rotations about a bond. Along the backbone, each residue has two that matter: <strong>φ</strong> (phi, about the N–Cα bond) and <strong>ψ</strong> (psi, about the Cα–C bond). A third, <strong>ω</strong> (omega, about the peptide bond between residues), is almost always 180° because that bond is rigid and flat.</p>
+  <div class="widget" data-widget="rama"></div>
+  <p>Two patterns dominate real proteins — the paper’s <strong>secondary structure</strong>:</p>
+  <ul>
+    <li><b>α-helix</b> (φ ≈ −57°, ψ ≈ −47°): a right-handed spiral with 3.6 residues per turn, held by a hydrogen bond from each C=O to the N–H four residues later.</li>
+    <li><b>β-strand</b> (φ ≈ −120°, ψ ≈ +130°): an almost straight zig-zag; strands pair side by side into <b>β-sheets</b>.</li>
+  </ul>
+  <p>Side chains have their own torsion angles, called <strong>χ</strong> (chi) angles: from zero (glycine, alanine) to four (lysine, arginine). AlphaFold predicts the backbone as a rigid frame per residue (Chapter 17), and then all of ω, φ, ψ and up to four χ angles to place every remaining atom (Chapter 19).</p>
+  <div class="callout warn"><div class="ct">⚠ Handedness</div><p>Natural amino acids are all “left-handed” (L) molecules, and α-helices in proteins are right-handed. The mirror image of a real protein is therefore <em>not</em> a valid protein, even though every distance in it is identical. Keep this in mind — it returns in Chapters 10 and 20.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Which angle is nearly always 180°?","o":["φ","ψ","ω"],"a":2,"e":"The peptide bond is planar, so ω stays near 180° (trans)."},
+    {"q":"What holds an α-helix together?","o":["Disulfide bonds","Hydrogen bonds from residue i’s C=O to residue i+4’s N–H","Salt bridges"],"a":1}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART II -->
+<section class="chapter" id="ch-learning" data-title="How machines learn" data-part="Part II · Learning machines">
+  <header>
+    <div class="kicker">Learning machines</div>
+    <h2 class="title">How machines learn</h2>
+    <p class="lede">Parameters, a loss, and many small steps downhill.</p>
+  </header>
+  <p>A <strong>neural network</strong> is a function with millions of adjustable numbers inside, called <strong>parameters</strong> or weights. Its basic building block is the <strong>linear layer</strong>: multiply a vector by a matrix of weights and add a bias, \(y = Wx + b\). Between linear layers sit simple non-linear functions (such as ReLU, \(\max(0, x)\)), which let stacked layers represent complex patterns. AlphaFold’s pseudocode is full of <code>Linear(·)</code> — every one is a learned matrix.</p>
+  <p><strong>Training</strong> means finding parameter values that make a <strong>loss</strong> — a single number measuring how wrong the network is on known examples — as small as possible. The workhorse is <strong>gradient descent</strong>: compute the slope of the loss with respect to every parameter (the <em>gradient</em>) and step the other way.</p>
+  <div class="widget" data-widget="gradDescent"></div>
+  <h3>Predicting probabilities: softmax</h3>
+  <p>When the answer is one of several options, a network outputs one score (a <strong>logit</strong>) per option, and the <strong>softmax</strong> function turns scores \(\ell_1, \dots, \ell_n\) into probabilities:</p>
+  \[ p_i = \frac{\exp(\ell_i / T)}{\sum_{j=1}^{n} \exp(\ell_j / T)} \]
+  <p>Every \(p_i\) is positive and they add to 1. The temperature \(T\) sharpens or flattens the distribution. AlphaFold uses this to predict, for every pair of residues, which <em>distance bin</em> they fall in — a <strong>distogram</strong>:</p>
+  <div class="widget" data-widget="softmax"></div>
+  <h3>Scoring a probabilistic guess: cross-entropy</h3>
+  <p>If the true answer is option \(y\) and the network gave it probability \(p_y\), the loss is \(-\log p_y\), averaged over examples: the <strong>cross-entropy</strong>. (Throughout, \(\log\) is the natural logarithm.)</p>
+  <div class="widget" data-widget="crossEntropy"></div>
+  <div class="callout intuition"><div class="ct">💡 End-to-end</div><p>A network is <strong>end-to-end</strong> when the loss is computed on the final answer and gradients flow back through every stage. Before AlphaFold 2, most structure predictors were pipelines: a network predicted distances, then a separate non-learned program built 3-D coordinates (Chapter 10). AlphaFold outputs coordinates directly and trains everything together; removing those end-to-end gradients costs about 6 GDT on CASP14 (Chapter 25).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What does a softmax output always satisfy?","o":["All values are between −1 and 1","All values are positive and sum to 1","The largest value is exactly 1"],"a":1},
+    {"q":"A distogram is…","o":["a 3-D picture","a probability distribution over distance bins for a residue pair","a list of torsion angles"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-attention" data-title="Attention and transformers" data-part="Part II · Learning machines">
+  <header>
+    <div class="kicker">Learning machines</div>
+    <h2 class="title">Attention and transformers</h2>
+    <p class="lede">Let every element decide which others to listen to.</p>
+  </header>
+  <p>The <strong>transformer</strong> (the paper’s ref. 52, the architecture behind modern language models) processes a set of elements — words, or residues — each represented by a vector. Its key operation is <strong>self-attention</strong>. Each element \(i\) computes a <em>query</em> \(q_i\); every element \(j\) a <em>key</em> \(k_j\) and a <em>value</em> \(v_j\), all by linear layers. Then:</p>
+  <div class="callout math"><div class="ct">∑ Gated attention with a bias, as AlphaFold writes it</div>
+  \[ a_{ij} = \operatorname{softmax}_j\!\Big( \tfrac{1}{\sqrt{c}}\, q_i \cdot k_j + b_{ij} \Big), \qquad o_i = g_i \odot \sum_j a_{ij}\, v_j \]
+  <ul>
+    <li>\(a_{ij}\): how much \(i\) attends to \(j\); softmax over \(j\) makes them sum to 1. \(c\) is the vector length; dividing by \(\sqrt{c}\) keeps the scores in a sensible range.</li>
+    <li>\(b_{ij}\): an optional <strong>bias</strong> added straight into the scores. AlphaFold uses it to let one representation steer attention in another.</li>
+    <li>\(g_i = \operatorname{sigmoid}(\operatorname{Linear}(\cdot))\): a <strong>gate</strong> of numbers between 0 and 1; \(\odot\) means element-wise multiplication. Gating lets the network softly switch an update off.</li>
+  </ul></div>
+  <div class="widget" data-widget="attention"></div>
+  <p>Attention usually runs as several <strong>heads</strong> in parallel, each with its own projections, whose outputs are concatenated. Two more ingredients appear in every AlphaFold block:</p>
+  <ul>
+    <li><b>Residual connections</b>: each block <em>adds</em> its output to its input (\(x \leftarrow x + f(x)\)) rather than replacing it. The ⊕ circles in the paper’s Fig. 3a are these additions. Deep stacks (AlphaFold’s 48 Evoformer blocks) train well because of them.</li>
+    <li><b>Layer normalisation</b>: rescale each vector to mean 0 and variance 1 before using it, which keeps numbers well behaved.</li>
+    <li><b>Transition</b>: a small two-layer network applied to every position separately (the green boxes in Fig. 3a).</li>
+  </ul>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What does the bias term b_ij in attention do?","o":["Adds information from outside directly into the attention scores","Normalises the output","Chooses the number of heads"],"a":0},
+    {"q":"A residual connection computes…","o":["x ← f(x)","x ← x + f(x)","x ← x · f(x)"],"a":1}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART III -->
+<section class="chapter" id="ch-msa" data-title="Multiple sequence alignments" data-part="Part III · Evolution as evidence">
+  <header>
+    <div class="kicker">Evolution as evidence</div>
+    <h2 class="title">Multiple sequence alignments</h2>
+    <p class="lede">Your protein has relatives in other species — line them up.</p>
+  </header>
+  <p>Proteins evolve. The same protein in a human, a fish and a bacterium has drifted to different sequences while keeping roughly the same shape and job. Searching huge databases for such <strong>homologues</strong> and lining them up position by position gives a <strong>multiple sequence alignment (MSA)</strong>: a table with one row per sequence and one column per residue of the query.</p>
+  <div class="widget" data-widget="msaViewer"></div>
+  <p>Reading an MSA column by column already tells you a lot. A column that never changes is probably essential — often buried in the core or part of an active site. A column that tolerates many residues is probably on the surface. And — the subject of the next chapter — two columns that change <em>together</em> are probably touching.</p>
+  <div class="callout paper"><div class="ct">📄 How AlphaFold builds its MSA</div><p>The query sequence is searched against UniRef90 and MGnify with <b>jackhmmer</b>, and against BFD + Uniclust30 with <b>HHBlits</b>. <b>BFD</b> (Big Fantastic Database) was built for this work: 65,983,866 families covering 2,204,359,010 sequences, from UniProt plus metagenomic catalogues of soil and marine life, clustered with MMseqs2. Searches are “tuned for high recall; spurious matches will probably appear in the raw MSA but this matches the training condition of the network.” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Methods, Inputs and data sources</a></p></div>
+  <p>The paper writes the number of sequences as \(N_\text{seq}\) and the number of residues as \(N_\text{res}\); in figures these are \(s\) and \(r\). AlphaFold’s main MSA representation uses a few hundred sequences (cluster centres of a larger alignment); a lighter “extra MSA” stack reads thousands more (SI 1.2.7).</p>
+  <div class="quiz"><script type="application/json">[
+    {"q":"In an MSA, what does one column represent?","o":["One species","One position of the query protein across all aligned sequences","One amino-acid type"],"a":1},
+    {"q":"A perfectly conserved column usually indicates…","o":["an unimportant position","a position under strong structural or functional constraint","a sequencing error"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-coevolution" data-title="Coevolution: contacts from sequences" data-part="Part III · Evolution as evidence">
+  <header>
+    <div class="kicker">Evolution as evidence</div>
+    <h2 class="title">Coevolution: reading contacts from sequences</h2>
+    <p class="lede">If one partner changes, the other must follow.</p>
+  </header>
+  <p>Suppose residues 12 and 40 touch in the folded protein, and fit well because one is large and the other small. If a mutation makes 12 small, the protein may become loose — unless 40 later becomes large. Over millions of years, such compensating changes leave a statistical fingerprint: the two columns <strong>co-vary</strong>. This is <strong>coevolution</strong> (the paper’s refs. 20–24).</p>
+  <div class="widget" data-widget="coevoPair"></div>
+  <div class="callout math"><div class="ct">∑ Mutual information and the APC correction</div>
+  <p>Let \(f_i(a)\) be the fraction of sequences with residue kind \(a\) in column \(i\), and \(f_{ij}(a,b)\) the fraction with \(a\) in column \(i\) and \(b\) in column \(j\). The mutual information</p>
+  \[ \mathrm{MI}_{ij} = \sum_{a,b} f_{ij}(a,b)\, \log \frac{f_{ij}(a,b)}{f_i(a)\, f_j(b)} \]
+  <p>is zero if the columns are independent and positive otherwise. Columns that vary a lot get high MI with everything, so we subtract the <strong>average product correction</strong> \(\mathrm{APC}_{ij} = \overline{\mathrm{MI}}_{i\cdot}\,\overline{\mathrm{MI}}_{\cdot j} / \overline{\mathrm{MI}}\), where bars are averages over a row, a column, or everything.</p></div>
+  <div class="widget" data-widget="coevoMap"></div>
+  <div class="callout intuition"><div class="ct">💡 Indirect correlations</div><p>If A touches B and B touches C, A and C can co-vary without touching. Pre-2018 methods (direct-coupling analysis, PSICOV) fitted global statistical models to remove such chains; later, deep networks learned to read contact maps from these statistics like reading an image. AlphaFold goes further: it reads the <em>raw</em> MSA and learns its own statistics. Replacing the raw MSA by pairwise frequencies costs it about 2 GDT on CASP14 (Chapter 25).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Why do residues in contact tend to co-vary across species?","o":["Because they are next to each other in the sequence","Because a change in one is often compensated by a change in the other to keep the structure stable","Because they are always identical"],"a":1},
+    {"q":"What happens to contact-prediction quality as the MSA gets shallower?","o":["It improves","It degrades — the statistics become noisy","Nothing"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-history" data-title="Before AlphaFold 2" data-part="Part III · Evolution as evidence">
+  <header>
+    <div class="kicker">Evolution as evidence</div>
+    <h2 class="title">Before AlphaFold 2: from contacts to coordinates</h2>
+    <p class="lede">Predict an “image” of distances, then fold a chain to match it.</p>
+  </header>
+  <p>The paper sums up the state of the art it replaced: recent methods treated “the problem of protein structure prediction as converting an ‘image’ of evolutionary couplings to an ‘image’ of the protein distance matrix and then integrating the distance predictions into a heuristic system that produces the final 3D coordinate prediction” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper, Related work</a>. DeepMind’s own CASP13 system (<b>AlphaFold 1</b>, ref. 10) was of this kind: a convolutional network predicted distograms, and gradient descent on a potential built from them produced coordinates. AlphaFold 2 is “a completely different model”.</p>
+  <p>You can run a miniature version of that older recipe here:</p>
+  <div class="widget" data-widget="foldContacts"></div>
+  <p>Run it a few times with different inputs and notice two weaknesses that AlphaFold 2 was designed around:</p>
+  <ol>
+    <li><b>Errors are frozen in.</b> The coordinate builder cannot ask the network for a better guess; a wrong contact misleads it.</li>
+    <li><b>Distances are blind to handedness.</b> A structure and its mirror image have identical distance matrices, so the search lands on either one. Real pipelines needed extra torsion or orientation predictions to fix the chirality.</li>
+  </ol>
+  <h3>Templates</h3>
+  <p>When a close homologue’s structure has already been solved, it can be used as a <strong>template</strong>: copy and adapt its coordinates (“homology modelling”, refs. 18–19). AlphaFold also searches PDB70 for templates and feeds them into its pair representation, but they are not essential: training without templates costs only a fraction of a GDT point on CASP14 (Fig. 4a).</p>
+  <h3>CASP: a blind test</h3>
+  <p><strong>CASP</strong> (Critical Assessment of protein Structure Prediction) runs every two years. Organisers collect structures that have just been solved but not yet released; predictors receive only the sequences and submit models; assessors score them once the structures are public. It “has long served as the gold-standard assessment” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 584</a>. AlphaFold entered CASP14 (May–July 2020) as team “AlphaFold2”.</p>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Why can’t a distance matrix alone distinguish a structure from its mirror image?","o":["Mirror images have identical pairwise distances","Distances are too noisy","Mirror images have more residues"],"a":0},
+    {"q":"What makes CASP a blind test?","o":["Predictors cannot see the sequence","The target structures are unpublished while predictions are made","The assessors do not know who predicted what"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-metrics" data-title="Measuring accuracy" data-part="Part III · Evolution as evidence">
+  <header>
+    <div class="kicker">Evolution as evidence</div>
+    <h2 class="title">Measuring accuracy: RMSD, GDT, lDDT, TM-score</h2>
+    <p class="lede">How close is close? Four rulers, each with a purpose.</p>
+  </header>
+  <p>Comparing a model to the truth needs care: the two are in different coordinate frames. Global metrics first <strong>superpose</strong> them — find the rotation \(R\) and translation \(t\) minimising the summed squared distances.</p>
+  <div class="widget" data-widget="superpose"></div>
+  <div class="callout math"><div class="ct">∑ The four metrics used in the paper</div>
+  <p><b>RMSD</b> after optimal superposition, over \(N\) Cα atoms:</p>
+  \[ \mathrm{RMSD} = \min_{R,t} \sqrt{\tfrac{1}{N} \textstyle\sum_{i} \lVert R x_i + t - y_i \rVert^2 } \]
+  <p><b>r.m.s.d.<sub>95</sub></b> (the paper’s headline CASP metric): repeat five times — superpose on the chosen atoms, then keep the 95% with the smallest error — and report the RMSD of the final 95%. This ignores a few residues distorted by crystal artefacts <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Methods, Metrics</a>.</p>
+  <p><b>GDT</b> (global distance test; CASP’s official domain score): the average, over cut-offs 1, 2, 4 and 8 Å, of the largest fraction of residues that can be superposed within that cut-off, ×100.</p>
+  <p><b>lDDT-Cα</b> (local distance difference test): superposition-free. For every pair of residues closer than 15 Å in the truth, check whether the model preserves their distance within 0.5, 1, 2 and 4 Å; average the four fractions, ×100. Because it is local, it scores domains well even if they are packed wrongly.</p>
+  <p><b>TM-score</b> (template modelling score): \(\displaystyle \mathrm{TM} = \max_{R,t} \frac{1}{L} \sum_{i} \frac{1}{1 + (d_i/d_0)^2}\), with \(d_0 = 1.24\,(L-15)^{1/3} - 1.8\) Å. Between 0 and 1, length-normalised, it rewards getting the overall fold right; above about 0.5 usually means the same fold.</p></div>
+  <div class="widget" data-widget="metricsLab"></div>
+  <div class="callout code"><div class="ct">⌨ Here and in the paper</div><p>This book computes all four in your browser (<code>assets/js/protein.js</code>), with a simplified superposition search for GDT and TM-score. The paper used TM-align for TM-scores and the official lDDT definition, which also scores all heavy atoms (“lDDT”) versus Cα only (“lDDT-Cα”).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Which metric needs no superposition?","o":["RMSD","GDT","lDDT"],"a":2},
+    {"q":"A two-domain protein has both domains perfect but the angle between them wrong. Which metric is hurt most?","o":["lDDT-Cα","RMSD over all residues","None"],"a":1}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART IV -->
+<section class="chapter" id="ch-overview" data-title="The architecture at a glance" data-part="Part IV · The AlphaFold network">
+  <header>
+    <div class="kicker">The AlphaFold network</div>
+    <h2 class="title">The architecture at a glance</h2>
+    <p class="lede">Two stages, two representations, one loop.</p>
+  </header>
+  <p>“The AlphaFold network directly predicts the 3D coordinates of all heavy atoms for a given protein using the primary amino acid sequence and aligned sequences of homologues as inputs” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 585</a>. It has two main stages:</p>
+  <ol>
+    <li>The <b>trunk</b>: 48 <b>Evoformer</b> blocks process an \(N_\text{seq}\times N_\text{res}\) array (the processed MSA) and an \(N_\text{res}\times N_\text{res}\) array (residue pairs).</li>
+    <li>The <b>structure module</b>: 8 blocks turn those into an explicit 3-D structure — a rotation and translation for every residue — and then all atom positions.</li>
+  </ol>
+  <figure><img src="assets/img/fig1e.png" alt="AlphaFold model architecture, paper Figure 1e" loading="lazy"><figcaption>Paper Fig. 1e: model architecture. Array shapes in parentheses: s = number of sequences, r = number of residues, c = number of channels. From Jumper et al. (2021), <i>Nature</i>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; cropped.</figcaption></figure>
+  <div class="widget" data-widget="archExplorer"></div>
+  <div class="callout paper"><div class="ct">📄 The innovations the paper lists</div><ul>
+    <li>a new architecture to jointly embed MSAs and pairwise features (the Evoformer);</li>
+    <li>a new output representation and loss for accurate end-to-end structure prediction (frames and FAPE);</li>
+    <li>a new equivariant attention architecture (invariant point attention);</li>
+    <li>intermediate losses for iterative refinement, and recycling;</li>
+    <li>a masked-MSA loss trained jointly with the structure;</li>
+    <li>self-distillation on unlabelled sequences, and self-estimates of accuracy.</li>
+  </ul><p><a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 584–585</a></p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"How many Evoformer blocks does AlphaFold use, and do they share weights?","o":["8, shared","48, not shared","48, shared"],"a":1},
+    {"q":"What does the structure module output directly?","o":["A contact map","A distogram only","A rotation and translation per residue, then atom coordinates"],"a":2}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-reps" data-title="MSA and pair representations" data-part="Part IV · The AlphaFold network">
+  <header>
+    <div class="kicker">The AlphaFold network</div>
+    <h2 class="title">Two representations: the MSA and the pair</h2>
+    <p class="lede">One table about sequences, one table about relationships.</p>
+  </header>
+  <p>A <strong>representation</strong> is a learned array of numbers that the network refines block after block. AlphaFold keeps two:</p>
+  <ul>
+    <li>The <b>MSA representation</b> \(m_{si} \in \mathbb{R}^{c_m}\), for every sequence \(s\) and residue \(i\): shape \((s, r, c)\) with \(c_m = 256\). “The columns of the MSA representation encode the individual residues of the input sequence while the rows represent the sequences in which those residues appear.” It starts from the raw MSA (one-hot residue types and deletion information).</li>
+    <li>The <b>pair representation</b> \(z_{ij} \in \mathbb{R}^{c_z}\), for every ordered pair of residues: shape \((r, r, c)\) with \(c_z = 128\). It starts from the query sequence (an outer sum of embeddings of residues \(i\) and \(j\)), a <b>relative position</b> encoding (the offset \(j - i\), clipped to ±32, as a one-hot vector), and template features.</li>
+  </ul>
+  <div class="widget" data-widget="repShapes"></div>
+  <div class="callout intuition"><div class="ct">💡 The pair representation is a graph</div><p>The paper’s key framing: “view the prediction of protein structures as a graph inference problem in 3D space in which the edges of the graph are defined by residues in proximity.” Each \(z_{ij}\) is the network’s current belief about the <em>edge</em> from residue \(i\) to residue \(j\) — how far apart, in which direction, whether they interact. Note \(z_{ij}\) and \(z_{ji}\) are separate directed edges. <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 585, Fig. 3b</a></p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p><code>alphafold/model/config.py</code> sets <code>msa_channel: 256</code>, <code>pair_channel: 128</code>, <code>seq_channel: 384</code> (the single representation), 48 Evoformer blocks and 8 structure-module layers. The input embedding lives in <code>alphafold/model/modules.py</code> (<code>EmbeddingsAndEvoformer</code>).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What is the shape of the pair representation?","o":["(s, r, c)","(r, r, c)","(r, c)"],"a":1},
+    {"q":"Which input does the relative position encoding capture?","o":["Where residues are in 3-D","How far apart residues are along the chain (j − i, clipped)","Which species a sequence comes from"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-evoformer" data-title="Inside the Evoformer" data-part="Part IV · The AlphaFold network">
+  <header>
+    <div class="kicker">The AlphaFold network</div>
+    <h2 class="title">Inside the Evoformer: attention along rows and columns</h2>
+    <p class="lede">Nine operations, in a fixed order, repeated 48 times.</p>
+  </header>
+  <figure><img src="assets/img/fig3_abc.png" alt="Evoformer block, pair representation as a graph, and triangle operations, paper Figure 3a–c" loading="lazy"><figcaption>Paper Fig. 3a–c: (a) the Evoformer block, (b) the pair representation as directed edges, (c) the triangle operations. Jumper et al. (2021), <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; cropped.</figcaption></figure>
+  <p>Each Evoformer block applies, in series, with a residual connection around each:</p>
+  <ol>
+    <li><b>MSA row-wise gated self-attention with pair bias</b> — this chapter;</li>
+    <li><b>MSA column-wise gated self-attention</b> — this chapter;</li>
+    <li><b>MSA transition</b>;</li>
+    <li><b>Outer product mean</b>: MSA → pair (Chapter 15);</li>
+    <li><b>Triangle multiplicative update using outgoing edges</b> (Chapter 16);</li>
+    <li><b>Triangle multiplicative update using incoming edges</b>;</li>
+    <li><b>Triangle self-attention around the starting node</b>;</li>
+    <li><b>Triangle self-attention around the ending node</b>;</li>
+    <li><b>Pair transition</b>.</li>
+  </ol>
+  <h3>Axial attention on the MSA</h3>
+  <p>Full attention over all \(s \cdot r\) cells of the MSA would cost \((s r)^2\) operations. Like vision models that attend along image rows and columns (“axial attention”, ref. 31), AlphaFold attends within one row or one column at a time.</p>
+  <div class="widget" data-widget="axialAttention"></div>
+  <div class="callout math"><div class="ct">∑ SI Alg. 7 and 8, per head</div>
+  \[ \text{row: } a_{sij} = \operatorname{softmax}_j\!\Big(\tfrac{1}{\sqrt c}\, q_{si}\cdot k_{sj} + b_{ij}\Big), \quad o_{si} = g_{si}\odot \textstyle\sum_j a_{sij}\, v_{sj} \]
+  \[ b_{ij} = \operatorname{LinearNoBias}(\operatorname{LayerNorm}(z_{ij})) \]
+  \[ \text{column: } a_{sti} = \operatorname{softmax}_t\!\Big(\tfrac{1}{\sqrt c}\, q_{si}\cdot k_{ti}\Big), \quad o_{si} = g_{si}\odot \textstyle\sum_t a_{sti}\, v_{ti} \]
+  <p>Row attention mixes information <em>along the protein</em> within one sequence, biased by the pair representation. Column attention mixes information <em>across species</em> at one position. Both use 8 heads in the released configuration.</p></div>
+  <div class="callout intuition"><div class="ct">💡 Closing the loop</div><p>“We project additional logits from the pair stack to bias the MSA attention. This closes the loop by providing information flow from the pair representation back into the MSA representation” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 586</a>. The outer product mean carries information the other way, MSA → pair, so every block fully mixes the two.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p><code>alphafold/model/modules.py</code>: <code>EvoformerIteration</code> calls <code>MSARowAttentionWithPairBias</code>, <code>MSAColumnAttention</code>, <code>Transition</code>, <code>OuterProductMean</code>, <code>TriangleMultiplication</code> (×2), <code>TriangleAttention</code> (×2) and <code>Transition</code>, each wrapped in dropout and a residual add.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Which MSA attention receives a bias from the pair representation?","o":["Row-wise","Column-wise","Both"],"a":0},
+    {"q":"Column-wise attention at residue i lets information flow…","o":["between residues of one sequence","between sequences (species) at the same position","from 3-D coordinates"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-opm" data-title="Outer product mean" data-part="Part IV · The AlphaFold network">
+  <header>
+    <div class="kicker">The AlphaFold network</div>
+    <h2 class="title">Outer product mean: the MSA talks to the pair</h2>
+    <p class="lede">A learned, always-on version of coevolution statistics.</p>
+  </header>
+  <p>“The MSA representation updates the pair representation through an element-wise outer product that is summed over the MSA sequence dimension. In contrast to previous work, this operation is applied within every block rather than once in the network” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 585</a>.</p>
+  <div class="callout math"><div class="ct">∑ SI Alg. 10</div>
+  \[ a_{si},\, b_{si} = \operatorname{Linear}(\operatorname{LayerNorm}(m_{si})) \in \mathbb{R}^{32} \]
+  \[ o_{ij} = \operatorname{flatten}\Big( \tfrac{1}{N_\text{seq}} \sum_{s} a_{si} \otimes b_{sj} \Big) \in \mathbb{R}^{32\cdot 32}, \qquad z_{ij} \leftarrow z_{ij} + \operatorname{Linear}(o_{ij}) \]
+  <p>The <strong>outer product</strong> \(a \otimes b\) of two vectors is the table of all products \(a_p b_q\). Averaged over sequences, it becomes a table of co-occurrence statistics between columns \(i\) and \(j\).</p></div>
+  <div class="widget" data-widget="outerProduct"></div>
+  <div class="callout intuition"><div class="ct">💡 Why this is clever</div><p>With one-hot inputs the outer product mean <em>is</em> the pair-frequency table \(f_{ij}(a,b)\) at the heart of coevolution methods. With learned 32-dimensional vectors — which, after a few blocks, already carry context from attention — the network can extract whatever pair statistic helps, and update it 48 times as its picture of the structure improves.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"With one-hot vectors, the outer product mean over sequences equals…","o":["the MSA itself","the joint frequency table of the two columns","the distance between the residues"],"a":1},
+    {"q":"How often is the outer product mean applied?","o":["Once, at the input","In every Evoformer block","Only in the structure module"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-triangles" data-title="Triangle updates" data-part="Part IV · The AlphaFold network">
+  <header>
+    <div class="kicker">The AlphaFold network</div>
+    <h2 class="title">Triangle updates: keeping distances consistent</h2>
+    <p class="lede">Edges of a graph that must close into triangles.</p>
+  </header>
+  <p>A table of pairwise relationships is only meaningful if it can come from a real 3-D structure: “for a pairwise description of amino acids to be representable as a single 3D structure, many constraints must be satisfied including the triangle inequality on distances” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 586</a>.</p>
+  <div class="widget" data-widget="triangleIneq"></div>
+  <p>AlphaFold therefore updates each edge \(ij\) using the other two edges of every triangle \(ijk\). There are four variants, applied one after the other:</p>
+  <div class="widget" data-widget="triangleOps"></div>
+  <div class="callout math"><div class="ct">∑ SI Alg. 11–14</div>
+  <p><b>Multiplicative update, outgoing edges</b> (incoming: swap to \(a_{ki}, b_{kj}\)):</p>
+  \[ a_{ij}, b_{ij} = \operatorname{sigmoid}(\operatorname{Linear}(z_{ij})) \odot \operatorname{Linear}(z_{ij}), \qquad g_{ij} = \operatorname{sigmoid}(\operatorname{Linear}(z_{ij})) \]
+  \[ \tilde z_{ij} = g_{ij} \odot \operatorname{Linear}\Big(\operatorname{LayerNorm}\Big(\textstyle\sum_k a_{ik} \odot b_{jk}\Big)\Big) \]
+  <p><b>Attention around the starting node</b> (ending node: keys \(k_{kj}\), values \(v_{kj}\), bias \(b_{ki}\)):</p>
+  \[ a_{ijk} = \operatorname{softmax}_k\Big(\tfrac{1}{\sqrt c}\, q_{ij}\cdot k_{ik} + b_{jk}\Big), \qquad \tilde z_{ij} = g_{ij} \odot \textstyle\sum_k a_{ijk}\, v_{ik} \]
+  <p>In the attention variants, the “missing edge” of the triangle (\(jk\) or \(ki\)) enters as a bias: “we add an extra logit bias to axial attention to include the ‘missing edge’ of the triangle”.</p></div>
+  <div class="callout paper"><div class="ct">📄 Why both?</div><p>“The triangle multiplicative update was developed originally as a more symmetric and cheaper replacement for the attention, and networks that use only the attention or multiplicative update are both able to produce high-accuracy structures. However, the combination of the two updates is more accurate.” Removing triangles, biasing and gating together (plain axial attention instead) costs about 4–5 GDT on CASP14 <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 586, Fig. 4a</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"To update edge ij, the outgoing multiplicative update combines…","o":["z_ik and z_jk over all k","z_ki and z_kj over all k","only z_ji"],"a":0},
+    {"q":"Triangle attention costs grow with…","o":["r","r²","r³ — every edge attends over r others"],"a":2}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-frames" data-title="Frames: residues as rigid bodies" data-part="Part IV · The AlphaFold network">
+  <header>
+    <div class="kicker">The AlphaFold network</div>
+    <h2 class="title">Frames: residues as rigid bodies</h2>
+    <p class="lede">Every residue carries its own little coordinate system.</p>
+  </header>
+  <p>The structure module needs a concrete 3-D representation. AlphaFold’s choice: treat each residue’s backbone (N, Cα, C) as a <strong>rigid body</strong> and describe it by a <strong>frame</strong> \(T_i = (R_i, t_i)\) — a rotation matrix \(R_i\) (which way the residue faces) and a translation \(t_i\) (where its Cα is) “with respect to the global frame”.</p>
+  <div class="callout math"><div class="ct">∑ Rigid transforms</div>
+  <p>A frame maps a point from the residue’s local coordinates to global coordinates, and back:</p>
+  \[ T_i \circ x = R_i\, x + t_i, \qquad T_i^{-1} \circ x = R_i^{\mathsf T} (x - t_i) \]
+  <p>\(R_i\) is a <strong>rotation matrix</strong>: its columns are three perpendicular unit vectors, \(R^{\mathsf T}R = I\) and \(\det R = +1\) (a proper rotation, never a reflection). Frames compose: \((T_1 \circ T_2)\circ x = T_1 \circ (T_2 \circ x)\).</p></div>
+  <div class="widget" data-widget="frameBuilder"></div>
+  <div class="callout intuition"><div class="ct">💡 Why frames?</div><p>“These rotations and translations — representing the geometry of the N-Cα-C atoms — prioritize the orientation of the protein backbone so that the location of the side chain of each residue is highly constrained within that frame” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 586</a>. A point described in a residue’s local frame moves rigidly with that residue — exactly the property that makes invariant point attention (next chapter) and FAPE (Chapter 20) work.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>Frames are implemented in <code>alphafold/model/r3.py</code> (rigid transforms, <code>rigids_from_3_points</code>) and <code>alphafold/model/quat_affine.py</code> (the quaternion-based version used inside the structure module).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Which atom’s position is the frame’s translation t?","o":["N","Cα","C"],"a":1},
+    {"q":"If the whole protein is rotated, a side-chain point’s local coordinates T⁻¹∘x…","o":["change","stay the same","become zero"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-ipa" data-title="Invariant point attention" data-part="Part IV · The AlphaFold network">
+  <header>
+    <div class="kicker">The AlphaFold network</div>
+    <h2 class="title">Invariant point attention</h2>
+    <p class="lede">Attention that reasons in 3-D but does not care how the world is oriented.</p>
+  </header>
+  <p>A protein has no preferred orientation in space. A good structure network should give the same answer however the input structure is rotated or shifted — it should be <strong>invariant</strong> for internal quantities and <strong>equivariant</strong> for outputs (rotate the input, and the output rotates the same way).</p>
+  <p><strong>Invariant point attention (IPA)</strong> “augments each of the usual attention queries, keys and values with 3D points that are produced in the local frame of each residue such that the final value is invariant to global rotations and translations” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 587</a>.</p>
+  <div class="callout math"><div class="ct">∑ SI Alg. 22, attention weights for head h</div>
+  \[ a_{ij}^h = \operatorname{softmax}_j\Big( w_L \Big( \tfrac{1}{\sqrt c}\, q_i^h \cdot k_j^h + b_{ij}^h - \tfrac{\gamma^h w_C}{2} \sum_p \big\lVert T_i \circ \vec q_i^{\,hp} - T_j \circ \vec k_j^{\,hp} \big\rVert^2 \Big)\Big) \]
+  <ul>
+    <li>\(q_i^h \cdot k_j^h\): the usual scalar attention term on the single representation.</li>
+    <li>\(b_{ij}^h\): a bias from the pair representation.</li>
+    <li>\(\vec q_i^{\,hp}, \vec k_j^{\,hp}\): learned 3-D <em>points</em> (4 query points per head) produced by linear layers, expressed in each residue’s <em>local</em> frame. \(T_i\circ\) moves them into global space, where squared distances are measured. \(\gamma^h\) is a learned positive weight; \(w_C = \sqrt{2/(9 N_\text{query points})}\) and \(w_L = \sqrt{1/3}\) balance the three terms.</li>
+  </ul>
+  <p>Outputs gather the pair representation \(\sum_j a_{ij}^h z_{ij}\), scalar values \(\sum_j a_{ij}^h v_j^h\), and value points brought back into \(i\)’s local frame: \(T_i^{-1}\circ \sum_j a_{ij}^h \big(T_j \circ \vec v_j^{\,hp}\big)\).</p></div>
+  <div class="widget" data-widget="ipaInvariance"></div>
+  <div class="callout math"><div class="ct">∑ Why it is invariant, in one line</div>
+  <p>Apply a global transform \(T_\text{g}\) to the whole structure: every frame becomes \(T_\text{g}\circ T_i\). Then \(\lVert (T_\text{g}\circ T_i)\circ\vec q - (T_\text{g}\circ T_j)\circ\vec k\rVert = \lVert T_i\circ\vec q - T_j\circ\vec k\rVert\), because rigid motions preserve distances. And output points are expressed in \(T_i\)’s own frame, where \(T_\text{g}\) cancels. The SI gives the full proof (§1.8.2).</p></div>
+  <p>The 3-D terms “also impose a strong spatial/locality bias on the attention, which is well-suited to the iterative refinement of the protein structure.” Replacing IPA by a direct projection costs about 2 GDT on CASP14; removing both IPA and recycling costs about 16 <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Fig. 4a</a>.</p>
+  <div class="quiz"><script type="application/json">[
+    {"q":"In which frame are IPA’s query and key points produced?","o":["The global frame","Each residue’s own local frame","The frame of residue 1"],"a":1},
+    {"q":"Why does a global rotation leave IPA’s attention weights unchanged?","o":["Because the weights ignore geometry","Because the weights depend only on distances between transformed points, which rigid motions preserve","Because rotations are not allowed"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-structure" data-title="The structure module" data-part="Part IV · The AlphaFold network">
+  <header>
+    <div class="kicker">The AlphaFold network</div>
+    <h2 class="title">The structure module and the residue gas</h2>
+    <p class="lede">Start everyone at the origin; let them all move at once.</p>
+  </header>
+  <figure><img src="assets/img/fig3_def.png" alt="Structure module, residue gas and FAPE, paper Figure 3d–f" loading="lazy"><figcaption>Paper Fig. 3d–f: (d) the structure module with the IPA module, (e) the residue gas — backbone frames as triangles plus χ angles, (f) FAPE. Jumper et al. (2021), <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; cropped.</figcaption></figure>
+  <p>The structure module reads the <b>single representation</b> (the first, query row of the MSA representation, projected to 384 numbers per residue) and the pair representation. The 3-D structure is a <strong>residue gas</strong>: \(N_\text{res}\) independent frames. “These representations are initialized in a trivial state with all rotations set to the identity and all positions set to the origin, but rapidly develop and refine a highly accurate protein structure with precise atomic details” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 585</a>.</p>
+  <div class="widget" data-widget="residueGas"></div>
+  <div class="callout math"><div class="ct">∑ One structure-module block (SI Alg. 20, 23)</div>
+  <p>1. \(s_i \leftarrow s_i + \operatorname{IPA}(s, z, T)\), then a transition. 2. Predict an update from \(s_i\):</p>
+  \[ (b_i, c_i, d_i, t_i) = \operatorname{Linear}(s_i), \qquad (a_i, b_i, c_i, d_i) \leftarrow \frac{(1, b_i, c_i, d_i)}{\sqrt{1 + b_i^2 + c_i^2 + d_i^2}} \]
+  <p>The normalised quaternion \((a, b, c, d)\) gives a rotation matrix \(R_i\) (fixing \(a = 1\) before normalising makes the update start close to “no rotation”). 3. Compose: \(T_i \leftarrow T_i \circ (R_i, t_i)\) — the update is applied <em>in the residue’s own frame</em>, which keeps the block equivariant. Eight such blocks share their weights.</p></div>
+  <h3>Breaking the chain, on purpose</h3>
+  <p>The frames are independent: nothing forces consecutive residues to stay bonded. This is deliberate: “the peptide bond geometry is completely unconstrained and the network is observed to frequently violate the chain constraint during the application of the structure module as breaking this constraint enables the local refinement of all parts of the chain without solving complex loop closure problems.” Bond geometry is encouraged by a <b>violation loss</b> during fine-tuning and enforced only at the very end by gradient-descent <b>relaxation</b> in the Amber force field — which “does not improve the accuracy … but does remove distracting stereochemical violations” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 586–587</a>.</p>
+  <h3>Side chains</h3>
+  <p>“Predictions of side-chain χ angles as well as the final, per-residue accuracy of the structure (pLDDT) are computed with small per-residue networks on the final activations.” Each torsion angle is predicted as a 2-D vector (sine, cosine) and normalised; idealised rigid groups of atoms are then attached to the backbone frame by successive rotations, placing every heavy atom.</p>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p><code>alphafold/model/folding.py</code>: <code>InvariantPointAttention</code>, <code>FoldIteration</code> (one block) and <code>StructureModule</code>; <code>alphafold/model/all_atom.py</code> turns torsion angles into atom coordinates; <code>alphafold/relax/</code> runs the Amber relaxation with OpenMM.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"How are all residue frames initialised?","o":["From a template","At the origin with the identity rotation","Along a straight line"],"a":1},
+    {"q":"Why does AlphaFold let the chain break during the structure module?","o":["To save memory","So all parts can be refined simultaneously without solving loop-closure problems","Because bonds do not matter"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-fape" data-title="FAPE: the main loss" data-part="Part IV · The AlphaFold network">
+  <header>
+    <div class="kicker">The AlphaFold network</div>
+    <h2 class="title">FAPE: the loss that knows left from right</h2>
+    <p class="lede">Judge every atom from every residue’s point of view.</p>
+  </header>
+  <p>AlphaFold’s main loss is the <strong>frame aligned point error (FAPE)</strong>. It “compares the predicted atom positions to the true positions under many different alignments. For each alignment, defined by aligning the predicted frame \((R_k, t_k)\) to the corresponding true frame, we compute the distance of all predicted atom positions \(x_i\) from the true atom positions. The resulting \(N_\text{frames} \times N_\text{atoms}\) distances are penalized with a clamped L1 loss” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 587</a>.</p>
+  <div class="callout math"><div class="ct">∑ SI Alg. 28</div>
+  \[ \vec x_{ij} = T_i^{-1}\circ \vec x_j, \qquad \vec x_{ij}^{\,\text{true}} = T_i^{\text{true}\,-1}\circ \vec x_j^{\,\text{true}} \]
+  \[ d_{ij} = \sqrt{\lVert \vec x_{ij} - \vec x_{ij}^{\,\text{true}} \rVert^2 + \epsilon}, \qquad \mathcal{L}_\text{FAPE} = \frac{1}{Z}\, \operatorname{mean}_{i,j} \big(\min(d_\text{clamp}, d_{ij})\big) \]
+  <ul>
+    <li>\(\vec x_{ij}\): atom \(j\) seen in frame \(i\)’s local coordinates, for prediction and truth.</li>
+    <li>\(d_{ij}\): how far apart the two views are; \(\epsilon = 10^{-4}\) Å² keeps the square root smooth.</li>
+    <li>\(d_\text{clamp} = 10\) Å caps each error, so one far-off atom cannot dominate; \(Z = 10\) Å makes the loss unitless.</li>
+  </ul></div>
+  <div class="widget" data-widget="fapeLab"></div>
+  <div class="callout intuition"><div class="ct">💡 What FAPE buys</div><p>FAPE is invariant to global rotations and translations (both views are local), like lDDT. But it is <em>not</em> invariant to reflections: in the mirror image, local frames remain right-handed, so the atoms come out on the wrong side. FAPE “creates a strong bias for atoms to be correct relative to the local frame of each residue and hence correct with respect to its side-chain interactions, as well as providing the main source of chirality for AlphaFold.” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 587</a></p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p><code>alphafold/model/all_atom.py</code>: <code>frame_aligned_point_error</code>. It is used for the backbone after every structure-module block (the auxiliary loss) and for all atoms in all frames at the end.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What does FAPE do with an error of 25 Å?","o":["Counts it as 25","Counts it as the clamp value, 10 Å","Ignores it"],"a":1},
+    {"q":"A prediction is the exact mirror image of the truth. Distance-matrix RMSD is 0. FAPE is…","o":["also 0","clearly greater than 0","undefined"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-recycling" data-title="Recycling and refinement" data-part="Part IV · The AlphaFold network">
+  <header>
+    <div class="kicker">The AlphaFold network</div>
+    <h2 class="title">Recycling and iterative refinement</h2>
+    <p class="lede">Run the whole network again on its own answer.</p>
+  </header>
+  <p>AlphaFold reinforces “the notion of iterative refinement by repeatedly applying the final loss to outputs and then feeding the outputs recursively into the same modules” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 585</a>. Two levels:</p>
+  <ul>
+    <li><b>Inside the structure module</b>: the 8 shared-weight blocks each refine the frames, and FAPE (plus a torsion loss) is applied after every block — the auxiliary loss.</li>
+    <li><b>Recycling the whole network</b>: the final pair representation, the first row of the MSA representation and the predicted structure (as distances between predicted Cβ atoms) are embedded and added to the inputs of a fresh pass. At inference this is done three times (four passes). During training the number of recycling iterations is sampled at random and gradients flow only through the last one, so recycling “contributes markedly to accuracy with minor extra training time” (SI 1.8). Removing it costs about 4–5 GDT on CASP14 (Fig. 4a).</li>
+  </ul>
+  <div class="widget" data-widget="trajectory"></div>
+  <figure><img src="assets/img/fig4.png" alt="Ablation results and per-block GDT trajectories, paper Figure 4" loading="lazy" style="max-width:520px"><figcaption>Paper Fig. 4: (a) ablations, (b) domain GDT across 192 intermediate structures (4 recycling iterations × 48 Evoformer blocks) for CASP14 targets T1024 and T1064. Jumper et al. (2021), <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; cropped.</figcaption></figure>
+  <div class="callout paper"><div class="ct">📄 Interpreting the network</div><p>To see the network’s intermediate beliefs, the authors froze AlphaFold and trained a separate structure module for each of the 48 Evoformer blocks. “The resulting trajectories are surprisingly smooth after the first few blocks, showing that AlphaFold makes constant incremental improvements to the structure until it can no longer improve.” For hard targets such as SARS-CoV-2 ORF8 (T1064) “the network searches and rearranges secondary structure elements for many layers before settling on a good structure”; for LmrP (T1024) it “finds the final structure within the first few layers” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 587–588</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"How many recycling iterations does AlphaFold use at inference (beyond the first pass)?","o":["None","Three","48"],"a":1},
+    {"q":"Where are the 192 intermediate structures of Fig. 4b obtained?","o":["From 192 separate trained models","From separate structure modules attached to each of 48 Evoformer blocks over 4 recycling passes","From molecular dynamics"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-training" data-title="Training AlphaFold" data-part="Part IV · The AlphaFold network">
+  <header>
+    <div class="kicker">The AlphaFold network</div>
+    <h2 class="title">Training: losses, masking and self-distillation</h2>
+    <p class="lede">One structure loss, several helpers, and a second round of learning from itself.</p>
+  </header>
+  <h3>The loss</h3>
+  <p>“The network is supervised by the FAPE loss and a number of auxiliary losses”: a distogram head (the pair representation projected to binned distances, cross-entropy), a BERT-like masked-MSA loss, a per-residue lDDT-Cα prediction head (for pLDDT), a side-chain loss, and, during fine-tuning, a structural-violation loss <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Methods, Training regimen</a>.</p>
+  <div class="widget" data-widget="lossMix"></div>
+  <h3>Masked MSA prediction</h3>
+  <p>“We randomly mask out or mutate individual residues within the MSA and have a Bidirectional Encoder Representations from Transformers (BERT)-style objective to predict the masked elements of the MSA sequences. This objective encourages the network to learn to interpret phylogenetic and covariation relationships without hardcoding a particular correlation statistic” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 587</a>. It is trained jointly with the structure, not as a separate pre-training step.</p>
+  <div class="widget" data-widget="maskedMSA"></div>
+  <h3>Data, crops and compute</h3>
+  <p>Training chains come from the PDB (release date up to 30 April 2018), sampled in inverse proportion to the size of their 40%-sequence-identity cluster so that over-studied families do not dominate. Each is randomly cropped to 256 residues; batches hold 128 examples, one per TPU v3 core. Training runs “until convergence (around 10 million samples)”, about one week, followed by about four days of fine-tuning with 384-residue crops, a larger MSA stack and a lower learning rate <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Methods</a>.</p>
+  <h3>Self-distillation</h3>
+  <div class="widget" data-widget="selfDistill"></div>
+  <p>This “noisy student” procedure (ref. 35) turns unlabelled sequences into extra training data. Finally, five models are trained with different random seeds (some with templates, some without) for diversity; at prediction time all five are run and the one with the highest confidence is chosen.</p>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What does the masked-MSA (BERT) objective encourage?","o":["Faster inference","Learning covariation relationships from the MSA itself","Exact bond lengths"],"a":1},
+    {"q":"In self-distillation, the second model is trained on…","o":["only predicted structures","a 75/25 mix of high-confidence predicted structures and PDB structures","only CASP14 targets"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-confidence" data-title="Confidence: pLDDT, PAE, pTM" data-part="Part IV · The AlphaFold network">
+  <header>
+    <div class="kicker">The AlphaFold network</div>
+    <h2 class="title">Knowing what it doesn’t know: pLDDT, PAE and pTM</h2>
+    <p class="lede">A prediction is only useful if you can tell when to trust it.</p>
+  </header>
+  <p>AlphaFold provides “precise, per-residue estimates of its reliability that should enable the confident use of these predictions” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 584</a>. Three of them:</p>
+  <ul>
+    <li><b>pLDDT</b> (predicted lDDT): for each residue, a small network on the final single representation predicts a distribution over 50 bins of lDDT-Cα; its expectation is the pLDDT, from 0 to 100.</li>
+    <li><b>PAE</b> (predicted aligned error): for each pair \((i, j)\), the expected error in residue \(j\)’s position when prediction and truth are aligned on residue \(i\)’s frame — predicted from the pair representation.</li>
+    <li><b>pTM</b> (predicted TM-score): computed from the PAE distribution; added after CASP14 by fine-tuning (SI 1.9.7).</li>
+  </ul>
+  <div class="widget" data-widget="plddtView"></div>
+  <div class="widget" data-widget="paeView"></div>
+  <div class="callout paper"><div class="ct">📄 Are the confidences honest?</div><p>On 10,795 recent PDB chains, “our confidence measure, the predicted local-distance difference test (pLDDT), reliably predicts the Cα local-distance difference test (lDDT-Cα) accuracy of the corresponding prediction”, and “the global superposition metric template modelling score (TM-score) can be accurately estimated” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper Fig. 2c, d</a>.</p></div>
+  <div class="widget" data-widget="calibration"></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"pLDDT predicts which quantity?","o":["Per-residue lDDT-Cα","RMSD","The number of MSA sequences"],"a":0},
+    {"q":"Two domains are each predicted well, but their relative position is uncertain. Where does PAE show this?","o":["In the diagonal blocks","In the off-diagonal blocks between the two domains","Nowhere"],"a":1}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART V -->
+<section class="chapter" id="ch-results" data-title="Results" data-part="Part V · Evidence">
+  <header>
+    <div class="kicker">Evidence</div>
+    <h2 class="title">Results: CASP14 and the recent PDB</h2>
+    <p class="lede">Accuracy competitive with experiment in a majority of cases.</p>
+  </header>
+  <div class="widget" data-widget="casp14Chart"></div>
+  <figure><img src="assets/img/fig1_abcd.png" alt="AlphaFold CASP14 performance and example predictions, paper Figure 1a–d" loading="lazy"><figcaption>Paper Fig. 1a–d: (a) median Cα r.m.s.d.95 on CASP14 versus the top 15 entries; (b) target T1049, (c) a zinc-binding site in T1056, (d) the 2,180-residue T1044. Blue = AlphaFold, green = experiment. Jumper et al. (2021), <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; cropped.</figcaption></figure>
+  <div class="callout paper"><div class="ct">📄 Headline numbers</div><ul>
+    <li><b>CASP14 backbone:</b> median 0.96 Å r.m.s.d.<sub>95</sub> (95% CI 0.85–1.16 Å) versus 2.8 Å (2.7–4.0 Å) for the next best method, over 87 domains and 146 entries.</li>
+    <li><b>CASP14 all-atom:</b> 1.5 Å (1.2–1.6 Å) versus 3.5 Å (3.1–4.2 Å).</li>
+    <li><b>Side chains:</b> highly accurate when the backbone is accurate (Fig. 2b) — even around a zinc ion the network never explicitly sees (Fig. 1c).</li>
+    <li><b>Long proteins:</b> correct domain packing for a 2,180-residue chain with no structural homologues (Fig. 1d).</li>
+    <li><b>Recent PDB (3,144 chains without close templates):</b> median full-chain Cα r.m.s.d.<sub>95</sub> = 1.46 Å (1.40–1.56 Å) (Fig. 2a).</li>
+  </ul><p><a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 584–585</a></p></div>
+  <p>The recent-PDB evaluation matters as much as CASP: these are 10,795 uncurated chains released after the training cut-off, filtered for redundancy. It shows that CASP accuracy “transfers to an uncurated collection of recent PDB submissions”.</p>
+  <h3>Speed</h3>
+  <div class="widget" data-widget="timing"></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"AlphaFold’s median CASP14 backbone accuracy was about…","o":["0.96 Å","2.8 Å","14 Å"],"a":0,"e":"Smaller than the width of a carbon atom (~1.4 Å). The next best method: 2.8 Å."},
+    {"q":"Why evaluate on recent PDB chains as well as CASP?","o":["CASP is too easy","To show accuracy holds on a large, uncurated set of unseen structures","To get more training data"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-ablations" data-title="What matters: ablations, MSA depth" data-part="Part V · Evidence">
+  <header>
+    <div class="kicker">Evidence</div>
+    <h2 class="title">What matters: ablations and MSA depth</h2>
+    <p class="lede">Take pieces away and see what breaks.</p>
+  </header>
+  <p>An <strong>ablation</strong> removes one component, retrains, and measures the damage. The paper’s Fig. 4a shows that “a variety of different mechanisms contribute to AlphaFold accuracy”:</p>
+  <div class="widget" data-widget="ablations"></div>
+  <ul>
+    <li><b>Biggest single losses:</b> end-to-end structure gradients, recycling, and the triangle/biasing/gating machinery. Removing IPA <em>and</em> recycling together is far worse than either alone — they substitute for each other.</li>
+    <li><b>Small effects:</b> templates and the auxiliary distogram head.</li>
+    <li><b>Gain:</b> self-distillation adds accuracy on both test sets.</li>
+  </ul>
+  <h3>How deep must the MSA be?</h3>
+  <figure><img src="assets/img/fig5.png" alt="Effect of MSA depth on accuracy, and an intertwined homotrimer, paper Figure 5" loading="lazy"><figcaption>Paper Fig. 5: (a) lDDT-Cα versus median per-residue N<sub>eff</sub> (effective number of sequences), for chains with low and high template coverage; (b) an intertwined homotrimer predicted correctly. Jumper et al. (2021), <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; cropped.</figcaption></figure>
+  <p>“The accuracy decreases substantially when the median alignment depth is less than around 30 sequences … improvements in MSA depth over around 100 sequences lead to small gains.” The authors hypothesise that “the MSA information is needed to coarsely find the correct structure within the early stages of the network, but refinement of that prediction into a high-accuracy model does not depend crucially on the MSA information” <a class="cite" href="https://doi.org/10.1038/s41586-021-03819-2">Paper p. 588</a>. Our toy coevolution in Chapter 9 shows the same kind of threshold.</p>
+  <div class="widget" data-widget="msaSources"></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Below roughly what median MSA depth does accuracy drop substantially?","o":["3 sequences","30 sequences","3,000 sequences"],"a":1},
+    {"q":"Which ablation was the most damaging on CASP14?","o":["No templates","No IPA and no recycling","No distogram head"],"a":1}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-limits" data-title="Limits and legacy" data-part="Part V · Evidence">
+  <header>
+    <div class="kicker">Evidence</div>
+    <h2 class="title">Limits, relatives and legacy</h2>
+    <p class="lede">What AlphaFold cannot do, and what it started.</p>
+  </header>
+  <h3>Limits the paper reports</h3>
+  <ul>
+    <li><b>Shallow MSAs.</b> Proteins with few relatives (median depth below ~30) are predicted less accurately (Chapter 25).</li>
+    <li><b>Proteins shaped by partners.</b> AlphaFold “is much weaker for proteins that have few intra-chain or homotypic contacts compared to the number of heterotypic contacts” — for example bridging domains whose shape comes almost entirely from other chains in a complex. It is “often able to give high-accuracy predictions for homomers, even when the chains are substantially intertwined” (Fig. 5b).</li>
+    <li><b>One structure per sequence.</b> AlphaFold “is trained to produce the protein structure most likely to appear as part of a PDB structure.” It may implicitly respect a predictable ligand, ion or stoichiometry, but it outputs no ensemble of conformations, no ligands and no dynamics.</li>
+    <li><b>Stereochemistry before relaxation.</b> Raw outputs can contain small violations, removed by the Amber relaxation.</li>
+  </ul>
+  <h3>What the paper anticipated</h3>
+  <p>“We expect that the ideas of AlphaFold are readily applicable to predicting full hetero-complexes in a future system.” And because predictions take GPU minutes to hours, they open “the exciting possibility of predicting structures at the proteome-scale and beyond” — demonstrated for the entire human proteome in the companion paper (Tunyasuvunakool et al. 2021, ref. 39). AlphaFold had already helped experimentalists with molecular replacement in crystallography and with interpreting cryo-EM maps.</p>
+  <h3>Since then</h3>
+  <p>The AlphaFold Protein Structure Database (with EMBL-EBI) grew to cover hundreds of millions of predicted structures; AlphaFold-Multimer extended the approach to complexes; AlphaFold 3 (2024) moved to a diffusion-based structure generator covering proteins, nucleic acids and small molecules. In 2024 Demis Hassabis and John Jumper shared the Nobel Prize in Chemistry (with David Baker, for protein design) for protein structure prediction. These developments are outside the paper; see the sources chapter.</p>
+  <div class="callout recap"><div class="ct">✓ The whole book in one paragraph</div><p>Evolution writes structural constraints into sequence databases (coevolution). AlphaFold embeds an MSA and a pair representation and lets 48 Evoformer blocks pass information between them — attention along rows and columns, the outer product mean, and triangle updates that keep pairwise beliefs geometrically consistent. A structure module then treats each residue as a rigid frame, starting at the origin, and moves all of them together with invariant point attention, breaking the chain if it helps. The whole network is trained end to end with FAPE, a loss that measures errors from every residue’s point of view and therefore knows left from right, plus helper losses, recycling and self-distillation. It also predicts its own accuracy (pLDDT, PAE, pTM). The result: median backbone accuracy under 1 Å on CASP14.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Which kind of protein does the paper report as a weak spot?","o":["Very short peptides","Chains whose shape is determined mainly by contacts with other, different chains","Helical proteins"],"a":1},
+    {"q":"What does AlphaFold (2021) output for one sequence?","o":["An ensemble of conformations","A single most likely structure with confidence estimates","A molecular-dynamics trajectory"],"a":1}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ BACK MATTER -->
+<section class="chapter" id="ch-cheatsheet" data-title="Cheat sheet: every equation" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Cheat sheet: every equation</h2>
+  </header>
+  <div class="table-wrap"><table class="data">
+    <tr><th>What</th><th>Equation</th><th>Chapter</th></tr>
+    <tr><td>Softmax</td><td>\(p_i = e^{\ell_i/T} / \sum_j e^{\ell_j/T}\)</td><td>6</td></tr>
+    <tr><td>Cross-entropy</td><td>\(-\log p_y\)</td><td>6</td></tr>
+    <tr><td>Gated attention with bias</td><td>\(a_{ij} = \operatorname{softmax}_j(q_i\cdot k_j/\sqrt c + b_{ij}),\; o_i = g_i \odot \sum_j a_{ij} v_j\)</td><td>7</td></tr>
+    <tr><td>Mutual information</td><td>\(\mathrm{MI}_{ij} = \sum_{ab} f_{ij}(a,b)\log\frac{f_{ij}(a,b)}{f_i(a)f_j(b)}\)</td><td>9</td></tr>
+    <tr><td>RMSD</td><td>\(\min_{R,t}\sqrt{\frac1N\sum_i\lVert Rx_i+t-y_i\rVert^2}\)</td><td>11</td></tr>
+    <tr><td>TM-score</td><td>\(\max_{R,t}\frac1L\sum_i \frac{1}{1+(d_i/d_0)^2},\; d_0 = 1.24(L-15)^{1/3}-1.8\)</td><td>11</td></tr>
+    <tr><td>MSA row attention</td><td>\(a_{sij} = \operatorname{softmax}_j(q_{si}\cdot k_{sj}/\sqrt c + b_{ij})\)</td><td>14</td></tr>
+    <tr><td>MSA column attention</td><td>\(a_{sti} = \operatorname{softmax}_t(q_{si}\cdot k_{ti}/\sqrt c)\)</td><td>14</td></tr>
+    <tr><td>Outer product mean</td><td>\(z_{ij} \mathrel{+}= \operatorname{Linear}(\operatorname{flatten}(\operatorname{mean}_s a_{si}\otimes b_{sj}))\)</td><td>15</td></tr>
+    <tr><td>Triangle update (outgoing)</td><td>\(\tilde z_{ij} = g_{ij}\odot\operatorname{Linear}(\operatorname{LN}(\sum_k a_{ik}\odot b_{jk}))\)</td><td>16</td></tr>
+    <tr><td>Triangle attention (start)</td><td>\(a_{ijk} = \operatorname{softmax}_k(q_{ij}\cdot k_{ik}/\sqrt c + b_{jk})\)</td><td>16</td></tr>
+    <tr><td>Rigid transform</td><td>\(T\circ x = Rx + t,\; T^{-1}\circ x = R^{\mathsf T}(x-t)\)</td><td>17</td></tr>
+    <tr><td>Frame from N, Cα, C</td><td>\(e_1 = \widehat{C-C_\alpha},\; e_2 = \widehat{v_2 - (e_1\cdot v_2)e_1},\; e_3 = e_1\times e_2\)</td><td>17</td></tr>
+    <tr><td>IPA logits</td><td>\(w_L\big(q_i\cdot k_j/\sqrt c + b_{ij} - \frac{\gamma w_C}{2}\sum_p\lVert T_i\circ\vec q_i^{\,p} - T_j\circ\vec k_j^{\,p}\rVert^2\big)\)</td><td>18</td></tr>
+    <tr><td>Backbone update</td><td>\((a,b,c,d) = (1,b,c,d)/\sqrt{1+b^2+c^2+d^2},\; T_i \leftarrow T_i\circ(R_i,t_i)\)</td><td>19</td></tr>
+    <tr><td>FAPE</td><td>\(\frac1Z\operatorname{mean}_{ij}\min(d_\text{clamp}, \lVert T_i^{-1}\circ x_j - T_i^{\text{true}-1}\circ x_j^\text{true}\rVert)\)</td><td>20</td></tr>
+    <tr><td>Calibration fits</td><td>\(\text{lDDT-C}\alpha = 0.997\,\text{pLDDT} - 1.17;\; \text{TM} = 0.98\,\text{pTM} + 0.07\)</td><td>23</td></tr>
+  </table></div>
+</section>
+
+<section class="chapter" id="ch-glossary" data-title="Glossary" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Glossary</h2>
+  </header>
+  <dl class="glossary">
+    <dt>Ablation</dt><dd>Removing one component of a model and retraining to measure its contribution.</dd>
+    <dt>Amino acid, residue</dt><dd>The 20 building blocks of proteins; a residue is one amino acid within a chain.</dd>
+    <dt>APC</dt><dd>Average product correction: removes background from mutual-information scores.</dd>
+    <dt>Backbone, side chain</dt><dd>The repeating N–Cα–C chain shared by all residues; the variable group attached to each Cα.</dd>
+    <dt>CASP</dt><dd>Critical Assessment of protein Structure Prediction: a biennial blind test.</dd>
+    <dt>Coevolution</dt><dd>Correlated changes in two MSA columns, often because the residues touch.</dd>
+    <dt>Contact map, distance matrix</dt><dd>Tables of which residue pairs are close / how far apart all pairs are.</dd>
+    <dt>Distogram</dt><dd>A predicted probability distribution over distance bins for each residue pair.</dd>
+    <dt>Evoformer</dt><dd>AlphaFold’s trunk block that jointly updates MSA and pair representations (48 blocks).</dd>
+    <dt>FAPE</dt><dd>Frame aligned point error: AlphaFold’s main structural loss.</dd>
+    <dt>Frame (rigid transform)</dt><dd>A rotation and translation \((R, t)\) placing a residue in space.</dd>
+    <dt>GDT</dt><dd>Global distance test: average fraction of residues within 1, 2, 4 and 8 Å after superposition.</dd>
+    <dt>IPA</dt><dd>Invariant point attention: attention using 3-D points in residue frames; invariant to global motion.</dd>
+    <dt>lDDT, lDDT-Cα</dt><dd>Local distance difference test: superposition-free, fraction of local distances preserved.</dd>
+    <dt>MSA</dt><dd>Multiple sequence alignment of a protein with its evolutionary relatives.</dd>
+    <dt>Neff</dt><dd>Effective number of sequences in an MSA, down-weighting near-duplicates.</dd>
+    <dt>Outer product mean</dt><dd>The Evoformer operation that writes MSA statistics into the pair representation.</dd>
+    <dt>PAE, pTM</dt><dd>Predicted aligned error between residue pairs; predicted TM-score derived from it.</dd>
+    <dt>PDB</dt><dd>Protein Data Bank: the archive of experimentally determined structures.</dd>
+    <dt>pLDDT</dt><dd>Predicted lDDT-Cα per residue: AlphaFold’s confidence score (0–100).</dd>
+    <dt>Recycling</dt><dd>Feeding the network’s outputs back as inputs for further passes (three extra at inference).</dd>
+    <dt>Relaxation</dt><dd>Final energy minimisation in the Amber force field to remove stereochemical violations.</dd>
+    <dt>Residue gas</dt><dd>The structure module’s representation: independent, free-floating residue frames.</dd>
+    <dt>RMSD, r.m.s.d.<sub>95</sub></dt><dd>Root-mean-square deviation after superposition; the 95%-coverage variant used in the paper.</dd>
+    <dt>Self-distillation</dt><dd>Retraining on a mix of real data and the model’s own confident predictions.</dd>
+    <dt>Single representation</dt><dd>Per-residue vectors (the query row of the MSA representation) used by the structure module.</dd>
+    <dt>Template</dt><dd>A solved structure of a related protein used as an extra input.</dd>
+    <dt>TM-score</dt><dd>Length-normalised global similarity score between 0 and 1.</dd>
+    <dt>Torsion angles φ, ψ, ω, χ</dt><dd>Rotations about backbone and side-chain bonds that determine shape.</dd>
+    <dt>Triangle update / triangle attention</dt><dd>Pair-representation operations that update edge ij from edges ik, jk (or ki, kj).</dd>
+  </dl>
+</section>
+
+<section class="chapter" id="ch-refs" data-title="Sources and further reading" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Sources and further reading</h2>
+  </header>
+  <ul>
+    <li><b>The paper:</b> J. Jumper, R. Evans, A. Pritzel, T. Green, M. Figurnov, O. Ronneberger, K. Tunyasuvunakool, R. Bates, A. Žídek, A. Potapenko, et al. <a href="https://doi.org/10.1038/s41586-021-03819-2">Highly accurate protein structure prediction with AlphaFold</a>. <i>Nature</i> 596, 583–589 (2021). Open access, CC BY 4.0. Its Supplementary Information contains the full pseudocode (Algorithms 1–32) referred to as “SI” in this book.</li>
+    <li><b>The code and weights:</b> <a href="https://github.com/deepmind/alphafold">github.com/deepmind/alphafold</a>. Files referenced: <code>alphafold/model/modules.py</code>, <code>folding.py</code>, <code>all_atom.py</code>, <code>r3.py</code>, <code>quat_affine.py</code>, <code>config.py</code>, <code>alphafold/common/confidence.py</code>, <code>alphafold/relax/</code>.</li>
+    <li><b>Companion paper:</b> K. Tunyasuvunakool et al. <a href="https://doi.org/10.1038/s41586-021-03828-1">Highly accurate protein structure prediction for the human proteome</a>. <i>Nature</i> (2021).</li>
+    <li><b>Background cited by the paper:</b> Anfinsen (1973) on folding; Marks et al. (2011) and Weigt et al. (2009) on coevolution; Senior et al. (2020), AlphaFold 1; Vaswani et al. (2017), transformers; Zhang &amp; Skolnick (2004), TM-score; Mariani et al. (2013), lDDT; Xie et al. (2020), noisy-student self-training; Devlin et al. (2019), BERT.</li>
+  </ul>
+  <p class="small">Figures marked “Jumper et al. (2021)” are cropped from the paper and reused under its <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0</a> licence. All other diagrams and widgets were made for this book. Quoted numbers come from the main paper; values labelled as read off a figure are approximate. The toy protein and its evolution are original constructions, not data from the paper.</p>
+</section>
+
+<footer class="book-foot">AlphaFold Interactive Web Book — an independent educational companion to Jumper et al. (2021). Built as a single static site; all interactive models run locally in your browser. <a href="../">Browse all lessons →</a></footer>
+
+</main>
+</div>
+
+<script src="assets/js/protein.js"></script>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/widgets-proteins.js"></script>
+<script src="assets/js/widgets-ml.js"></script>
+<script src="assets/js/widgets-evolution.js"></script>
+<script src="assets/js/widgets-network.js"></script>
+<script src="assets/js/widgets-evidence.js"></script>
+</body>
+</html>
