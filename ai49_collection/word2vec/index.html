@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Word2Vec · Interactive Web Book · Modern AI in 49 Papers</title>
+<meta name="description" content="An interactive web book that teaches Word2Vec (Mikolov, Chen, Corrado, Dean, 2013) from absolute zero, with live widgets for every idea and every equation. Lesson 1 of Modern AI in 49 Papers.">
+<link rel="icon" href="../cover.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="../shared/book.css">
+<style>
+  :root { --accent: #5a4fcf; --accent-soft: #ecebfb; --accent-ink: #3b3299; }
+  :root[data-theme="dark"] { --accent: #9d95f0; --accent-soft: #24223d; --accent-ink: #cbc6fa; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --accent: #9d95f0; --accent-soft: #24223d; --accent-ink: #cbc6fa; } }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</head>
+<body data-store="ai49:word2vec:" data-lesson="word2vec" data-theme-key="ai49:theme">
+
+<div class="topbar">
+  <button class="icon-btn" id="menuBtn" aria-label="Open contents">☰</button>
+  <a class="brand" href="#top"><span class="mark">W2V</span><span>Interactive Web Book</span></a>
+  <a class="icon-btn home-link" href="../" title="Modern AI in 49 Papers">← 49 Papers</a>
+  <div class="spacer"></div>
+  <div class="progress-wrap" title="Chapters marked as read"><div class="progress-bar" id="progressBar"></div></div>
+  <span class="progress-label" id="progressLabel"></span>
+  <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode" title="Light / dark">◐</button>
+</div>
+
+<div class="layout">
+<nav class="sidebar" id="toc" aria-label="Contents"></nav>
+<main>
+
+<!-- ============================================================ COVER -->
+<div class="hero" id="top">
+  <div class="eyebrow">Modern AI in 49 Papers · Lesson 1</div>
+  <div class="lesson-strip" id="lessonStrip"></div>
+  <h1>Word2Vec,<br><em>from zero.</em></h1>
+  <p class="sub">In 2013 four researchers at Google showed that a very simple model, trained on a lot of text, gives every word a short list of numbers, and that these numbers capture meaning so well that <i>king − man + woman</i> lands on <i>queen</i>. This book starts from “what is a vector?” and ends with every equation, table and result of the paper. You need no background: every idea comes with something to try, and two small models train live in your browser.</p>
+  <p class="meta">Based on <a href="https://arxiv.org/abs/1301.3781">Tomas Mikolov, Kai Chen, Greg Corrado, Jeffrey Dean, “Efficient Estimation of Word Representations in Vector Space”, ICLR 2013 workshop (arXiv 1301.3781)</a> and the authors’ code at <a href="https://github.com/tmikolov/word2vec">tmikolov/word2vec</a>. This book is an independent educational companion, not an official publication of the authors.</p>
+  <div class="hero-demo"><div data-widget="heroDemo"></div></div>
+  <div class="btn-row">
+    <a class="btn primary" href="#ch-onehot">Start reading →</a>
+    <a class="btn" id="resumeBtn" href="#">Resume where you left off</a>
+    <a class="btn" href="https://arxiv.org/abs/1301.3781">The paper</a>
+    <a class="btn" href="https://github.com/tmikolov/word2vec">The code</a>
+  </div>
+</div>
+
+<!-- ============================================================ HOW TO READ -->
+<section class="chapter" id="ch-howto" data-title="How to read this book" data-part="Front matter" data-nonum>
+  <header>
+    <div class="kicker">Front matter</div>
+    <h2 class="title">How to read this book</h2>
+    <p class="lede">24 short chapters, 4 parts, and about 50 things you can poke.</p>
+  </header>
+  <p>This book assumes you know <strong>nothing</strong> about language processing or machine learning. Every new idea arrives with a picture or a widget you can play with, and every equation is unpacked symbol by symbol. It is lesson 1 of <a href="../">Modern AI in 49 Papers</a> and stands on its own: everything you need is inside.</p>
+  <div class="roadmap">
+    <div class="card"><b>Part I · Words as numbers</b><span>Chapters 1–6. Vectors, similarity, context, how networks learn, softmax, and language models.</span></div>
+    <div class="card"><b>Part II · Neural language models before word2vec</b><span>Chapters 7–10. The models the paper compares against, their cost (Eq. 1–3) and the Huffman-tree softmax.</span></div>
+    <div class="card"><b>Part III · The two new models</b><span>Chapters 11–16. CBOW and skip-gram (Eq. 4–5, Figure 1), trained live, and how the released C code does it.</span></div>
+    <div class="card"><b>Part IV · Evidence</b><span>Chapters 17–24. Word analogies, the test set and all eight tables of results, then the limits.</span></div>
+  </div>
+  <h3>Signposts</h3>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>Plain-language pictures of what is going on. Read these even if you skip everything else.</p></div>
+  <div class="callout math"><div class="ct">∑ The math</div><p>The precise statement, exactly as it appears in the paper, with every symbol explained.</p></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Where this idea appears in the paper, with numbers taken directly from it. Tags like <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §3</a> link to the paper.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>How the authors’ implementation does it, with file names and line numbers from <a href="https://github.com/tmikolov/word2vec">tmikolov/word2vec</a>.</p></div>
+  <p>Widgets have a title, a one-line instruction, then controls. Your progress (chapters you mark as read, light/dark choice) is remembered in your own browser only.</p>
+  <div class="callout warn"><div class="ct">⚠ About the toy model</div><p>The paper trains on billions of words. Here, a <b>toy corpus</b> of about 2,400 generated sentences (about 14,000 words, 120 different words) describes a small world: kings, queens, boys and girls; five countries with their capitals, languages and dishes; four adjectives with their comparative and superlative forms. On it, the book runs the paper’s methods <b>exactly</b>: the Huffman tree, hierarchical softmax, CBOW and skip-gram with the random window, the linearly falling learning rate and the analogy search, ported line by line from the authors’ C code. What is <b>not</b> the paper: the corpus is synthetic and tiny, the vectors have 2–40 numbers instead of hundreds, and every accuracy the toy reports is a toy number. All numbers in the results chapters come from the paper and say so.</p></div>
+  <div class="callout warn"><div class="ct">⚠ Two papers, one code</div><p>The code released with this paper was later extended with ideas from the authors’ follow-up paper, Mikolov et al., <a href="https://arxiv.org/abs/1310.4546">“Distributed Representations of Words and Phrases and their Compositionality”</a> (NIPS 2013): <b>negative sampling</b> and <b>subsampling</b> of frequent words. This book teaches the 2013a paper; the follow-up ideas get one chapter (<a href="#ch-followup">Chapter 16</a>), always labelled as such.</p></div>
+</section>
+
+<!-- ============================================================ PART I · FOUNDATIONS -->
+<section class="chapter" id="ch-onehot" data-title="Words as atomic symbols" data-part="Part I · Words as numbers">
+  <header>
+    <div class="kicker">Words as numbers</div>
+    <h2 class="title">Words as atomic symbols</h2>
+    <p class="lede">A computer can store a word as a position in a list, but then no two words are more alike than any other two.</p>
+  </header>
+  <p>A computer only handles numbers. The simplest way to turn words into numbers is to write every word we will ever meet in one long list, the <strong>vocabulary</strong>, and to call each word by its position. If the list begins “the, is, of, …”, then “the” is word 0, “is” is word 1, and so on. The number of words in the list is written \(V\).</p>
+  <p>To feed a word to a mathematical model we usually turn its position into a <strong>one-hot vector</strong>: a list of \(V\) numbers that are all 0 except a single 1 at the word’s position. The paper calls this <strong>1-of-V coding</strong>.</p>
+  <div class="widget" data-widget="oneHot"></div>
+  <p>Try a few pairs. The answer never changes: two different one-hot vectors share no position, so multiplying them entry by entry and adding up always gives 0. “King” is exactly as far from “queen” as from “bigger”. The representation says <em>which</em> word it is and nothing about <em>what it means</em>.</p>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The paper opens with exactly this complaint: many systems “treat words as atomic units”, as “indices in a vocabulary”, so there is “no notion of similarity between words” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §1</a>. The authors admit this choice works: simple models trained on huge data, like N-gram models trained on trillions of words, often beat clever ones. Their goal is to keep that scale <em>and</em> get similarity.</p></div>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>A one-hot vector is like a locker number. Locker 41 and locker 42 are neighbours, but that tells you nothing about whether their owners are alike. We want a description of each word, not a locker number.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"With a vocabulary of V = 1,000,000 words, how many numbers does one one-hot vector contain, and how many of them are 1?","o":["1,000,000 numbers, exactly one of them is 1","1,000 numbers, about half of them are 1","20 numbers, enough to count to a million in binary"],"a":0,"e":"One entry per vocabulary word, and only the word’s own entry is 1. That is a lot of numbers to say very little.","h":"One-hot means one entry is ‘hot’ (1); there is one entry per word."},
+    {"q":"What is the dot product of the one-hot vectors of “king” and “queen”?","o":["1","0","It depends on how similar they are"],"a":1,"e":"Different words have their 1 in different positions, so every product is 0 × something or something × 0. The sum is 0 for every pair of different words.","h":"Multiply entry by entry: where is the 1 of each vector?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-vectors" data-title="Vectors and cosine similarity" data-part="Part I · Words as numbers">
+  <header>
+    <div class="kicker">Words as numbers</div>
+    <h2 class="title">Vectors and cosine similarity</h2>
+    <p class="lede">Describe each word with a few numbers, and similar words become arrows pointing the same way.</p>
+  </header>
+  <p>A <strong>vector</strong> is just an ordered list of numbers, like (3, 1). With two numbers you can draw it as an arrow from the centre of a grid. The number of entries is its <strong>dimension</strong>. Two measurements of a pair of vectors will matter all through this book: the <strong>dot product</strong> and the <strong>cosine similarity</strong>.</p>
+  <div class="widget" data-widget="r_vectors"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    <p>For two vectors \(a\) and \(b\) with \(d\) entries each:</p>
+    \[ a \cdot b = \sum_{i=1}^{d} a_i\, b_i, \qquad \lVert a \rVert = \sqrt{a \cdot a}, \qquad \cos(a, b) = \frac{a \cdot b}{\lVert a \rVert\, \lVert b \rVert}. \]
+    <p>\(a_i\) is the \(i\)-th entry of \(a\); \(\sum_{i=1}^{d}\) means “add up for \(i = 1, 2, \dots, d\)”. \(\lVert a \rVert\) is the length of the arrow. The cosine divides the lengths out, so it only measures the <em>angle</em>: 1 for the same direction, 0 for a right angle, −1 for opposite directions. Example: \(a = (3, 1)\), \(b = (1, 2)\): \(a\cdot b = 3 + 2 = 5\), \(\lVert a\rVert = \sqrt{10}\), \(\lVert b \rVert = \sqrt 5\), cosine \(= 5/\sqrt{50} \approx 0.71\).</p>
+  </div>
+  <p>Now suppose we describe each word not by a locker number but by a few <em>features</em>. In the widget below, three hand-picked features (royal, female, young) are enough to make “queen” close to “princess” and “king”, and far from “boy”.</p>
+  <div class="widget" data-widget="featureWords"></div>
+  <p>Such a dense list of numbers for a word is called a <strong>word vector</strong>, <strong>word embedding</strong> or, in the paper’s words, a <strong>distributed representation</strong>: the meaning is spread over many numbers, and each number takes part in describing many words. The paper never hand-picks features. The whole point is to <em>learn</em> the numbers from raw text.</p>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Similarity is measured with the cosine everywhere in the paper; the analogy test searches “for the word closest to X measured by cosine distance” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4</a>. Distributed representations go back to Hinton, McClelland and Rumelhart (1986), the paper’s reference [10] <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §1</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Vectors a = (2, 0) and b = (5, 0). What is their cosine similarity?","o":["0.4","1","10"],"a":1,"e":"Both point along the first axis, so the angle is 0 and the cosine is 1. Length does not matter: 10 ÷ (2 × 5) = 1.","h":"Cosine ignores length and measures only the angle."},
+    {"q":"Why is cosine similarity preferred over the plain dot product for comparing word vectors?","o":["It is faster to compute","It ignores vector length, so a frequent word with a long vector does not look similar to everything","It is always positive"],"a":1,"e":"Dividing by both lengths leaves only direction. (It can be negative, and it is slightly slower.)","h":"What does dividing by the lengths remove?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-context" data-title="You know a word by its company" data-part="Part I · Words as numbers">
+  <header>
+    <div class="kicker">Words as numbers</div>
+    <h2 class="title">You know a word by its company</h2>
+    <p class="lede">Words that appear in similar contexts tend to mean similar things, and that is something we can count.</p>
+  </header>
+  <p>How could a program discover that “queen” is like “king” without anyone telling it? By looking at the words around them. Both appear after “the”, before “wore the crown”, near “palace”. Linguists call this the <strong>distributional hypothesis</strong>: a word is characterised by the company it keeps. (This idea is background the paper builds on; it does not state it in these words.)</p>
+  <p>To make “company” precise, fix a <strong>context window</strong>: the up to \(C\) words before and after a <strong>centre word</strong>. Every (centre, context) pair inside the window is one small piece of evidence.</p>
+  <div class="widget" data-widget="contextWindow"></div>
+  <p>Collect these pairs over a whole corpus and count them, and each word gets a row of counts, one entry per vocabulary word. Rows of words with similar company look alike, so their cosine similarity is high:</p>
+  <div class="widget" data-widget="coocMatrix"></div>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>The count rows already “know” that king and queen are alike. But they are huge (V entries each) and mostly zeros. Word2Vec learns a short, dense vector that keeps the useful part of this information. Methods that compress such count tables, like Latent Semantic Analysis (LSA), existed before; the paper argues neural approaches preserve “linear regularities” much better <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §2</a>.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>word2vec.c reads the text as a stream of words; a newline ends a sentence (the token <code>&lt;/s&gt;</code>) and the window never crosses it. The option <code>-window</code> sets \(C\) (default 5). <a class="cite" href="https://github.com/tmikolov/word2vec/blob/master/word2vec.c#L70-L95">word2vec.c ReadWord</a></p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"In the sentence “the king wore the crown”, with centre word “wore” and window C = 1, which pairs are produced?","o":["(wore, king) and (wore, the)","(wore, the), (wore, king), (wore, the), (wore, crown)","Only (wore, crown)"],"a":0,"e":"C = 1 means one word on each side: “king” before and “the” after.","h":"One word on each side of the centre."},
+    {"q":"Why not simply use the rows of co-occurrence counts as word vectors?","o":["They contain no information about meaning","Each row has V entries, almost all zero, which is huge and noisy for a large vocabulary","Counts cannot be compared with the cosine"],"a":1,"e":"Counts do carry meaning, but with V = 1 million each row would have a million mostly-empty entries. A short dense vector is far more practical.","h":"How long is a row?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-learn" data-title="How a network learns" data-part="Part I · Words as numbers">
+  <header>
+    <div class="kicker">Words as numbers</div>
+    <h2 class="title">How a network learns</h2>
+    <p class="lede">A model is a function with adjustable numbers; learning nudges those numbers downhill on a measure of error.</p>
+  </header>
+  <p>Word2Vec learns its vectors the same way any neural network learns. Here are the three pieces, one widget each.</p>
+  <p>1. A <strong>neuron</strong> multiplies each input by a <strong>weight</strong>, adds a <strong>bias</strong>, and passes the sum through an <strong>activation function</strong>. The weights and biases are the <strong>parameters</strong>: the numbers that learning will change.</p>
+  <div class="widget" data-widget="r_neuron"></div>
+  <p>2. A <strong>loss</strong> is one number that says how wrong the model is. <strong>Gradient descent</strong> computes the slope of the loss with respect to each parameter (the <strong>gradient</strong>) and moves every parameter a small step downhill. The step size is the <strong>learning rate</strong>, written \(\alpha\) in the paper’s code.</p>
+  <div class="widget" data-widget="r_descent"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \theta \leftarrow \theta - \alpha \, \frac{\partial L}{\partial \theta} \]
+    <p>\(\theta\) (theta) is any parameter, \(L\) is the loss, \(\partial L / \partial \theta\) is the slope of the loss when only \(\theta\) changes, and \(\alpha\) is the learning rate. The arrow means “replace by”. When the gradient is computed from one example or a small batch rather than the whole data set, this is <strong>stochastic gradient descent (SGD)</strong>, the method the paper uses for all models <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §2</a>.</p>
+  </div>
+  <p>3. Stack neurons in layers and you get a <strong>neural network</strong>. A <strong>hidden layer</strong> with a non-linear activation lets the network bend its decision boundary. The gradients of all its weights are computed by <strong>backpropagation</strong>, the chain rule applied backwards from the loss. Train one:</p>
+  <div class="widget" data-widget="r_trainNet"></div>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>Remember the hidden layer. It is what makes neural networks powerful, and also, as <a href="#ch-nnlm">Chapter 7</a> will show, what makes the earlier language models slow. The paper’s big move is to throw it away.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"The gradient of the loss for a weight is +2. Gradient descent with learning rate 0.1 will…","o":["increase the weight by 0.2","decrease the weight by 0.2","leave it unchanged"],"a":1,"e":"θ ← θ − α × gradient = θ − 0.1 × 2. A positive slope means the loss grows when the weight grows, so we move the other way.","h":"Move against the slope."},
+    {"q":"In the trainNet widget, why can 2 hidden neurons not separate the two rings?","o":["Two neurons can draw only a very simple boundary; a ring needs a curved one built from more pieces","The learning rate is too small","Rings cannot be learned by any network"],"a":0,"e":"Each tanh neuron contributes roughly one straight edge; a closed curve needs several.","h":"What shape is each neuron’s contribution?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-softmax" data-title="Predicting a word: softmax and cross-entropy" data-part="Part I · Words as numbers">
+  <header>
+    <div class="kicker">Words as numbers</div>
+    <h2 class="title">Predicting a word: softmax and cross-entropy</h2>
+    <p class="lede">To predict a word, give every vocabulary word a score, turn the scores into probabilities, and punish a low probability on the right word.</p>
+  </header>
+  <p>Every model in the paper is trained by making it <em>predict a word</em>: the next word, the middle word, or a neighbouring word. Predicting a word is a <strong>classification</strong> with \(V\) classes. The model outputs one raw score, a <strong>logit</strong>, per word; the <strong>softmax</strong> turns them into a <strong>probability distribution</strong>.</p>
+  <div class="widget" data-widget="r_softmax"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ p_i = \frac{e^{s_i}}{\sum_{j=1}^{V} e^{s_j}}, \qquad L = -\log p_y, \qquad \frac{\partial L}{\partial s_i} = p_i - y_i. \]
+    <p>\(s_i\) is the score of word \(i\); \(e^{s}\) makes it positive; dividing by the sum over all \(V\) words makes the \(p_i\) add up to 1. \(y\) is the correct word, and the <strong>cross-entropy</strong> loss \(L\) is minus the log of the probability given to it: 0 when the model is certain and right, large when it is confidently wrong. \(y_i\) is 1 for the correct word and 0 otherwise, so the gradient pushes the correct score up by \(1 - p_y\) and every other score down by \(p_i\).</p>
+  </div>
+  <div class="widget" data-widget="xentGrad"></div>
+  <p>A model whose score for each class is a weighted sum of its input, followed by softmax, is called a <strong>log-linear classifier</strong> (the log of each probability is linear in the input, up to a shared constant). That is exactly what the paper’s new models are <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §3</a>.</p>
+  <div class="callout warn"><div class="ct">⚠ The catch</div><p>The sum in the denominator runs over <em>all</em> \(V\) words, and every one of them gets a gradient. With a million-word vocabulary, each training example touches a million output scores. <a href="#ch-huffman">Chapters 8</a> and <a href="#ch-hsoftmax">9</a> show the trick the paper uses to avoid this.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"The model gives the correct word probability 0.5. What is the cross-entropy loss (natural log)?","o":["0.5","about 0.69","about 1.39"],"a":1,"e":"−ln 0.5 = ln 2 ≈ 0.693.","h":"Loss = −log p of the correct word."},
+    {"q":"After a gradient step, what happens to the score of a wrong word that had probability 0.3?","o":["It goes up","It goes down (gradient +0.3)","It stays the same, only the correct word changes"],"a":1,"e":"For a wrong word, ∂L/∂s = p − 0 = 0.3 > 0, so the step lowers its score. Every wrong word is pushed down in proportion to its probability.","h":"Gradient is p_i − y_i, and y_i = 0 for a wrong word."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-lm" data-title="Language models and N-grams" data-part="Part I · Words as numbers">
+  <header>
+    <div class="kicker">Words as numbers</div>
+    <h2 class="title">Language models and N-grams</h2>
+    <p class="lede">A language model gives every sentence a probability; counting short word sequences is the classic way, and it cannot generalise.</p>
+  </header>
+  <p>A <strong>language model</strong> assigns a probability to every possible sentence, usually by predicting one word at a time from the words before it: \(P(w_1, \dots, w_n) = \prod_t P(w_t \mid w_1, \dots, w_{t-1})\), where \(\prod\) means “multiply together”. Language models help speech recognisers and translators pick the most plausible output.</p>
+  <p>The classic <strong>N-gram model</strong> looks back only \(N-1\) words and estimates each probability by counting. With \(N = 2\) (a <strong>bigram</strong> model), \(P(\text{next} \mid \text{prev}) = \text{count(prev, next)} / \text{count(prev)}\).</p>
+  <div class="widget" data-widget="bigramModel"></div>
+  <p>The weakness shows up immediately: “the queen sells cheese” gets probability 0 because that exact pair never occurred, even though “the woman sells bread” did. Counts of one word teach nothing about another. And the longer the N-gram, the more of them are unseen:</p>
+  <div class="widget" data-widget="ngramSparsity"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>N-gram models can be trained “on virtually all available data (trillions of words)”, but for many tasks the relevant data is small: in-domain speech data is “often just millions of words”, and translation corpora for many languages have “a few billions of words or less” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §1</a>. Simply scaling counting up then stops helping, and neural language models, which share information between similar words through their vectors, “significantly outperform N-gram models”.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A bigram model has seen “the king” 100 times and “the” 1,000 times. What is P(king | the)?","o":["0.01","0.1","100"],"a":1,"e":"count(the, king) / count(the) = 100 / 1000 = 0.1.","h":"Divide the pair count by the count of the previous word."},
+    {"q":"Why does a neural language model generalise to “the queen sells cheese” when a bigram model gives it zero?","o":["It stores every sentence it has seen","Similar words get similar vectors, so what it learned about “woman sells” carries over to “queen sells”","It ignores word order"],"a":1,"e":"Shared, similar representations let evidence flow between words. That is the reason word vectors matter.","h":"What do the vectors of similar words look like?"}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART II -->
+<section class="chapter" id="ch-nnlm" data-title="The NNLM and the cost of training" data-part="Part II · Neural language models before word2vec">
+  <header>
+    <div class="kicker">Neural language models before word2vec</div>
+    <h2 class="title">The NNLM and the cost of training</h2>
+    <p class="lede">The feedforward neural language model learns word vectors as a by-product, but its hidden and output layers make it expensive.</p>
+  </header>
+  <p>The paper is about <em>efficiency</em>, so it first defines how to count cost. For every model, training cost is proportional to</p>
+  <div class="callout math"><div class="ct">∑ The math · Eq. 1</div>
+    \[ O = E \times T \times Q \]
+    <p>\(E\) is the number of <strong>epochs</strong> (passes over the data; “common choice is \(E\) = 3–50”), \(T\) the number of words in the training set (“up to one billion”), and \(Q\) the cost of one training example, defined per architecture. Cost here is the number of parameters that must be touched <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §2, Eq. 1</a>.</p>
+  </div>
+  <p>The <strong>feedforward neural net language model (NNLM)</strong> of Bengio et al. (2003) predicts the next word from the \(N\) previous ones. It has four layers:</p>
+  <ul>
+    <li><b>input</b>: the \(N\) previous words, each as a one-hot vector of size \(V\);</li>
+    <li><b>projection</b>: each word picks its row from a shared \(V \times D\) matrix, its \(D\)-number word vector. The \(N\) vectors placed side by side form the <strong>projection layer</strong> \(P\) of size \(N \times D\). Because each input is one-hot, this is a cheap table lookup;</li>
+    <li><b>hidden</b>: \(H\) neurons with a non-linear activation, each connected to all \(N \times D\) projection values;</li>
+    <li><b>output</b>: a softmax over all \(V\) words.</li>
+  </ul>
+  <div class="callout math"><div class="ct">∑ The math · Eq. 2</div>
+    \[ Q = N \times D + N \times D \times H + H \times V \]
+    <p>The three terms are the three layers: looking up \(N\) vectors of size \(D\); connecting \(N \times D\) projection values to \(H\) hidden units; connecting \(H\) hidden units to \(V\) outputs. With the paper’s typical sizes (\(N = 10\), \(P = N\times D\) of 500–2000, \(H\) of 500–1000), the dominant term is \(H \times V\). With hierarchical softmax (next two chapters) \(V\) becomes about \(\log_2 V\), and then “most of the complexity is caused by the term \(N \times D \times H\)” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §2.1, Eq. 2</a>.</p>
+  </div>
+  <div class="widget" data-widget="nnlmCost"></div>
+  <p>Here is a tiny NNLM, trained live with the collection’s autograd library. After training, the rows of its projection matrix are word vectors: an NNLM learns them as a by-product of predicting the next word.</p>
+  <div class="widget" data-widget="nnlmTrain"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The authors note that no earlier architecture had been trained on “more than a few hundred of millions of words, with a modest dimensionality of the word vectors between 50–100” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §1.1</a>. They also build on Mikolov’s earlier work where word vectors are first learned by a simple model and then used to train the NNLM <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §1.2, §3</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"With N = 10, D = 100, H = 500 and V = 1,000,000, which term of Eq. 2 is largest?","o":["N×D = 1,000","N×D×H = 500,000","H×V = 500,000,000"],"a":2,"e":"H×V is a thousand times larger than N×D×H: the full softmax over a million words dominates.","h":"Multiply out each term."},
+    {"q":"After hierarchical softmax replaces V by about log₂V ≈ 20, which term dominates?","o":["N×D×H, the hidden layer","H×log₂V, the output","N×D, the projection"],"a":0,"e":"H×20 = 10,000 is now far smaller than N×D×H = 500,000. The hidden layer is the new bottleneck, which is exactly what the paper’s new models remove.","h":"Recompute H × 20."},
+    {"q":"Doubling the epochs E in Eq. 1 changes the training cost O how?","o":["It doubles","It squares","It does not change O"],"a":0,"e":"O = E × T × Q is linear in each factor.","h":"Look at Eq. 1."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-huffman" data-title="Huffman trees" data-part="Part II · Neural language models before word2vec">
+  <header>
+    <div class="kicker">Neural language models before word2vec</div>
+    <h2 class="title">Huffman trees</h2>
+    <p class="lede">Give every word a path in a binary tree, with short paths for frequent words.</p>
+  </header>
+  <p>Picture the vocabulary as the leaves of a <strong>binary tree</strong>: every inner node has two children, and every word is reached from the root by a sequence of left/right turns. Write left as 0 and right as 1, and each word gets a <strong>binary code</strong>. In a balanced tree every code has length \(\log_2 V\) (20 for a million words).</p>
+  <p>A <strong>Huffman tree</strong> does better when some words are much more common than others. Its construction is a simple loop: take the two nodes with the smallest counts, join them under a new parent whose count is their sum, repeat until one node is left.</p>
+  <div class="widget" data-widget="huffmanBuild"></div>
+  <p>Frequent words are merged last, so they sit close to the root with short codes; rare words get long codes. On average this is as short as a code can be: the frequency-weighted average length is close to the <strong>entropy</strong> of the word distribution, which is \(\log_2\) of the <strong>unigram perplexity</strong> (the effective number of equally likely words).</p>
+  <div class="widget" data-widget="huffmanSavings"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Huffman trees assign short binary codes to frequent words”: a balanced tree needs \(\log_2(V)\) outputs, the Huffman tree “only about \(\log_2(\text{Unigram perplexity}(V))\)”, which for a one-million-word vocabulary gives “about two times speedup in evaluation” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §2.1</a>. The paper adds that this is not crucial for the NNLM, whose bottleneck is \(N\times D\times H\), but it matters a lot for models without a hidden layer.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p><code>CreateBinaryTree()</code> sorts nothing at run time: the vocabulary is already sorted by count, so the two smallest nodes are always at the end of the word list (pointer <code>pos1</code>, moving left) or at the start of the new-node list (<code>pos2</code>, moving right). Each word stores its <code>code</code> (0/1 per level) and its <code>point</code> list (the inner nodes on its path). The widget runs a line-by-line port. <a class="cite" href="https://github.com/tmikolov/word2vec/blob/master/word2vec.c#L205-L270">word2vec.c l.205–270</a></p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Counts are the: 50, king: 20, crown: 5, sushi: 5. Which two nodes does the first Huffman merge join?","o":["the and king","crown and sushi","king and crown"],"a":1,"e":"Always the two smallest counts: 5 and 5. Their parent has count 10.","h":"Smallest two counts."},
+    {"q":"Why does a Huffman tree make hierarchical softmax faster than a balanced tree?","o":["It has fewer leaves","Frequent words, which are predicted most often, have short paths, so the average number of nodes evaluated drops","It avoids computing sigmoids"],"a":1,"e":"Cost per prediction is the path length; weighting by frequency, Huffman paths are shortest on average.","h":"Which words are predicted most often, and where do they sit?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-hsoftmax" data-title="Hierarchical softmax" data-part="Part II · Neural language models before word2vec">
+  <header>
+    <div class="kicker">Neural language models before word2vec</div>
+    <h2 class="title">Hierarchical softmax</h2>
+    <p class="lede">Replace one decision among V words by about log₂V yes/no decisions along a tree path.</p>
+  </header>
+  <p><strong>Hierarchical softmax</strong> (Morin and Bengio, 2005; Mnih and Hinton, 2009) keeps a vector for every <em>inner node</em> of the tree instead of every output word. To get the probability of a word, walk its path from the root. At each node the model asks a yes/no question: go to child 0 or child 1? The answer’s probability is a <strong>sigmoid</strong> of a dot product. Multiply the answers along the path.</p>
+  <div class="widget" data-widget="hsMini"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ P(w \mid h) = \prod_{j=1}^{L(w)} \sigma\!\big( (1 - 2\,c_j)\; h \cdot u_{n_j} \big), \qquad \sigma(x) = \frac{1}{1 + e^{-x}} \]
+    <p>\(h\) is the input vector (the projection), \(L(w)\) the length of word \(w\)’s code, \(n_j\) the \(j\)-th inner node on its path, \(u_{n_j}\) that node’s vector, and \(c_j \in \{0, 1\}\) the \(j\)-th code bit. \((1 - 2c_j)\) is \(+1\) for a 0 bit and \(-1\) for a 1 bit, using \(\sigma(-x) = 1 - \sigma(x)\). Because the two branches at every node have probabilities that add to 1, the probabilities of all leaves add to exactly 1, with no sum over \(V\). This formula is the book’s explicit statement; the paper names the method and its cost, and the code implements exactly this (see below).</p>
+  </div>
+  <p>The same thing inside the trained toy model, with all 120 words:</p>
+  <div class="widget" data-widget="hsPath"></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>For every node on the path: <code>f = σ(h·syn1[node])</code>, then <code>g = (1 − code − f) × alpha</code>; the input’s error <code>neu1e += g × syn1[node]</code> and the node vector <code>syn1[node] += g × h</code>. Here <code>1 − code</code> is the target (“go to child 0” = 1). That one line is the gradient of \(-\log P(w\mid h)\), which <a href="#ch-code">Chapter 15</a> checks against automatic differentiation. <a class="cite" href="https://github.com/tmikolov/word2vec/blob/master/word2vec.c#L449-L463">word2vec.c l.449–463</a></p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A word’s code is 0, 1. The first node gives σ = 0.8 and the second σ = 0.3. What is its probability?","o":["0.8 × 0.3 = 0.24","0.8 × 0.7 = 0.56","0.2 × 0.3 = 0.06"],"a":1,"e":"Bit 0 takes σ = 0.8; bit 1 takes 1 − σ = 0.7. Product: 0.56.","h":"A 1 bit uses 1 − σ."},
+    {"q":"Why do the probabilities of all words still sum to 1 without computing a sum over V?","o":["They are renormalised at the end","At every node the two branches split the probability exactly, so the total flowing down the tree is always 1","They do not sum to 1; it is an approximation"],"a":1,"e":"σ and 1 − σ add to 1 at each node, so the probability mass is conserved down to the leaves. The hsPath widget sums all 120 and gets 1.","h":"What do the two branches at one node add up to?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-rnnlm" data-title="The recurrent language model" data-part="Part II · Neural language models before word2vec">
+  <header>
+    <div class="kicker">Neural language models before word2vec</div>
+    <h2 class="title">The recurrent language model</h2>
+    <p class="lede">A recurrent network carries a hidden state from word to word, so it needs no fixed context length, but the state update is costly.</p>
+  </header>
+  <p>The NNLM must choose how many previous words \(N\) to look at. A <strong>recurrent neural network (RNN)</strong> avoids that choice: it keeps a <strong>hidden state</strong> \(h_t\), a vector that is updated after every word from the new word and the previous state. The recurrent weight matrix connects the hidden layer to itself “using time-delayed connections”, so the state acts as a short-term memory <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §2.2</a>.</p>
+  <div class="callout math"><div class="ct">∑ The math · Eq. 3</div>
+    \[ h_t = \tanh\!\big(U x_t + W h_{t-1}\big), \qquad Q = H \times H + H \times V \]
+    <p>The update (standard RNNLM form, not printed in the paper) uses \(x_t\), the current word as one-hot, \(U\) the input weights, and \(W\), an \(H \times H\) matrix. The cost per word, Eq. 3, has two terms: \(H \times H\) for the recurrent matrix and \(H \times V\) for the output. There is no projection layer; the word representations have “the same dimensionality as the hidden layer \(H\)”, and hierarchical softmax reduces \(H\times V\) to \(H \times \log_2 V\), leaving \(H \times H\) as the main cost <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §2.2, Eq. 3</a>.</p>
+  </div>
+  <div class="widget" data-widget="rnnTrain"></div>
+  <p>After training, step through “the king said that …”: when the model reaches “that”, its memory of “king” makes it expect “he”. Try the queen sentence and it switches to “she”. That memory is what an RNN offers.</p>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>In <a href="#ch-archs">Table 3</a> the RNNLM vectors do well mostly on syntactic questions. The authors explain that “the word vectors in the RNNLM are directly connected to a non-linear hidden layer” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.3</a>. The RNNLM used for comparison “took about 8 weeks to train on a single CPU”.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"With H = 640 and hierarchical softmax over V = 82,000 words (log₂V ≈ 16), which term of Eq. 3 dominates?","o":["H×H ≈ 410,000","H×log₂V ≈ 10,000","They are equal"],"a":0,"e":"640² = 409,600 vs 640 × 16 ≈ 10,000. The recurrent matrix is the bottleneck.","h":"Compute 640 × 640."},
+    {"q":"What does an RNNLM have that the feedforward NNLM lacks?","o":["A softmax output","A hidden state carried from one word to the next, so no fixed context length N","Word vectors"],"a":1,"e":"Both have outputs and word representations; only the RNN feeds its hidden layer back into itself.","h":"Look at h_{t−1} in the update."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART III -->
+<section class="chapter" id="ch-idea" data-title="The big idea: remove the hidden layer" data-part="Part III · The two new models">
+  <header>
+    <div class="kicker">The two new models</div>
+    <h2 class="title">The big idea: remove the hidden layer</h2>
+    <p class="lede">A simpler model that is much cheaper per word can read far more text, and more text beats a cleverer model.</p>
+  </header>
+  <p>The previous chapters found the bottleneck: once hierarchical softmax tames the output, almost all the cost sits in the non-linear hidden layer (\(N\times D\times H\) for the NNLM, \(H \times H\) for the RNNLM). The paper’s idea is almost blunt: <em>remove the hidden layer</em>. What is left is a <strong>log-linear model</strong>: look up word vectors, combine them, and feed them straight into a (hierarchical) softmax.</p>
+  <div class="widget" data-widget="bigIdeaCost"></div>
+  <p>Such a model “might not be able to represent the data as precisely as neural networks”, but it can be trained on much more data <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §3</a>. And the goal is not a language model at all: it is <em>good word vectors</em>. The paper proposes two ways to arrange this log-linear model, shown in its Figure 1 and the next two chapters:</p>
+  <ul>
+    <li><b>CBOW</b>: predict the middle word from the words around it;</li>
+    <li><b>Skip-gram</b>: predict the words around from the middle word.</li>
+  </ul>
+  <p>The demo from the cover is the whole story in miniature: a skip-gram model reads the toy corpus and arithmetic on its vectors starts to work.</p>
+  <div class="widget" data-widget="heroDemo"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“The main observation from the previous section was that most of the complexity is caused by the non-linear hidden layer in the model” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §3</a>. The approach follows the authors’ earlier finding that an NNLM can be trained in two steps, first learning word vectors with a simple model <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §1.2, §3</a>. The abstract’s headline: high-quality vectors from a 1.6-billion-word data set in less than a day.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What exactly is removed to get the paper’s new models?","o":["The softmax output","The non-linear hidden layer","The word vectors"],"a":1,"e":"The vectors and a (hierarchical) softmax output remain; the costly non-linear hidden layer goes.","h":"Which term dominated Eq. 2 after hierarchical softmax?"},
+    {"q":"Why can a less expressive model end up with better word vectors?","o":["Because it is cheaper per word, it can be trained on much more data in the same time","Because non-linear models cannot learn vectors","Because it uses a larger vocabulary"],"a":0,"e":"The paper’s bet is data over model complexity: cheap updates let it read billions of words.","h":"Think about Eq. 1: O = E × T × Q."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-cbow" data-title="Continuous bag-of-words (CBOW)" data-part="Part III · The two new models">
+  <header>
+    <div class="kicker">The two new models</div>
+    <h2 class="title">Continuous bag-of-words (CBOW)</h2>
+    <p class="lede">Average the vectors of the surrounding words and use that average to predict the middle word.</p>
+  </header>
+  <p>The first architecture is the NNLM with two changes: the hidden layer is gone, and the projection is <em>shared</em> by all context words. Instead of placing the \(N\) vectors side by side, it averages them into one vector \(h\) of size \(D\): “all words get projected into the same position” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §3.1</a>. Averaging forgets the order of the context words, as a <strong>bag of words</strong> does; but the words are represented by continuous vectors, hence the name <strong>continuous bag-of-words (CBOW)</strong>. And it uses words from the future as well as the past.</p>
+  <div class="widget" data-widget="fig1"></div>
+  <div class="callout math"><div class="ct">∑ The math · Eq. 4</div>
+    \[ h = \frac{1}{N}\sum_{c \in \text{context}} v_c, \qquad P(w_t \mid \text{context}) = \text{HS}(h) \]
+    \[ Q = N \times D + D \times \log_2(V) \]
+    <p>\(v_c\) is the input vector of context word \(c\) and HS is the hierarchical softmax of <a href="#ch-hsoftmax">Chapter 9</a>; \(N\) is the number of context words (8 in the paper’s best setting: four before and four after). Cost: \(N \times D\) to read and average the vectors, then \(D\) per tree node for about \(\log_2 V\) nodes. No \(H\) anywhere <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §3.1, Eq. 4</a>.</p>
+  </div>
+  <p>Now watch one training step on the toy, with real numbers. The update is the one from the code: the error collected at the tree nodes is added to <em>every</em> context word’s vector.</p>
+  <div class="widget" data-widget="cbowStep"></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>CBOW branch: sum the context rows of <code>syn0</code> into <code>neu1</code> and divide by their count <code>cw</code>; run hierarchical softmax on <code>neu1</code>, collecting the error in <code>neu1e</code>; then add <code>neu1e</code> to each context word’s row of <code>syn0</code>. CBOW is the default (<code>-cbow 1</code>) with starting learning rate 0.05. <a class="cite" href="https://github.com/tmikolov/word2vec/blob/master/word2vec.c#L435-L494">word2vec.c l.435–494</a></p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"CBOW sees the context “the ___ wore the” and “wore the ___ the”. Does the order of the context words change h?","o":["Yes, each position has its own weights","No, the vectors are averaged, so any order gives the same h","Only the first word matters"],"a":1,"e":"Averaging is order-free: that is the ‘bag of words’ part of the name.","h":"Is an average affected by the order of its terms?"},
+    {"q":"With N = 8, D = 300 and V = 1,000,000 (log₂V ≈ 20), what is Q from Eq. 4?","o":["2,400 + 6,000 = 8,400","300 × 1,000,000","8 × 300 × 500"],"a":0,"e":"N×D = 2,400 and D×log₂V = 300 × 20 = 6,000.","h":"Q = N×D + D×log₂V."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-skipgram" data-title="Continuous skip-gram" data-part="Part III · The two new models">
+  <header>
+    <div class="kicker">The two new models</div>
+    <h2 class="title">Continuous skip-gram</h2>
+    <p class="lede">Use the middle word to predict each surrounding word, sampling nearer words more often.</p>
+  </header>
+  <p>The second architecture turns CBOW around. Each word is the input of a log-linear classifier that predicts “words within a certain range before and after the current word” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §3.2</a>. Each (current word, context word) pair is a separate training example. A wider range gives better vectors but costs more, and since distant words are usually less related, the paper gives them less weight by sampling them less often: for each word it draws a random <strong>reach</strong> \(R\) between 1 and \(C\) and uses only the \(R\) words on each side.</p>
+  <div class="widget" data-widget="skipPairs"></div>
+  <div class="callout math"><div class="ct">∑ The math · Eq. 5</div>
+    \[ Q = C \times (D + D \times \log_2(V)) \]
+    <p>\(C\) is the maximum distance. Each prediction costs \(D\) to read the input vector and \(D \times \log_2 V\) for the tree path. The paper writes the number of predictions as \(C\) (a word uses \(R\times 2\) classifications, and \(R\) averages \((C+1)/2\), so the expected count is \(C + 1\)). The experiments use \(C = 10\) <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §3.2, Eq. 5</a>.</p>
+  </div>
+  <div class="widget" data-widget="sgStep"></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>The random reach: <code>b = next_random % window</code>, and the loop runs from <code>b</code> to <code>window*2 − b</code>, so the reach is <code>window − b</code>, uniform in 1 … window. One detail differs from the paper’s wording: in the skip-gram branch the code uses the <em>context</em> word as input (<code>l1 = last_word</code>) and walks the <em>middle</em> word’s tree path. Over a whole corpus this sees the same pairs with the roles swapped, and it learns equally useful vectors; the book’s toy follows the paper. <a class="cite" href="https://github.com/tmikolov/word2vec/blob/master/word2vec.c#L495-L543">word2vec.c l.495–543</a></p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"With C = 5, how often is a context word at distance 5 used, compared with one at distance 1?","o":["Equally often","1 time in 5 (only when R = 5), while distance 1 is always used","Never"],"a":1,"e":"Distance d is used whenever R ≥ d, with probability (C − d + 1)/C: 5/5 for d = 1, 1/5 for d = 5.","h":"For which values of R is distance 5 inside the window?"},
+    {"q":"For each training word, how many classifications does skip-gram do with reach R (inside a long sentence)?","o":["1","R","2R"],"a":2,"e":"R words before and R words after, each a separate prediction: “R × 2 word classifications” (§3.2).","h":"Count both sides."},
+    {"q":"Why is skip-gram slower than CBOW per training word?","o":["It predicts each context word separately, about C+1 tree walks instead of one","It has a hidden layer","It uses a full softmax"],"a":0,"e":"CBOW averages the context and walks one tree path; skip-gram walks a path per context word.","h":"Compare Eq. 4 and Eq. 5."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-train" data-title="Training the toy, live" data-part="Part III · The two new models">
+  <header>
+    <div class="kicker">The two new models</div>
+    <h2 class="title">Training the toy, live</h2>
+    <p class="lede">Repeat the single step over the whole corpus with a falling learning rate, and structure appears in the vectors.</p>
+  </header>
+  <p>Training is just the single step of the last two chapters, repeated for every word of the corpus, for a few epochs. Every vector starts as small random numbers (word2vec.c draws each entry uniformly between \(-0.5/D\) and \(+0.5/D\)); the tree-node vectors start at zero. It trains as soon as it scrolls into view. Watch the map: people split by gender in one direction and by royal/common in another, and parallel arrows appear.</p>
+  <div class="widget" data-widget="trainLive"></div>
+  <p>The step size is not constant. It starts at \(\alpha_0\) and falls in a straight line to (almost) zero by the end, so early updates move fast and late updates fine-tune:</p>
+  <div class="widget" data-widget="lrSchedule"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>For Tables 2 and 4 the authors “used three training epochs with stochastic gradient descent and backpropagation”, a “starting learning rate 0.025” decreased linearly “so that it approaches zero at the end of the last training epoch” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.2</a>. Later experiments use one epoch with the same linear decay <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.3</a>.</p></div>
+  <div class="callout warn"><div class="ct">⚠ Toy versus paper</div><p>The toy needs 6 epochs because its corpus is tiny; the paper uses 1–3 epochs over hundreds of millions of words. With D = 2 the toy can still separate gender, but not everything at once: try it and watch the analogy accuracy.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"With α₀ = 0.025 and linear decay, what is the learning rate halfway through training?","o":["0.025","0.0125","0.00625"],"a":1,"e":"α = α₀ × (1 − 0.5) = 0.0125.","h":"α = α₀ × (1 − progress)."},
+    {"q":"In the toy, which architecture finishes its 6 epochs faster, and why?","o":["Skip-gram, because it has fewer parameters","CBOW, because it walks one tree path per word instead of one per context word","They take the same time"],"a":1,"e":"Same parameters, but skip-gram does several times as many tree walks. The paper reports about a day for CBOW and three for skip-gram on the same data (§4.3).","h":"Count tree walks per word."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-code" data-title="Inside word2vec.c" data-part="Part III · The two new models">
+  <header>
+    <div class="kicker">The two new models</div>
+    <h2 class="title">Inside word2vec.c</h2>
+    <p class="lede">The released C program is about 700 lines; a handful of them do all the learning.</p>
+  </header>
+  <p>After the paper was written, the authors released single-machine, multi-threaded code whose training speed is “in the order of billions of words per hour” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §7</a>. Its names map onto the paper like this:</p>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Code</th><th>Meaning</th><th>Paper</th></tr>
+    <tr><td><code>syn0</code></td><td>input word vectors, V × D: the vectors that are saved</td><td>projection / word vectors</td></tr>
+    <tr><td><code>syn1</code></td><td>one vector per inner node of the Huffman tree</td><td>hierarchical softmax (§2.1)</td></tr>
+    <tr><td><code>neu1</code></td><td>the projection h (CBOW: average of context vectors)</td><td>projection layer (Fig. 1)</td></tr>
+    <tr><td><code>neu1e</code></td><td>the error to add to the input vector(s)</td><td>backpropagation</td></tr>
+    <tr><td><code>layer1_size</code>, <code>window</code>, <code>alpha</code></td><td>D (default 100), C (default 5), learning rate</td><td>D, C, 0.025</td></tr>
+    <tr><td><code>vocab[w].code</code>, <code>.point</code></td><td>Huffman code and path of word w</td><td>Huffman tree (§2.1)</td></tr>
+  </table></div>
+  <p>Two tricks make it fast. First, the sigmoid comes from a precomputed table, and nodes where \(|h\cdot u| \ge 6\) are skipped, because there the sigmoid is already within 0.0025 of 0 or 1 and the update would be tiny:</p>
+  <div class="widget" data-widget="expTable"></div>
+  <p>Second, the gradient is written by hand in one line, <code>g = (1 − code − f) × alpha</code>. Is that really the derivative of the loss? Check it against automatic differentiation:</p>
+  <div class="widget" data-widget="gradCheck"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    <p>For one node with target \(t = 1 - c\) and \(f = \sigma(h\cdot u)\), the loss is \(\ell = -[\,t \log f + (1-t)\log(1-f)\,]\). Its derivative with respect to the dot product is \(\partial \ell / \partial (h\cdot u) = f - t\), so</p>
+    \[ \frac{\partial \ell}{\partial u} = (f - t)\,h, \qquad \frac{\partial \ell}{\partial h} = (f - t)\,u, \qquad -\alpha\frac{\partial \ell}{\partial u} = \underbrace{(1 - c - f)\,\alpha}_{g}\; h. \]
+    <p>That is exactly <code>syn1 += g × h</code> and <code>neu1e += g × u</code>.</p>
+  </div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>Defaults of version 0.1c (running <code>./word2vec</code> with no arguments prints them): <code>-size 100 -window 5 -sample 1e-3 -hs 0 -negative 5 -iter 5 -min-count 5 -cbow 1</code>, alpha 0.025 for skip-gram and 0.05 for CBOW. Note <code>-hs 0 -negative 5</code>: by default the released code uses the follow-up paper’s negative sampling, not this paper’s hierarchical softmax; pass <code>-hs 1 -negative 0</code> to get this paper’s method. <a class="cite" href="https://github.com/tmikolov/word2vec/blob/master/word2vec.c#L640-L715">word2vec.c main()</a> · <a class="cite" href="https://github.com/tmikolov/word2vec/blob/master/word2vec.c#L350-L372">InitNet()</a></p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"At a tree node with code bit 0, the model gives f = σ(h·u) = 0.9. What is g with alpha = 0.025?","o":["(1 − 0 − 0.9) × 0.025 = +0.0025","(0 − 0.9) × 0.025 = −0.0225","0"],"a":0,"e":"Target is 1 − code = 1; error 1 − 0.9 = 0.1; times alpha gives 0.0025. A small push, because the model is already mostly right.","h":"g = (1 − code − f) × alpha."},
+    {"q":"Why does the code skip a node when h·u ≥ 6 or ≤ −6?","o":["To avoid dividing by zero","The sigmoid is then within about 0.0025 of 0 or 1, so the update would be tiny; skipping saves time","Those nodes are not on the path"],"a":1,"e":"σ(6) ≈ 0.9975. The code accepts a tiny loss of accuracy for speed (MAX_EXP = 6).","h":"Compute σ(6)."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-followup" data-title="Later additions: negative sampling and subsampling" data-part="Part III · The two new models">
+  <header>
+    <div class="kicker">The two new models</div>
+    <h2 class="title">Later additions: negative sampling and subsampling</h2>
+    <p class="lede">The follow-up paper replaced the tree with a few random “wrong” words and dropped many copies of very frequent words. Both are in the released code.</p>
+  </header>
+  <div class="callout warn"><div class="ct">⚠ Not this paper</div><p>Everything in this chapter comes from Mikolov, Sutskever, Chen, Corrado and Dean, <a href="https://arxiv.org/abs/1310.4546">“Distributed Representations of Words and Phrases and their Compositionality”</a> (NIPS 2013), cited by this paper as [21] and announced in its §7. It is here because the released code (and most later word2vec software) uses it by default.</p></div>
+  <p><strong>Negative sampling</strong> drops the tree. For a true (input, output) pair, the model should say “yes, real pair” for the true output word and “no” for \(k\) <strong>noise words</strong> drawn at random. Each yes/no answer is one sigmoid of a dot product, with a separate output vector per word (<code>syn1neg</code>). Noise words are drawn from the word frequencies raised to the power 0.75, which gives rare words more chances than their raw frequency.</p>
+  <div class="widget" data-widget="negSampling"></div>
+  <p><strong>Subsampling</strong> randomly discards occurrences of very frequent words (“the”, “of”) before training. They carry little information, and dropping them both speeds training and effectively widens the window for the remaining words.</p>
+  <div class="widget" data-widget="subsample"></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>Negative sampling: a table of 10⁸ entries filled in proportion to count<sup>0.75</sup> (<a class="cite" href="https://github.com/tmikolov/word2vec/blob/master/word2vec.c#L52-L68">InitUnigramTable, l.52–68</a>), and the update with label 1 for the true word and 0 for each noise word (<a class="cite" href="https://github.com/tmikolov/word2vec/blob/master/word2vec.c#L465-L484">l.465–484</a>). Subsampling: a word with count cn is kept if <code>(√(cn/(sample·T)) + 1)·(sample·T)/cn</code> exceeds a random number (<a class="cite" href="https://github.com/tmikolov/word2vec/blob/master/word2vec.c#L407-L412">l.407–412</a>).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Which of these is part of the 2013a paper this book is about (arXiv 1301.3781)?","o":["Negative sampling","Hierarchical softmax with a Huffman tree","Subsampling of frequent words"],"a":1,"e":"Hierarchical softmax with a Huffman tree is §2.1 of this paper. Negative sampling and subsampling come from the follow-up paper (1310.4546).","h":"Which one appears in §2.1?"},
+    {"q":"Raising word counts to the power 0.75 before sampling noise words does what?","o":["Makes frequent words even more likely","Flattens the distribution, so rare words are drawn more often than their frequency","Makes all words equally likely"],"a":1,"e":"A power between 0 and 1 compresses big counts more than small ones. Power 0 would give the uniform distribution; power 1 the raw frequencies.","h":"Move the power slider between 0 and 1."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART IV · EVIDENCE -->
+<section class="chapter" id="ch-analogy" data-title="Word arithmetic" data-part="Part IV · Evidence">
+  <header>
+    <div class="kicker">Evidence</div>
+    <h2 class="title">Word arithmetic</h2>
+    <p class="lede">To answer “a is to b as c is to ?”, compute b − a + c and look for the nearest word.</p>
+  </header>
+  <p>How do you measure whether word vectors are good? Earlier papers showed lists of nearest neighbours (France is near Italy) and judged them by eye. This paper uses a sharper test, from Mikolov, Yih and Zweig (2013): there are many <em>kinds</em> of similarity, and a relation like big → bigger should look the same as small → smaller. Two word pairs with the same relation form a <strong>question</strong>: “What is the word that is similar to <i>small</i> in the same sense as <i>biggest</i> is similar to <i>big</i>?” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4</a></p>
+  <div class="callout math"><div class="ct">∑ The math · the vector offset method</div>
+    \[ X = \text{vector}(\text{“biggest”}) - \text{vector}(\text{“big”}) + \text{vector}(\text{“small”}) \]
+    \[ \text{answer} = \arg\max_{w \notin \{\text{big, biggest, small}\}} \cos\big(X, \text{vector}(w)\big) \]
+    <p>The difference biggest − big is the “make it superlative” direction; adding it to small should land near smallest. \(\arg\max_w\) means “the word \(w\) that makes the cosine largest”. The three question words are excluded from the search <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4</a>. The famous example from the introduction: vector(“King”) − vector(“Man”) + vector(“Woman”) is closest to vector(“Queen”) <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §1</a>.</p>
+  </div>
+  <div class="widget" data-widget="analogyCalc"></div>
+  <p>Why should this work? If the model learned a direction for each feature (gender, royalty, comparative…), then each word is roughly a sum of its features, and the differences between pairs with the same relation are the same arrow. Look at the arrows:</p>
+  <div class="widget" data-widget="offsetMap"></div>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>Nobody told the model about gender. It noticed that “king” and “queen” appear in the same royal contexts but next to “he” and “she” respectively, and the cheapest way to fit that is one shared “he/she” direction. The paper’s new architectures were designed to “preserve the linear regularities among words” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §1.1</a>.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p><code>word-analogy.c</code> and <code>compute-accuracy.c</code> first scale every vector to length 1, compute <code>vec = M[b] − M[a] + M[c]</code>, skip the three input words and keep the best dot products. <a class="cite" href="https://github.com/tmikolov/word2vec/blob/master/word-analogy.c#L112-L139">word-analogy.c l.112–139</a></p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"To answer “France is to Paris as Germany is to ?”, which vector do you compute?","o":["Paris − France + Germany","France − Paris + Germany","Paris + France − Germany"],"a":0,"e":"b − a + c: the ‘capital of’ arrow from France to Paris, added to Germany. The nearest word should be Berlin.","h":"X = b − a + c with a = France, b = Paris, c = Germany."},
+    {"q":"Why does the search exclude the three question words?","o":["To make the test harder","Because X is usually still closest to one of the inputs (often c), which would make the method answer with a question word","Because their vectors are not normalised"],"a":1,"e":"Tick ‘allow the input words’ in the calculator: the input words often win. The paper discards them (§4).","h":"Try the checkbox in the calculator."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-testset" data-title="The Semantic-Syntactic test set" data-part="Part IV · Evidence">
+  <header>
+    <div class="kicker">Evidence</div>
+    <h2 class="title">The Semantic-Syntactic test set</h2>
+    <p class="lede">About 19,500 analogy questions of 14 types, scored by exact match.</p>
+  </header>
+  <p>The paper builds a new test set, the <strong>Semantic-Syntactic Word Relationship test set</strong>, with five types of <strong>semantic</strong> questions (about meaning and facts: capitals, currencies, family) and nine types of <strong>syntactic</strong> ones (about grammar: comparatives, plurals, past tense). Table 1 gives two example pairs per type.</p>
+  <div class="widget" data-widget="table1"></div>
+  <p>How the questions were made: first a list of similar word pairs was written by hand for each type; then every question joins two pairs. For example, a list of 68 large American cities and their states gave about 2.5K questions by picking two pairs at random. Only single-token words are included, so “New York” is not <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.1</a>.</p>
+  <p>Scoring is strict: a question counts as correct only if the nearest word is <em>exactly</em> the expected one. Synonyms count as mistakes, so 100% is “likely to be impossible”, especially because the models see no information about word spelling (morphology) <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.1</a>. The toy test set is built the same way, with 6 types:</p>
+  <div class="widget" data-widget="toyTest"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Overall, there are 8869 semantic and 10675 syntactic questions” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.1, Table 1</a>. The file was published (footnote 1) and ships with the code as <code>questions-words.txt</code>; its per-type counts, shown in the bar chart, add up to exactly these totals. <a class="cite" href="https://github.com/tmikolov/word2vec/blob/master/questions-words.txt">questions-words.txt</a></p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A model answers “big : bigger :: quick : ?” with “faster”. How does the paper score it?","o":["Correct, because faster is a synonym of quicker","Wrong: only the exact word “quicker” counts","Half correct"],"a":1,"e":"Exact match only; synonyms are mistakes (§4.1).","h":"Re-read how a question is scored."},
+    {"q":"Is “Present Participle” (think → thinking) a semantic or a syntactic question type?","o":["Semantic","Syntactic"],"a":1,"e":"It is about grammatical form, not meaning: syntactic, type 10 in Table 1.","h":"Is it about meaning or about word form?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-datadims" data-title="More data or more dimensions?" data-part="Part IV · Evidence">
+  <header>
+    <div class="kicker">Evidence</div>
+    <h2 class="title">More data or more dimensions?</h2>
+    <p class="lede">Accuracy grows with both, but each alone soon stops paying; grow them together.</p>
+  </header>
+  <p>Training data: a Google News corpus of about 6 billion tokens, with the vocabulary limited to the 1 million most frequent words. To choose settings quickly, the authors first trained CBOW on subsets of the data with the vocabulary restricted to the 30k most frequent words, and evaluated only the questions whose words are all in that 30k <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.2</a>.</p>
+  <div class="widget" data-widget="table2"></div>
+  <p>Two patterns. Along a row, more data helps a lot at first and then less; for 50 dimensions it flattens near 23%. Down a column, more dimensions help, but 300 → 600 adds little when data is small. Hence the paper’s conclusion: increase dimensionality and data <em>together</em>. And “given Equation 4, increasing amount of training data twice results in about the same increase of computational complexity as increasing vector size twice”, since \(Q \propto D\) and \(O \propto T\) <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.2</a>. The authors also point out that it was popular to train vectors on lots of data but with only 50–100 dimensions, which this table shows is not enough.</p>
+  <div class="widget" data-widget="toyGrid"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Training for Table 2 (and Table 4): three epochs, SGD, starting learning rate 0.025 decreasing linearly to zero <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.2, Table 2</a>. Best cell: 600 dimensions, 783M words, 50.4%.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"In Table 2, at 783M words, how much does going from 300 to 600 dimensions add?","o":["About 4.5 points (45.9 → 50.4)","About 25 points","Nothing"],"a":0,"e":"50.4 − 45.9 = 4.5 points.","h":"Read the last column."},
+    {"q":"According to Eq. 4 and Eq. 1, doubling the data T or doubling D costs about…","o":["the same: both double the training cost","doubling D is free","doubling T quadruples the cost"],"a":0,"e":"O = E×T×Q, and Q for CBOW is dominated by terms proportional to D. Both double O.","h":"How do T and D enter O?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-archs" data-title="Four architectures compared" data-part="Part IV · Evidence">
+  <header>
+    <div class="kicker">Evidence</div>
+    <h2 class="title">Four architectures compared</h2>
+    <p class="lede">On the same data, skip-gram wins on meaning, CBOW on grammar, and both beat the older models.</p>
+  </header>
+  <p>First a fair fight: all four architectures with 640-dimensional vectors on the same data, several LDC corpora with 320M words and an 82K vocabulary. The RNNLM is Mikolov’s earlier model (8 weeks on one CPU); the NNLM was trained with DistBelief using 8 previous words, so its projection layer is 640 × 8. The last column is the syntactic test set of Mikolov, Yih and Zweig (2013), “MSR Word Relatedness” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.3</a>.</p>
+  <div class="widget" data-widget="table3"></div>
+  <p>The paper reads it like this: RNNLM vectors are good mostly at syntax; NNLM vectors are much better, which is not surprising since RNNLM vectors are “directly connected to a non-linear hidden layer”; CBOW beats the NNLM on syntax and matches it on semantics; skip-gram is slightly worse than CBOW on syntax “and much better on the semantic part of the test than all the other models” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.3, Table 3</a>.</p>
+  <p>Then a comparison with word vectors other groups had published, on the full test set with full vocabularies. The paper’s CBOW and skip-gram here were trained on one CPU:</p>
+  <div class="widget" data-widget="table4"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Table 4: the best published vectors before this paper (Mikolov RNNLM 640d, 24.6% total; Huang 12.3%; Collobert-Weston 11.0%) are far behind skip-gram 300d on 783M words: 50.0% semantic, 55.9% syntactic, 53.3% total. The large “Our NNLM” 100d on 6B words reaches 50.8% total and the best syntactic score, 64.5% <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper Table 4</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"In Table 3, which architecture has the best semantic accuracy?","o":["CBOW (24%)","NNLM (23%)","Skip-gram (55%)"],"a":2,"e":"Skip-gram’s 55% more than doubles every other model on semantic questions.","h":"Choose ‘semantic’ in the widget."},
+    {"q":"Why are Table 3’s comparisons fairer than Table 4’s?","o":["Table 3 trains every model on the same data with the same vector size; Table 4 compares vectors trained on different data with different sizes","Table 4 uses a different test set","Table 3 has more models"],"a":0,"e":"Table 4 mixes 37M to 6B words and 20 to 640 dimensions, so it compares available vectors, not architectures.","h":"Look at the training words and dimension columns."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-scale" data-title="Epochs, days and DistBelief" data-part="Part IV · Evidence">
+  <header>
+    <div class="kicker">Evidence</div>
+    <h2 class="title">Epochs, days and DistBelief</h2>
+    <p class="lede">Reading twice as much text once beats reading the same text three times, and a cluster makes 1000-dimensional vectors possible.</p>
+  </header>
+  <p>On one CPU, the CBOW model of Table 4 trained on a subset of Google News “in about a day”, skip-gram in “about three days”. For later experiments the authors used one epoch only, and found that one epoch on twice as much data is as good or better than three epochs on the same data, and a bit faster <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.3, Table 5</a>:</p>
+  <div class="widget" data-widget="table5"></div>
+  <p>To go bigger, the models were also implemented in <strong>DistBelief</strong>, Google’s framework for training on many machines. Many <strong>replicas</strong> of the model each process different data and send their gradient updates to a central parameter server, without waiting for each other: <strong>asynchronous mini-batch gradient descent</strong>. The step size is set per parameter by <strong>Adagrad</strong> (Duchi et al., 2011) <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §2.3</a>.</p>
+  <div class="callout math"><div class="ct">∑ The math · Adagrad</div>
+    \[ G_i \leftarrow G_i + g_i^2, \qquad \theta_i \leftarrow \theta_i - \frac{\eta}{\sqrt{G_i} + \epsilon}\, g_i \]
+    <p>\(g_i\) is the gradient for parameter \(i\), \(G_i\) the running sum of its squares, \(\eta\) a base step and \(\epsilon\) a tiny number that avoids division by zero. Parameters with large gradients get smaller steps; rarely-updated parameters (such as vectors of rare words) keep larger ones. This is the standard Adagrad rule; the paper names the method and cites it [7] without writing it out.</p>
+  </div>
+  <div class="widget" data-widget="adagradAsync"></div>
+  <div class="widget" data-widget="table6"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“We used 50 to 100 model replicas”; CPU-core counts are estimates because the machines were shared, and the overhead of the framework brings CBOW and skip-gram CPU use much closer than on one machine <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.4, Table 6</a>. Best results in the paper: skip-gram 1000d on 6B words, 65.6% total (66.1% semantic); CBOW 1000d, 63.7% (68.9% syntactic).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"From Table 5: what did skip-gram score with 1 epoch on 1.6B words, versus 3 epochs on 783M?","o":["53.8% in 2 days vs 53.3% in 3 days","49.2% vs 53.3%","55.5% vs 36.1%"],"a":0,"e":"More data once is slightly better and a day faster.","h":"Find the two skip-gram rows with 300 dimensions."},
+    {"q":"What does Adagrad do differently from plain SGD?","o":["It uses no gradient","It gives every parameter its own step size, shrinking it for parameters that have had large gradients","It always uses a larger step"],"a":1,"e":"Dividing by √G_i adapts the step per coordinate; in the widget it handles the steep and flat directions at once.","h":"Look at the denominator."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-msr" data-title="Sentence completion" data-part="Part IV · Evidence">
+  <header>
+    <div class="kicker">Evidence</div>
+    <h2 class="title">Sentence completion</h2>
+    <p class="lede">Skip-gram alone is mediocre at filling blanks, but its mistakes differ from a language model’s, so together they set a new record.</p>
+  </header>
+  <p>The <strong>Microsoft Research Sentence Completion Challenge</strong> has 1040 sentences, each missing one word, with five plausible candidates. The paper trained a 640-dimensional skip-gram on the 50M words provided with the task, then scored each candidate sentence “by using the unknown word at the input, and predict all surrounding words in a sentence”; the sentence score is the sum of these predictions <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.5</a>. Try the same recipe on toy questions:</p>
+  <div class="widget" data-widget="msrToy"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \text{score}(w) = \sum_{j \ne k} \log P(w_j \mid w) \]
+    \[ \text{combined}(w) = \lambda\, \text{score}_{\text{SG}}(w) + (1-\lambda)\, \text{score}_{\text{LM}}(w) \]
+    <p>\(w\) is a candidate placed at the blank position \(k\), and \(w_j\) are the other words of the sentence. The paper says it used “a weighted combination” of skip-gram and RNNLM scores without giving the weight; \(\lambda\) here is the book’s notation, and the toy uses a bigram model instead of RNNLMs.</p>
+  </div>
+  <div class="widget" data-widget="table7"></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Skip-gram alone scores 48.0%, below LSA (49%). Why is it still useful here?","o":["It is faster","Its scores are complementary to the RNNLMs’, so the weighted combination reaches 58.9%, a new state of the art","It wins on the dev set"],"a":1,"e":"Combining models that make different mistakes beats either alone (§4.5).","h":"Look at the last bar of Table 7."},
+    {"q":"How does skip-gram score a candidate word for the blank?","o":["By the cosine between the candidate and the previous word","By putting the candidate at the input and summing the log-probabilities of all other words in the sentence","By counting how often the candidate appears"],"a":1,"e":"That is the paper’s recipe: the candidate predicts its whole sentence.","h":"Which word is at the input?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-relations" data-title="Examples of learned relationships" data-part="Part IV · Evidence">
+  <header>
+    <div class="kicker">Evidence</div>
+    <h2 class="title">Examples of learned relationships</h2>
+    <p class="lede">The same arithmetic finds capitals, leaders, chemical symbols and famous dishes, and averaging several examples makes it more accurate.</p>
+  </header>
+  <p>Table 8 shows answers of the best skip-gram vectors (783M words, 300 dimensions) to relations defined by a single example pair, e.g. Paris − France + Italy = Rome <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §5, Table 8</a>. Notice the honest errors the authors kept: small → larger instead of smaller, uranium → plutonium instead of U.</p>
+  <div class="widget" data-widget="table8"></div>
+  <p>One example pair is a noisy definition of a relation. The paper suggests giving “more than one example of the relationship”: averaging the offsets of ten pairs improved the best models “by about 10% absolutely” on the test set <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §5</a>. The toy has only 4–5 pairs per relation and its single-pair accuracy is already high, so the gain there is small and not steady from k = 1 to 2; see for yourself:</p>
+  <div class="widget" data-widget="avgOffset"></div>
+  <p>The vectors can solve other puzzles too. To pick the word that does not belong in a list, average the list’s vectors and choose the word farthest from the average, a “popular type of problems in certain human intelligence tests” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §5</a>.</p>
+  <div class="widget" data-widget="oddOneOut"></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"By the paper’s exact-match metric, roughly what share of Table 8 would be correct?","o":["About 60%","100%","About 10%"],"a":0,"e":"The authors say Table 8 “would score only about 60%” (§5).","h":"Read the text right after Table 8."},
+    {"q":"Why can averaging the offsets of several example pairs help?","o":["It cancels part of the noise specific to each single pair, leaving the shared relation direction","It makes the vectors longer","It removes the need to exclude input words"],"a":0,"e":"Each pair’s offset is relation + pair-specific noise; averaging keeps the common part.","h":"What do all the example offsets have in common?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-next" data-title="Limits and where this leads" data-part="Part IV · Evidence">
+  <header>
+    <div class="kicker">Evidence</div>
+    <h2 class="title">Limits and where this leads</h2>
+    <p class="lede">Simple, fast models on huge data give strong word vectors, but one fixed vector per word is not the end of the story.</p>
+  </header>
+  <p>The conclusion is short: very simple architectures give high-quality word vectors, and because they are so cheap, they can be trained on much more data. With DistBelief the authors expect CBOW and skip-gram to train even on corpora of one trillion words, “several orders of magnitude larger than the best previously published results” <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §6</a>. Data is the lever; try starving the toy:</p>
+  <div class="widget" data-widget="stressTest"></div>
+  <p>What the paper reports beyond the test set: publicly available RNN vectors helped give over 50% increase in Spearman’s rank correlation on SemEval-2012 Task 2 (measuring relational similarity); ongoing work applies the vectors to extending knowledge bases and checking facts, and to machine translation <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §6</a>. In its follow-up section the authors announce the released C code and more than 1.4 million vectors for named entities trained on more than 100 billion words <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §7</a>.</p>
+  <h3>Limits</h3>
+  <ul>
+    <li><b>No word structure.</b> The models see words as whole tokens and know nothing of their spelling; the paper itself says reaching 100% is likely impossible for this reason and suggests adding morphology, especially for syntactic questions <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.1</a>.</li>
+    <li><b>One vector per word.</b> “bank” (river) and “bank” (money) share one vector, whatever the sentence. (The book’s observation; the paper does not discuss it.)</li>
+    <li><b>Order is mostly ignored.</b> CBOW averages its context; skip-gram treats each neighbour separately. Good for vectors, poor for understanding sentences.</li>
+    <li><b>Strict, single-word evaluation.</b> Exact match punishes synonyms, and multi-word names like “New York” are excluded <a class="cite" href="https://arxiv.org/abs/1301.3781">Paper §4.1</a>; phrases came in the follow-up paper.</li>
+  </ul>
+  <h3>Where this leads in the collection</h3>
+  <p>Word vectors became the input layer of almost every language model that followed. <a href="../seq2seq/">Seq2Seq (lesson 6)</a> feeds embeddings into recurrent networks to translate whole sentences; <a href="../bahdanau/">Bahdanau attention (lesson 7)</a> and <a href="../transformer/">the Transformer (lesson 8)</a> make each word’s representation depend on its context, fixing the one-vector-per-word limit; <a href="../bert/">BERT (lesson 9)</a> learns contextual vectors by filling in blanks, a descendant of CBOW’s “predict the middle word”. <a href="../sentence_bert/">Sentence-BERT (lesson 20)</a> applies the cosine-similarity idea to whole sentences, and <a href="../clip/">CLIP (lesson 26)</a> puts images and words in one vector space. Training tricks continue in <a href="../dropout/">Dropout (lesson 2)</a> and <a href="../adam/">Adam (lesson 3)</a>, the descendant of Adagrad.</p>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Which limitation does the paper itself name as a reason that 100% accuracy is unlikely?","o":["The vectors have no information about word morphology (spelling)","Vectors cannot be added","The test set is too small"],"a":0,"e":"§4.1: “the current models do not have any input information about word morphology”.","h":"See §4.1."},
+    {"q":"Which later idea fixes the “one vector per word, whatever the sentence” limitation?","o":["Hierarchical softmax","Contextual representations from attention models such as the Transformer and BERT","Subsampling"],"a":1,"e":"Attention-based models compute a different vector for each occurrence of a word, depending on its sentence.","h":"Which models make a word’s vector depend on its neighbours?"}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ BACK MATTER -->
+<section class="chapter" id="ch-cheatsheet" data-title="Cheat sheet: every equation" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Cheat sheet: every equation of the paper</h2>
+  </header>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Eq.</th><th>Formula</th><th>In words</th><th>Chapter</th></tr>
+    <tr><td>1</td><td>\( O = E \times T \times Q \)</td><td>training cost = epochs × training words × cost per word</td><td><a href="#ch-nnlm">7</a></td></tr>
+    <tr><td>2</td><td>\( Q = N\times D + N\times D\times H + H\times V \)</td><td>NNLM: projection + hidden layer + output; \(H\times V\) dominates, then \(N\times D\times H\) with hierarchical softmax</td><td><a href="#ch-nnlm">7</a></td></tr>
+    <tr><td>—</td><td>\( \approx \log_2 V \) vs \( \approx \log_2(\text{unigram perplexity}) \)</td><td>outputs per prediction: balanced tree vs Huffman tree (~2× faster at V = 1M)</td><td><a href="#ch-huffman">8</a></td></tr>
+    <tr><td>—</td><td>\( P(w\mid h) = \prod_j \sigma((1-2c_j)\, h\cdot u_{n_j}) \)</td><td>hierarchical softmax: multiply the sigmoid decisions along the word’s tree path (code form)</td><td><a href="#ch-hsoftmax">9</a></td></tr>
+    <tr><td>3</td><td>\( Q = H\times H + H\times V \)</td><td>RNNLM: recurrent matrix + output; \(H\times H\) dominates with hierarchical softmax</td><td><a href="#ch-rnnlm">10</a></td></tr>
+    <tr><td>4</td><td>\( Q = N\times D + D\times\log_2(V) \)</td><td>CBOW: average N context vectors, one tree walk</td><td><a href="#ch-cbow">12</a></td></tr>
+    <tr><td>5</td><td>\( Q = C\times(D + D\times\log_2(V)) \)</td><td>skip-gram: up to C tree walks per word, R drawn from 1…C</td><td><a href="#ch-skipgram">13</a></td></tr>
+    <tr><td>—</td><td>\( \alpha = \alpha_0\,(1 - \text{progress}) \)</td><td>learning rate falls linearly from 0.025 to about 0</td><td><a href="#ch-train">14</a></td></tr>
+    <tr><td>—</td><td>\( g = (1 - c - \sigma(h\cdot u))\,\alpha \)</td><td>the code’s update at one tree node</td><td><a href="#ch-code">15</a></td></tr>
+    <tr><td>—</td><td>\( X = v_b - v_a + v_c,\ \arg\max_w \cos(X, v_w) \)</td><td>vector offset method for “a : b :: c : ?”, inputs excluded</td><td><a href="#ch-analogy">17</a></td></tr>
+    <tr><td>—</td><td>\( G_i \mathrel{+}= g_i^2,\ \theta_i \mathrel{-}= \eta\, g_i / \sqrt{G_i} \)</td><td>Adagrad (used in DistBelief, cited not written)</td><td><a href="#ch-scale">21</a></td></tr>
+    <tr><td>—</td><td>\( \sum_{j\ne k}\log P(w_j \mid w) \)</td><td>skip-gram score of a sentence-completion candidate</td><td><a href="#ch-msr">22</a></td></tr>
+    <tr><td>—</td><td>\( p_i = e^{s_i}/\sum_j e^{s_j},\ L = -\log p_y \)</td><td>softmax and cross-entropy (background)</td><td><a href="#ch-softmax">5</a></td></tr>
+  </table></div>
+</section>
+
+<section class="chapter" id="ch-glossary" data-title="Glossary" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Glossary</h2>
+  </header>
+  <dl class="glossary" data-terms="Vector; Dimension; Dot product; Cosine similarity; Vocabulary; Corpus; Embedding; Neuron; Weight; Bias; Activation function; Parameter; Loss; Gradient; Gradient descent; Learning rate; Stochastic gradient descent (SGD); Neural network; Hidden layer; Backpropagation; Softmax; Logit; Probability distribution; Cross-entropy; Classification; Sigmoid; Tanh; Epoch; Adam; Hyperparameter; Token; Training">
+    <dt>1-of-V coding (one-hot vector)</dt><dd>A vector of V numbers, all 0 except a 1 at the word’s position in the vocabulary.</dd>
+    <dt>Adagrad</dt><dd>An optimizer that divides each parameter’s step by the square root of the sum of its past squared gradients (Duchi et al., 2011); used in DistBelief.</dd>
+    <dt>Asynchronous gradient descent</dt><dd>Many model replicas send updates to a shared parameter server without waiting for each other, so some gradients are slightly stale.</dd>
+    <dt>Bag of words</dt><dd>A representation that keeps which words occur but forgets their order.</dd>
+    <dt>Bigram</dt><dd>A pair of consecutive words; a bigram model predicts each word from the one before it.</dd>
+    <dt>Binary code (Huffman code)</dt><dd>The sequence of 0/1 turns from the root of the tree to a word.</dd>
+    <dt>CBOW (continuous bag-of-words)</dt><dd>The paper’s first model: average the context words’ vectors and predict the middle word.</dd>
+    <dt>Centre word</dt><dd>The word whose context is being considered (the paper’s “current word” w(t)).</dd>
+    <dt>Context window</dt><dd>The up to C words on each side of the centre word.</dd>
+    <dt>Distributed representation</dt><dd>A representation in which meaning is spread over many numbers and each number helps describe many words; a word vector.</dd>
+    <dt>DistBelief</dt><dd>Google’s framework for training one model on many machines with parameter servers (Dean et al., 2012).</dd>
+    <dt>Distributional hypothesis</dt><dd>The idea that words occurring in similar contexts have similar meanings.</dd>
+    <dt>Entropy</dt><dd>The average number of bits needed to encode a word drawn from a distribution; log₂ of the perplexity.</dd>
+    <dt>Exact match</dt><dd>The paper’s scoring rule: an analogy is correct only if the nearest word is exactly the expected word.</dd>
+    <dt>Hierarchical softmax</dt><dd>Computing a word’s probability as a product of binary sigmoid decisions along its path in a tree, instead of a softmax over all V words.</dd>
+    <dt>Huffman tree</dt><dd>A binary tree built by repeatedly joining the two least frequent nodes, which gives frequent words short codes.</dd>
+    <dt>Language model</dt><dd>A model that assigns probabilities to word sequences, usually by predicting each word from the previous ones.</dd>
+    <dt>Log-linear model</dt><dd>A model whose class scores are linear in its input, followed by a softmax; the paper’s models have no hidden layer.</dd>
+    <dt>MSR Sentence Completion Challenge</dt><dd>1040 sentences, each with one missing word and five candidate answers.</dd>
+    <dt>N-gram model</dt><dd>A language model that predicts a word from the N−1 previous words using counts.</dd>
+    <dt>Negative sampling</dt><dd>(Follow-up paper.) Training to tell the true context word from k random noise words, instead of a full or hierarchical softmax.</dd>
+    <dt>NNLM</dt><dd>Feedforward neural net language model: projection, non-linear hidden layer and softmax output (Bengio et al., 2003).</dd>
+    <dt>Projection layer</dt><dd>The layer that looks up the vectors of the input words from a shared matrix.</dd>
+    <dt>Reach R</dt><dd>In skip-gram, the random number of words used on each side, drawn uniformly from 1 to C.</dd>
+    <dt>Recurrent neural network (RNN)</dt><dd>A network that updates a hidden state after every input, so it can remember earlier words.</dd>
+    <dt>RNNLM</dt><dd>A language model built on a recurrent neural network.</dd>
+    <dt>Semantic-Syntactic Word Relationship test set</dt><dd>The paper’s analogy test: 8869 semantic and 10675 syntactic questions in 14 types.</dd>
+    <dt>Skip-gram</dt><dd>The paper’s second model: use the centre word to predict each word in its context window.</dd>
+    <dt>Subsampling</dt><dd>(Follow-up paper.) Randomly discarding occurrences of very frequent words before training.</dd>
+    <dt>Unigram perplexity</dt><dd>2 to the power of the entropy of word frequencies: the effective number of equally likely words.</dd>
+    <dt>Vector offset method</dt><dd>Answering a : b :: c : ? with the word nearest to b − a + c.</dd>
+    <dt>Word vector (word embedding)</dt><dd>A learned list of numbers representing a word, so similar words get nearby vectors.</dd>
+  </dl>
+</section>
+
+<section class="chapter" id="ch-refs" data-title="Sources and further reading" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Sources and further reading</h2>
+  </header>
+  <ul>
+    <li><b>The paper:</b> Tomas Mikolov, Kai Chen, Greg Corrado, Jeffrey Dean. <a href="https://arxiv.org/abs/1301.3781">Efficient Estimation of Word Representations in Vector Space</a>. ICLR 2013 workshop track. Numbers in this book are quoted from arXiv version 3 (7 September 2013).</li>
+    <li><b>The code:</b> <a href="https://github.com/tmikolov/word2vec">tmikolov/word2vec</a>, Tomas Mikolov’s GitHub copy of the original Google Code project (code.google.com/p/word2vec, paper footnote 4), version 0.1c, Apache License 2.0. Files referenced: <a href="https://github.com/tmikolov/word2vec/blob/master/word2vec.c">word2vec.c</a> (CreateBinaryTree l.205–270, InitNet l.350–372, TrainModelThread l.374–555, main l.640–715), <a href="https://github.com/tmikolov/word2vec/blob/master/word-analogy.c">word-analogy.c</a>, <a href="https://github.com/tmikolov/word2vec/blob/master/compute-accuracy.c">compute-accuracy.c</a>, <a href="https://github.com/tmikolov/word2vec/blob/master/questions-words.txt">questions-words.txt</a>.</li>
+    <li><b>The follow-up paper:</b> T. Mikolov, I. Sutskever, K. Chen, G. Corrado, J. Dean. <a href="https://arxiv.org/abs/1310.4546">Distributed Representations of Words and Phrases and their Compositionality</a>. NIPS 2013. Source of negative sampling and subsampling (<a href="#ch-followup">Chapter 16</a>).</li>
+    <li><b>Key background cited by the paper:</b> Bengio, Ducharme, Vincent, A neural probabilistic language model, JMLR 2003 [1]; Mikolov, Yih, Zweig, Linguistic Regularities in Continuous Space Word Representations, NAACL 2013 [20]; Morin and Bengio, Hierarchical probabilistic neural network language model, AISTATS 2005 [25]; Mnih and Hinton, A scalable hierarchical distributed language model, NIPS 2009 [23]; Dean et al., Large scale distributed deep networks, NIPS 2012 [6]; Duchi, Hazan, Singer, Adaptive subgradient methods (Adagrad), JMLR 2011 [7]; Zweig and Burges, The Microsoft Research Sentence Completion Challenge, 2011 [32].</li>
+    <li><b>In this collection:</b> later lessons <a href="../seq2seq/">Seq2Seq</a>, <a href="../transformer/">The Transformer</a>, <a href="../bert/">BERT</a>, <a href="../sentence_bert/">Sentence-BERT</a> and <a href="../clip/">CLIP</a> build on word vectors.</li>
+  </ul>
+  <p class="small">Figures: the paper is distributed under arXiv’s default licence, so no figure is reproduced; Figure 1 is redrawn as an original interactive SVG, and Tables 1–8 are retyped as data with citations. What is toy and what is paper: every number cited to a table or section is the paper’s; every number labelled “toy” is computed in your browser from the generated corpus in <code>toy.js</code>.</p>
+</section>
+
+<nav class="lesson-pager" id="lessonPager" aria-label="Previous and next lessons"></nav>
+
+<footer class="book-foot">Word2Vec Interactive Web Book, lesson 1 of <a href="../">Modern AI in 49 Papers</a>. An independent educational companion to Mikolov, Chen, Corrado and Dean (2013), not an official publication of the authors; all interactive models run locally in your browser.</footer>
+
+</main>
+</div>
+
+<script src="../collection.js"></script>
+<script src="../shared/glossary.js"></script>
+<script src="../shared/lesson-nav.js"></script>
+<script src="../shared/core.js"></script>
+<script src="../shared/lib/math.js"></script>
+<script src="../shared/lib/nn.js"></script>
+<script src="../shared/widgets/refreshers.js"></script>
+<script src="toy.js"></script>
+<script src="widgets-found.js"></script>
+<script src="widgets-method.js"></script>
+<script src="widgets-evidence.js"></script>
+</body>
+</html>
