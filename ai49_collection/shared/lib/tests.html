@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shared library tests</title>
+<style>body{font:14px/1.5 ui-monospace,Consolas,monospace;margin:24px} .pass{color:#2f855a} .fail{color:#c0392b;font-weight:700}</style>
+</head>
+<body>
+<h1 id="summary">running…</h1>
+<pre id="out"></pre>
+<script src="math.js"></script>
+<script src="nn.js"></script>
+<script>
+/* Open this page (or: chrome --headless --dump-dom tests.html) to check the shared maths and autograd.
+   Gradients are compared with central finite differences. */
+(function () {
+  'use strict';
+  const out = [], results = [];
+  function check(name, ok, detail) { results.push(ok); out.push((ok ? 'PASS ' : 'FAIL ') + name + (detail ? '  ' + detail : '')); }
+  function close(a, b, tol) { return Math.abs(a - b) <= (tol || 1e-6) * Math.max(1, Math.abs(a), Math.abs(b)); }
+
+  // generic gradient check: build(params) returns a 1×1 loss tensor
+  function gradCheck(name, params, build, tol) {
+    NN.zeroGrad(params);
+    const loss = build(); loss.backward();
+    let worst = 0, ok = true;
+    params.forEach(function (p) {
+      for (let i = 0; i < p.data.length; i++) {
+        const old = p.data[i], h = 1e-5;
+        p.data[i] = old + h; const lp = build().item();
+        p.data[i] = old - h; const lm = build().item();
+        p.data[i] = old;
+        const num = (lp - lm) / (2 * h), ana = p.grad ? p.grad[i] : 0;
+        const err = Math.abs(num - ana) / Math.max(1e-6, Math.abs(num) + Math.abs(ana));
+        worst = Math.max(worst, err);
+        if (err > (tol || 1e-4) && Math.abs(num - ana) > 1e-7) ok = false;
+      }
+    });
+    check('grad ' + name, ok, 'worst rel. error ' + worst.toExponential(2));
+  }
+
+  // ---------- math.js ----------
+  const r1 = ML.rng(42), r2 = ML.rng(42);
+  check('rng is deterministic', ML.range(5).every(function () { return r1.next() === r2.next(); }));
+  const rn = ML.rng(7), xs = ML.range(20000).map(function () { return rn.normal(); });
+  check('normal() has mean≈0, var≈1', Math.abs(ML.mean(xs)) < 0.03 && Math.abs(ML.variance(xs) - 1) < 0.04, 'mean ' + ML.mean(xs).toFixed(3) + ', var ' + ML.variance(xs).toFixed(3));
+  const sm = ML.softmax([2, 1, 0.1]);
+  check('softmax sums to 1', close(ML.sum(sm), 1));
+  check('softmax known values', close(sm[0], 0.6590011388859679, 1e-9), sm.map(function (x) { return x.toFixed(4); }).join(', '));
+  check('softmax temperature → near one-hot', ML.softmax([2, 1, 0], 0.05)[0] > 0.999);
+  check('logsumexp stable for big inputs', close(ML.logsumexp([1000, 1000]), 1000 + Math.log(2)));
+  check('cosine of parallel vectors = 1', close(ML.cosine([1, 2, 3], [2, 4, 6]), 1));
+  check('matmul 2×2', JSON.stringify(ML.matmul([[1, 2], [3, 4]], [[5, 6], [7, 8]])) === '[[19,22],[43,50]]');
+  check('entropy of fair coin = 1 bit', close(ML.entropy([0.5, 0.5], 2), 1));
+  const rs = ML.rng(3); let counts = [0, 0, 0];
+  for (let i = 0; i < 30000; i++) counts[ML.sampleIndex([0.2, 0.3, 0.5], rs)]++;
+  check('sampleIndex follows probabilities', Math.abs(counts[2] / 30000 - 0.5) < 0.01, counts.join('/'));
+  // PCA: points spread along (1,1,0) direction mostly
+  const rp = ML.rng(5), pts = ML.range(200).map(function () { const t = rp.normal(0, 3); return [t + rp.normal(0, .2), t + rp.normal(0, .2), rp.normal(0, .2)]; });
+  const pc = ML.pca2(pts);
+  check('pca2 finds the main direction', Math.abs(Math.abs(pc.components[0][0]) - Math.SQRT1_2) < 0.02 && pc.explained[0] > 0.95, 'explained ' + pc.explained.map(function (e) { return e.toFixed(3); }).join(', '));
+
+  // ---------- nn.js: gradients of every op ----------
+  const R = ML.rng(11);
+  const A = NN.param(3, 4, R, 1), B = NN.param(4, 2, R, 1), bias = NN.param(1, 2, R, 1), C = NN.param(3, 4, R, 1);
+  gradCheck('matmul + bias + sum', [A, B, bias], function () { return NN.sum(NN.add(NN.matmul(A, B), bias)); });
+  gradCheck('mul / tanh / mean', [A, C], function () { return NN.mean(NN.tanh(NN.mul(A, C))); });
+  gradCheck('sigmoid / scale / sub', [A, C], function () { return NN.sum(NN.sub(NN.sigmoid(A), NN.scale(C, 0.5))); });
+  gradCheck('relu (away from 0)', [A], function () { return NN.sum(NN.mul(NN.relu(A), NN.relu(A))); });
+  gradCheck('rowSum', [A, C], function () { return NN.sum(NN.mul(NN.rowSum(NN.mul(A, C)), NN.rowSum(A))); });
+  const E = NN.param(6, 3, R, 1);
+  gradCheck('embedding (repeated rows)', [E], function () { return NN.sum(NN.tanh(NN.embedding(E, [0, 2, 2, 5]))); });
+  gradCheck('softmaxCE', [A, B], function () { return NN.softmaxCE(NN.matmul(A, B), [0, 1, 1]); });
+  const Lg = NN.param(5, 1, R, 2);
+  gradCheck('sigmoidBCE', [Lg], function () { return NN.sigmoidBCE(Lg, [1, 0, 1, 1, 0]); });
+  const T = NN.tensor([[1, 0], [0, 1], [1, 1]]);
+  gradCheck('mse', [A, B], function () { return NN.mse(NN.matmul(A, B), T); });
+  const X = NN.param(5, 3, R, 2), gam = NN.param(1, 3, R, 1), bet = NN.param(1, 3, R, 1), W2 = NN.param(3, 2, R, 1);
+  gradCheck('batchNorm (training)', [X, gam, bet, W2], function () { return NN.sum(NN.tanh(NN.matmul(NN.batchNorm(X, gam, bet), W2))); }, 1e-3);
+  const run = { mean: [0.1, -0.2, 0.3], var: [1.5, 0.7, 2.0] };
+  gradCheck('batchNorm (eval)', [X, gam, bet], function () { return NN.sum(NN.tanh(NN.batchNorm(X, gam, bet, { training: false, running: run }))); });
+  const bn = NN.batchNorm(X, NN.full(1, 3, 1), NN.zeros(1, 3));
+  const colMeans = [0, 1, 2].map(function (j) { return ML.mean(bn.toArray().map(function (r) { return r[j]; })); });
+  check('batchNorm output has zero mean per feature', colMeans.every(function (m) { return Math.abs(m) < 1e-9; }));
+  // dropout: fixed mask → gradient matches; expected value preserved
+  const D = NN.param(200, 50, R, 1), dr = NN.dropout(D, 0.5, ML.rng(9), true);
+  check('dropout keeps the mean (inverted scaling)', Math.abs(ML.mean(Array.from(dr.data)) - ML.mean(Array.from(D.data))) < 0.05);
+  check('dropout is identity at test time', NN.dropout(D, 0.5, ML.rng(9), false) === D);
+
+  // ---------- training end to end ----------
+  // XOR with a 2-8-2 MLP, Adam
+  const rx = ML.rng(1), l1 = new NN.Linear(2, 8, rx), l2 = new NN.Linear(8, 2, rx);
+  const Xx = NN.tensor([[0, 0], [0, 1], [1, 0], [1, 1]]), yx = [0, 1, 1, 0];
+  const opt = new NN.Adam(l1.params.concat(l2.params), { lr: 0.05 });
+  let lossX;
+  for (let it = 0; it < 400; it++) { NN.zeroGrad(opt.params); lossX = NN.softmaxCE(l2.forward(NN.tanh(l1.forward(Xx))), yx); lossX.backward(); opt.step(); }
+  check('Adam trains XOR', lossX.item() < 0.02, 'final loss ' + lossX.item().toFixed(4));
+  // SGD with momentum on a 1-D quadratic f(w) = (w-3)^2
+  const w = NN.full(1, 1, -2, true), sgd = new NN.SGD([w], { lr: 0.1, momentum: 0.5 });
+  for (let it = 0; it < 100; it++) { NN.zeroGrad([w]); const d = NN.add(w, NN.full(1, 1, -3)); NN.mul(d, d).backward(); sgd.step(); }
+  check('SGD+momentum minimises a quadratic', close(w.item(), 3, 1e-4), 'w = ' + w.item().toFixed(6));
+  // Adam first step size ≈ lr regardless of gradient scale (bias correction)
+  const wa = NN.full(1, 1, 0, true), ad = new NN.Adam([wa], { lr: 0.01 });
+  NN.zeroGrad([wa]); NN.scale(wa, 1000).backward(); ad.step();
+  check('Adam first step ≈ −lr (bias-corrected)', close(wa.item(), -0.01, 1e-6), 'w = ' + wa.item());
+
+  const nPass = results.filter(Boolean).length;
+  document.getElementById('summary').textContent = (nPass === results.length ? 'ALL PASS ' : 'FAILURES ') + nPass + '/' + results.length;
+  document.getElementById('summary').className = nPass === results.length ? 'pass' : 'fail';
+  document.getElementById('out').textContent = out.join('\n');
+})();
+</script>
+</body>
+</html>

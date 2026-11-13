@@ -48,6 +48,7 @@
 <footer class="foot">Independent educational companions to the papers they cover — not official publications of the papers’ authors. Each lesson credits its sources and licences.</footer>
 
 <script src="home/lessons.js"></script>
+<script src="ai49_collection/collection.js"></script>
 <script>
 (function () {
   'use strict';
@@ -74,6 +75,18 @@
     for (var k in done) if (done[k]) n++;
     return { read: Math.min(n, l.stats.chapters), last: store.get(l.store + 'last', null) };
   }
+  // collections: counts and reading progress across their ready books
+  function collectionInfo(c) {
+    var data = window[c.data] || { lessons: [], parts: [] }, read = 0, total = 0, ready = 0;
+    data.lessons.forEach(function (b) {
+      if (b.status !== 'ready' || !b.stats) return;
+      ready++; total += b.stats.chapters;
+      var p = progress({ store: 'ai49:' + b.slug + ':', stats: b.stats }); read += p.read;
+    });
+    var years = data.lessons.map(function (b) { return b.paper.year; });
+    return { papers: data.lessons.length, parts: data.parts.length, ready: ready, read: read, total: total,
+             span: years.length ? Math.min.apply(null, years) + '–' + Math.max.apply(null, years) : '' };
+  }
   ['All'].concat(lessons.map(function (l) { return l.field; }).filter(function (f, i, a) { return a.indexOf(f) === i; })).forEach(function (f) {
     var b = document.createElement('button'); b.className = 'chip' + (f === field ? ' on' : ''); b.textContent = f;
     b.addEventListener('click', function () { field = f; chips.querySelectorAll('.chip').forEach(function (c) { c.classList.toggle('on', c.textContent === f); }); draw(); });
@@ -85,9 +98,13 @@
     var shown = lessons.filter(function (l) {
       if (field !== 'All' && l.field !== field) return false;
       if (!query) return true;
-      return [l.title, l.subtitle, l.field, l.paper.authors, l.paper.title, l.paper.venue, l.paper.year].join(' ').toLowerCase().indexOf(query) >= 0;
+      var text = l.type === 'collection'
+        ? [l.title, l.subtitle, l.field].concat(((window[l.data] || {}).lessons || []).map(function (b) { return b.title + ' ' + b.paper.title; }))
+        : [l.title, l.subtitle, l.field, l.paper.authors, l.paper.title, l.paper.venue, l.paper.year];
+      return text.join(' ').toLowerCase().indexOf(query) >= 0;
     });
     grid.innerHTML = shown.map(function (l) {
+      if (l.type === 'collection') return collectionCard(l);
       var p = progress(l), pct = Math.round(100 * p.read / l.stats.chapters);
       var start = l.id + '/', resume = p.last ? l.id + '/#' + encodeURIComponent(p.last) : null;
       return '<article class="card">' +
@@ -107,7 +124,21 @@
         '</div></article>';
     }).join('');
     document.getElementById('empty').hidden = shown.length > 0;
-    document.getElementById('count').textContent = shown.length + (shown.length === 1 ? ' lesson' : ' lessons');
+    document.getElementById('count').textContent = shown.length + (shown.length === 1 ? ' entry' : ' entries');
+  }
+  function collectionCard(l) {
+    var c = collectionInfo(l), start = l.id + '/';
+    return '<article class="card">' +
+      '<a class="cover" href="' + start + '" tabindex="-1" aria-hidden="true"><img src="' + esc(l.cover) + '" alt="" loading="lazy"></a>' +
+      '<div class="body">' +
+        '<div class="tag">Collection · ' + esc(l.field) + '</div>' +
+        '<h3><a href="' + start + '">' + esc(l.title) + '</a></h3>' +
+        '<p class="desc">' + esc(l.subtitle) + '</p>' +
+        '<p class="cite">Landmark papers from ' + esc(c.span) + ', from Word2Vec and the Transformer to DPO and DeepSeek-R1.</p>' +
+        '<div class="stats"><span>' + c.papers + ' papers</span><span>' + c.parts + ' parts</span><span>' + c.ready + ' of ' + c.papers + ' books ready</span></div>' +
+        (c.read ? '<div class="prog" title="' + c.read + ' of ' + c.total + ' chapters read"><div style="width:' + Math.round(100 * c.read / c.total) + '%"></div></div><div class="prog-label">' + c.read + ' / ' + c.total + ' chapters read</div>' : '') +
+        '<div class="actions"><a class="btn primary" href="' + start + '">Open collection →</a></div>' +
+      '</div></article>';
   }
   draw();
 })();

@@ -10,8 +10,22 @@
      cover     image path relative to the site root
      stats     { chapters, widgets, quizzes }
      store     localStorage prefix the book uses ("<prefix>done", "<prefix>last"), for progress on the home page
-     added     date the lesson was published (YYYY-MM-DD) */
+     added     date the lesson was published (YYYY-MM-DD)
+   A collection (one card that opens a list of books) has instead:
+     type: 'collection', id (its folder), title, subtitle, field, cover, added,
+     data      name of the global its catalogue defines (index.html loads <id>/collection.js), e.g. 'AI49'
+   Its paper count, ready count and reading progress are computed from that catalogue. */
 window.LESSONS = [
+  {
+    type: 'collection',
+    id: 'ai49_collection',
+    title: 'Modern AI in 49 Papers',
+    subtitle: 'From word vectors to reasoning models: 49 landmark papers, ordered from easiest to hardest, each with its own interactive web book.',
+    field: 'Language models',
+    cover: 'ai49_collection/cover.svg',
+    data: 'AI49',
+    added: '2026-11-14'
+  },
   {
     id: 'alphafold_lessons',
     title: 'AlphaFold',

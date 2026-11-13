@@ -1,3 +1,6 @@
 .claude/
 *.pdf
 __pycache__/
+_src/
+_work/
+__shot_*.html

@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}} · Interactive Web Book · Modern AI in 49 Papers</title>
+<meta name="description" content="An interactive web book that teaches {{TITLE}} ({{AUTHORS}}, {{YEAR}}) from absolute zero, with live widgets for every idea and every equation. Lesson {{N}} of Modern AI in 49 Papers.">
+<link rel="icon" href="../cover.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="../shared/book.css">
+<!-- Optional: give this book its own accent colour (light and dark).
+<style>
+  :root { --accent: #2b6cb0; --accent-soft: #e3eefa; --accent-ink: #1c4a7a; }
+  :root[data-theme="dark"] { --accent: #63a4ea; --accent-soft: #1b2a3c; --accent-ink: #a9cdf5; }
+</style> -->
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</head>
+<body data-store="ai49:{{SLUG}}:" data-lesson="{{SLUG}}" data-theme-key="ai49:theme">
+
+<div class="topbar">
+  <button class="icon-btn" id="menuBtn" aria-label="Open contents">☰</button>
+  <a class="brand" href="#top"><span class="mark">{{MARK}}</span><span>Interactive Web Book</span></a>
+  <a class="icon-btn home-link" href="../" title="Modern AI in 49 Papers">← 49 Papers</a>
+  <div class="spacer"></div>
+  <div class="progress-wrap" title="Chapters marked as read"><div class="progress-bar" id="progressBar"></div></div>
+  <span class="progress-label" id="progressLabel"></span>
+  <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode" title="Light / dark">◐</button>
+</div>
+
+<div class="layout">
+<nav class="sidebar" id="toc" aria-label="Contents"></nav>
+<main>
+
+<!-- ============================================================ COVER -->
+<div class="hero" id="top">
+  <div class="eyebrow">Modern AI in 49 Papers · Lesson {{N}}</div>
+  <div class="lesson-strip" id="lessonStrip"></div>
+  <h1>{{TITLE}},<br><em>from zero.</em></h1>
+  <p class="sub">{{ONE-PARAGRAPH PROMISE: what the reader will understand by the end, in plain words, and that no background is needed.}}</p>
+  <p class="meta">Based on <a href="{{PAPER_URL}}">{{AUTHORS}}, “{{PAPER_TITLE}}”, {{VENUE}} ({{YEAR}})</a> and the official code at <a href="{{CODE_URL}}">{{CODE_NAME}}</a> (if the paper has no official code, say so here and drop the code button and code callouts). This book is an independent educational companion, not an official publication of the authors.</p>
+  <div class="hero-demo"><div data-widget="heroDemo"></div></div>
+  <div class="btn-row">
+    <a class="btn primary" href="#ch-before">Start reading →</a>
+    <a class="btn" id="resumeBtn" href="#">Resume where you left off</a>
+    <a class="btn" href="{{PAPER_URL}}">The paper</a>
+    <a class="btn" href="{{CODE_URL}}">The code</a>
+  </div>
+</div>
+
+<!-- ============================================================ HOW TO READ -->
+<section class="chapter" id="ch-howto" data-title="How to read this book" data-part="Front matter" data-nonum>
+  <header>
+    <div class="kicker">Front matter</div>
+    <h2 class="title">How to read this book</h2>
+    <p class="lede">{{N_CH}} short chapters, {{N_PARTS}} parts, and about {{N_W}} things you can poke.</p>
+  </header>
+  <p>This book assumes you know <strong>nothing</strong> about {{FIELD}}. Every new idea arrives with a picture or a widget you can play with, and every equation is unpacked symbol by symbol. It is lesson {{N}} of <a href="../">Modern AI in 49 Papers</a>, but it stands on its own: everything you need is inside.</p>
+  <div class="roadmap">
+    <div class="card"><b>Part I · Foundations</b><span>Chapters 1–{{x}}. {{what the part covers}}</span></div>
+    <div class="card"><b>Part II · {{…}}</b><span>{{…}}</span></div>
+  </div>
+  <h3>Signposts</h3>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>Plain-language pictures of what is going on. Read these even if you skip everything else.</p></div>
+  <div class="callout math"><div class="ct">∑ The math</div><p>The precise statement, exactly as it appears in the paper, with every symbol explained.</p></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Where this idea appears in the paper, with numbers taken directly from it. Tags like <a class="cite" href="{{PAPER_URL}}">Paper §3</a> link to the paper.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>How the official implementation does it, with file names from <a href="{{CODE_URL}}">{{CODE_NAME}}</a>.</p></div>
+  <p>Widgets have a title, a one-line instruction, then controls. Your progress (chapters you mark as read, light/dark choice) is remembered in your own browser only.</p>
+  <div class="callout warn"><div class="ct">⚠ About the toy model</div><p>{{Describe honestly what the in-browser toy is, what it computes exactly, and what it only imitates. Paper-scale numbers come from the paper; toy numbers come from the toy.}}</p></div>
+</section>
+
+<!-- ============================================================ PART I · FOUNDATIONS
+     Start from zero. Use the shared refresher widgets (r_vectors, r_neuron, r_descent, r_softmax, r_trainNet)
+     where they fit, and write new foundation chapters for whatever else this paper assumes. Keep only what the
+     paper needs, but teach all of it. -->
+<section class="chapter" id="ch-before" data-title="{{First foundations chapter}}" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">{{First foundations chapter}}</h2>
+    <p class="lede">{{One sentence: the single idea this chapter delivers.}}</p>
+  </header>
+  <p>{{Start from something the reader already knows from daily life. Introduce one new term in <strong>bold</strong> at a time.}}</p>
+  <div class="widget" data-widget="r_vectors"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    <p>{{Name the equation, then show it:}}</p>
+    \[ a \cdot b = \sum_{i=1}^{d} a_i\, b_i \]
+    <p>{{Then unpack EVERY symbol.}}</p>
+  </div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"{{Question that checks understanding, not recall}}","o":["{{option}}","{{option}}","{{option}}"],"a":1,"e":"{{Why the right answer is right.}}","h":"{{Hint shown on a wrong answer.}}"},
+    {"q":"{{Second question; can be a tiny calculation}}","o":["{{option}}","{{option}}","{{option}}"],"a":0,"e":"{{Why.}}","h":"{{Hint.}}"}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART II … · THE METHOD (paper's own order)
+     The first method chapter is "The big idea": the paper's core insight in plain words, with a widget, before any machinery. -->
+<section class="chapter" id="ch-idea" data-title="The big idea" data-part="Part II · {{The method}}">
+  <header>
+    <div class="kicker">{{The method}}</div>
+    <h2 class="title">The big idea</h2>
+    <p class="lede">{{The paper's core insight in one sentence.}}</p>
+  </header>
+  <p>{{…}}</p>
+  <div class="widget" data-widget="heroDemo"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>{{Where the paper states this, with its own words paraphrased and its own numbers}} <a class="cite" href="{{PAPER_URL}}">Paper §1</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"{{…}}","o":["{{…}}","{{…}}"],"a":0,"e":"{{…}}","h":"{{…}}"},
+    {"q":"{{…}}","o":["{{…}}","{{…}}"],"a":1,"e":"{{…}}","h":"{{…}}"}
+  ]</script></div>
+</section>
+
+<!-- … more chapters … then the evidence part (metrics before results, every main result, ablations, limits) … -->
+
+<section class="chapter" id="ch-next" data-title="Limits and where this leads" data-part="Part {{last}} · Evidence">
+  <header>
+    <div class="kicker">Evidence</div>
+    <h2 class="title">Limits and where this leads</h2>
+    <p class="lede">{{What the paper could not do, and which later lessons in the collection pick up the thread.}}</p>
+  </header>
+  <p>{{The paper's own stated limitations, then the follow-up work. Link later lessons by their folder, e.g. <a href="../transformer/">The Transformer (lesson 8)</a>.}}</p>
+  <div class="widget" data-widget="{{a widget that recaps or stress-tests the method}}"></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"{{…}}","o":["{{…}}","{{…}}"],"a":0,"e":"{{…}}","h":"{{…}}"},
+    {"q":"{{…}}","o":["{{…}}","{{…}}"],"a":1,"e":"{{…}}","h":"{{…}}"}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ BACK MATTER -->
+<section class="chapter" id="ch-cheatsheet" data-title="Cheat sheet: every equation" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Cheat sheet: every equation of the paper</h2>
+  </header>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Eq.</th><th>Formula</th><th>In words</th><th>Chapter</th></tr>
+    <tr><td>{{1}}</td><td>\( {{formula}} \)</td><td>{{plain words}}</td><td><a href="#ch-idea">{{chapter}}</a></td></tr>
+  </table></div>
+</section>
+
+<section class="chapter" id="ch-glossary" data-title="Glossary" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Glossary</h2>
+  </header>
+  <!-- Shared terms are filled from ../shared/glossary.js; write book-specific terms as <dt>/<dd> pairs. -->
+  <dl class="glossary" data-terms="Vector; Dot product; Cosine similarity">
+    <dt>{{Book-specific term}}</dt><dd>{{One-sentence plain definition.}}</dd>
+  </dl>
+</section>
+
+<section class="chapter" id="ch-refs" data-title="Sources and further reading" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Sources and further reading</h2>
+  </header>
+  <ul>
+    <li><b>The paper:</b> {{full author list}}. <a href="{{PAPER_URL}}">{{PAPER_TITLE}}</a>. {{VENUE}}, {{YEAR}}. Numbers in this book are quoted from {{the version read}}.</li>
+    <li><b>The code:</b> <a href="{{CODE_URL}}">{{CODE_NAME}}</a> ({{licence}}). Files referenced in this book: {{links}}.</li>
+    <li><b>Key background cited by the paper:</b> {{…}}</li>
+    <li><b>In this collection:</b> {{earlier and later lessons that connect to this one}}.</li>
+  </ul>
+  <p class="small">{{Figure credits and licences. What is toy vs. paper.}}</p>
+</section>
+
+<nav class="lesson-pager" id="lessonPager" aria-label="Previous and next lessons"></nav>
+
+<footer class="book-foot">{{TITLE}} Interactive Web Book, lesson {{N}} of <a href="../">Modern AI in 49 Papers</a>. An independent educational companion to {{AUTHORS}} ({{YEAR}}); all interactive models run locally in your browser.</footer>
+
+</main>
+</div>
+
+<!-- Order matters: catalogue + glossary + lesson-nav (fill the page) → core (engine) → shared libraries → refreshers → this book's widgets. -->
+<script src="../collection.js"></script>
+<script src="../shared/glossary.js"></script>
+<script src="../shared/lesson-nav.js"></script>
+<script src="../shared/core.js"></script>
+<script src="../shared/lib/math.js"></script>
+<script src="../shared/lib/nn.js"></script>
+<script src="../shared/widgets/refreshers.js"></script>
+<script src="widgets.js"></script>
+</body>
+</html>

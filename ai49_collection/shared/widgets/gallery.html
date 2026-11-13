@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Refresher widget gallery · Modern AI in 49 Papers</title>
+<link rel="icon" href="../../cover.svg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="../book.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</head>
+<!-- For authors: every shared refresher widget on one page, to pick from and to check after changes. -->
+<body data-store="ai49:gallery:" data-theme-key="ai49:theme">
+<div class="topbar">
+  <button class="icon-btn" id="menuBtn" aria-label="Open contents">☰</button>
+  <a class="brand" href="#top"><span class="mark">49</span><span>Refresher widgets</span></a>
+  <a class="icon-btn home-link" href="../../" title="Modern AI in 49 Papers">← 49 Papers</a>
+  <div class="spacer"></div>
+  <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode" title="Light / dark">◐</button>
+</div>
+<div class="layout">
+<nav class="sidebar" id="toc" aria-label="Contents"></nav>
+<main>
+<section class="chapter" id="g-vectors" data-title="r_vectors" data-part="Refreshers" data-nonum>
+  <header><h2 class="title">r_vectors</h2><p class="lede">Vectors, length, dot product, cosine similarity.</p></header>
+  <div class="widget" data-widget="r_vectors"></div>
+</section>
+<section class="chapter" id="g-neuron" data-title="r_neuron" data-part="Refreshers" data-nonum>
+  <header><h2 class="title">r_neuron</h2><p class="lede">One neuron: weighted sum and activation.</p></header>
+  <div class="widget" data-widget="r_neuron"></div>
+</section>
+<section class="chapter" id="g-descent" data-title="r_descent" data-part="Refreshers" data-nonum>
+  <header><h2 class="title">r_descent</h2><p class="lede">Gradient descent on a 1-D loss curve.</p></header>
+  <div class="widget" data-widget="r_descent"></div>
+</section>
+<section class="chapter" id="g-softmax" data-title="r_softmax" data-part="Refreshers" data-nonum>
+  <header><h2 class="title">r_softmax</h2><p class="lede">Scores to probabilities, with temperature.</p></header>
+  <div class="widget" data-widget="r_softmax"></div>
+</section>
+<section class="chapter" id="g-train" data-title="r_trainNet" data-part="Refreshers" data-nonum>
+  <header><h2 class="title">r_trainNet</h2><p class="lede">A small network trained live with Adam.</p></header>
+  <div class="widget" data-widget="r_trainNet"></div>
+</section>
+</main>
+</div>
+<script src="../core.js"></script>
+<script src="../lib/math.js"></script>
+<script src="../lib/nn.js"></script>
+<script src="refreshers.js"></script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modern AI in 49 Papers · Paper Lessons</title>
+<meta name="description" content="49 interactive web books, from word vectors to reasoning models, ordered from easiest to hardest. Each one teaches one landmark paper from zero.">
+<link rel="icon" href="cover.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../home/home.css">
+<link rel="stylesheet" href="collection.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="../"><span class="mark">PL</span>Paper Lessons</a>
+  <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode" title="Light / dark">◐</button>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="eyebrow">A collection of interactive web books</div>
+    <h1>Modern AI,<br><em>in 49 papers.</em></h1>
+    <p class="sub">From word vectors to reasoning models: 49 landmark papers, put in order from easiest to hardest. Each paper gets its own interactive web book that starts from zero, so you can begin anywhere. Following the order is easiest, because each lesson builds on the ones before it.</p>
+    <div class="meta-row" id="metaRow"></div>
+    <div class="overall" id="overall"></div>
+  </section>
+
+  <div class="next-up" id="nextUp"></div>
+
+  <div class="filters">
+    <input type="search" id="q" placeholder="Search the 49 papers…" aria-label="Search lessons">
+    <div class="chips" id="chips" role="group" aria-label="Jump to part"></div>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div id="parts"></div>
+  <p class="empty" id="empty" hidden>No lesson matches that search.</p>
+
+  <section class="how">
+    <h2>How this collection works</h2>
+    <div class="how-grid">
+      <div><b>Easy to advanced</b><span>Lessons are ordered by what they build on, not by year. ★ needs nothing; ★★★★★ is heavy maths or systems.</span></div>
+      <div><b>Every book from zero</b><span>Each book opens with the background it needs. Earlier lessons go deeper but are never required.</span></div>
+      <div><b>Faithful</b><span>Numbers quoted from a paper are marked and linked; toy examples are labelled as toys.</span></div>
+      <div><b>Growing</b><span>Lessons appear as they are finished. “Coming soon” cards link to the paper in the meantime.</span></div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">Independent educational companions to the papers they cover, not official publications of the papers’ authors. Each book credits its sources and licences. <a href="../">← All lessons</a></footer>
+
+<script src="collection.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = window.AI49, THEME = 'ai49:theme';
+  function get(k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+  function set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  var saved = get(THEME, null);
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('themeBtn').addEventListener('click', function () {
+    var cur = document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var nx = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', nx); set(THEME, nx);
+  });
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  var bySlug = {}; C.lessons.forEach(function (l) { bySlug[l.slug] = l; });
+  function prog(l) {
+    if (l.status !== 'ready' || !l.stats) return { read: 0, total: 0, last: null };
+    var d = get('ai49:' + l.slug + ':done', {}), n = 0;
+    for (var k in d) if (d[k]) n++;
+    return { read: Math.min(n, l.stats.chapters), total: l.stats.chapters, last: get('ai49:' + l.slug + ':last', null) };
+  }
+  function stars(n) { var s = ''; for (var i = 1; i <= 5; i++) s += i <= n ? '★' : '<i>★</i>'; return s; }
+
+  // header numbers
+  var ready = C.lessons.filter(function (l) { return l.status === 'ready'; });
+  var totalCh = 0, readCh = 0, doneLessons = 0;
+  ready.forEach(function (l) { var p = prog(l); totalCh += p.total; readCh += p.read; if (p.total && p.read >= p.total) doneLessons++; });
+  document.getElementById('metaRow').innerHTML =
+    '<span><b>' + C.lessons.length + '</b> papers</span><span><b>' + C.parts.length + '</b> parts</span>' +
+    '<span><b>' + ready.length + '</b> ready to read</span>' + (doneLessons ? '<span><b>' + doneLessons + '</b> finished by you</span>' : '');
+  if (readCh) document.getElementById('overall').innerHTML =
+    '<div class="prog"><div style="width:' + Math.round(100 * readCh / totalCh) + '%"></div></div><div class="prog-label">' + readCh + ' of ' + totalCh + ' chapters read across the ready lessons</div>';
+
+  // next up: first ready lesson not finished; else the first planned one
+  var next = ready.filter(function (l) { var p = prog(l); return p.read < p.total; })[0];
+  var nu = document.getElementById('nextUp');
+  if (next) {
+    var p = prog(next), href = next.slug + '/' + (p.last ? '#' + encodeURIComponent(p.last) : '');
+    nu.innerHTML = '<div class="grow"><div class="lbl">' + (p.read ? 'Continue' : 'Start here') + ' · Lesson ' + next.n + '</div><div class="t">' + esc(next.title) + '</div><div class="b">' + esc(next.blurb) + '</div></div>' +
+      '<a class="btn primary" href="' + href + '">' + (p.read ? 'Resume →' : 'Start learning →') + '</a>';
+  } else {
+    var first = C.lessons[0];
+    nu.innerHTML = '<div class="grow"><div class="lbl">Coming first · Lesson 1</div><div class="t">' + esc(first.title) + '</div><div class="b">The first books are being written. ' + esc(first.blurb) + '</div></div>' +
+      '<a class="btn" href="' + esc(first.paper.url) + '">Read the paper</a>';
+  }
+
+  // chips jump to parts
+  var chips = document.getElementById('chips');
+  C.parts.forEach(function (pt) {
+    var a = document.createElement('a'); a.className = 'chip'; a.href = '#part-' + pt.id; a.textContent = pt.id + ' · ' + pt.title; a.style.textDecoration = 'none';
+    chips.appendChild(a);
+  });
+
+  var query = '';
+  document.getElementById('q').addEventListener('input', function (e) { query = e.target.value.trim().toLowerCase(); draw(); });
+
+  function row(l) {
+    var p = prog(l), isReady = l.status === 'ready', href = l.slug + '/';
+    var done = p.total && p.read >= p.total;
+    var builds = l.builds_on.map(function (s) { var b = bySlug[s]; return '<a href="#l-' + s + '">' + b.n + ' ' + esc(b.title) + '</a>'; }).join(', ');
+    var side = isReady
+      ? '<span class="badge ready">' + (done ? 'Finished' : 'Ready') + '</span>' +
+        (p.read ? '<div class="prog" title="' + p.read + ' of ' + p.total + ' chapters read"><div style="width:' + Math.round(100 * p.read / p.total) + '%"></div></div>' : '') +
+        '<a class="btn primary" href="' + href + (p.last ? '#' + encodeURIComponent(p.last) : '') + '">' + (p.read ? 'Resume' : 'Start') + ' →</a>'
+      : '<span class="badge soon">Coming soon</span><a class="src" href="' + esc(l.paper.url) + '">Read the paper ↗</a>';
+    var title = isReady ? '<a href="' + href + '">' + esc(l.title) + '</a>' : esc(l.title);
+    return '<li class="lesson ' + (isReady ? 'ready' : 'planned') + (done ? ' done' : '') + '" id="l-' + l.slug + '">' +
+      '<div class="num">' + (done ? '✓' : l.n) + '</div>' +
+      '<div><h3>' + title + '<span class="yr">' + l.paper.year + '</span></h3>' +
+      '<p class="bl">' + esc(l.blurb) + '</p>' +
+      '<div class="meta"><span class="diff" title="Difficulty ' + l.difficulty + ' of 5">' + stars(l.difficulty) + '</span>' +
+      '<span>' + esc(l.paper.authors) + ' · ' + esc(l.paper.venue) + '</span>' +
+      (builds ? '<span>Builds on: ' + builds + '</span>' : '<span>No prerequisites</span>') +
+      (isReady && l.stats ? '<span>' + l.stats.chapters + ' chapters · ' + l.stats.widgets + ' widgets</span>' : '') + '</div></div>' +
+      '<div class="side">' + side + '</div></li>';
+  }
+  function draw() {
+    var html = '', shown = 0;
+    C.parts.forEach(function (pt) {
+      var ls = C.lessons.filter(function (l) {
+        if (l.part !== pt.id) return false;
+        if (!query) return true;
+        return [l.title, l.blurb, l.paper.title, l.paper.authors, l.paper.venue, l.paper.year].join(' ').toLowerCase().indexOf(query) >= 0;
+      });
+      if (!ls.length) return;
+      shown += ls.length;
+      var nReady = ls.filter(function (l) { return l.status === 'ready'; }).length;
+      html += '<section class="part" id="part-' + pt.id + '"><div class="part-head"><span class="letter">Part ' + pt.id + '</span><h2>' + esc(pt.title) + '</h2>' +
+        '<span class="pc">Lessons ' + ls[0].n + (ls.length > 1 ? '–' + ls[ls.length - 1].n : '') + ' · ' + nReady + ' ready</span></div>' +
+        (query ? '' : '<p class="part-desc">' + esc(pt.desc) + '</p>') +
+        '<ol class="lessons">' + ls.map(row).join('') + '</ol></section>';
+    });
+    document.getElementById('parts').innerHTML = html;
+    document.getElementById('empty').hidden = shown > 0;
+    document.getElementById('count').textContent = shown + (shown === 1 ? ' lesson' : ' lessons');
+  }
+  draw();
+})();
+</script>
+</body>
+</html>
