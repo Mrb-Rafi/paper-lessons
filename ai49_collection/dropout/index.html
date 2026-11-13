@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dropout · Interactive Web Book · Modern AI in 49 Papers</title>
+<meta name="description" content="An interactive web book that teaches Dropout (Srivastava, Hinton, Krizhevsky, Sutskever, Salakhutdinov, 2014) from absolute zero, with live widgets for every idea and every equation. Lesson 2 of Modern AI in 49 Papers.">
+<link rel="icon" href="../cover.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="../shared/book.css">
+<style>
+  :root { --accent: #b4531c; --accent-soft: #fbece2; --accent-ink: #7f3510; }
+  :root[data-theme="dark"] { --accent: #f0a066; --accent-soft: #3a2619; --accent-ink: #f8c9a6; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --accent: #f0a066; --accent-soft: #3a2619; --accent-ink: #f8c9a6; } }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</head>
+<body data-store="ai49:dropout:" data-lesson="dropout" data-theme-key="ai49:theme">
+
+<div class="topbar">
+  <button class="icon-btn" id="menuBtn" aria-label="Open contents">☰</button>
+  <a class="brand" href="#top"><span class="mark">DO</span><span>Interactive Web Book</span></a>
+  <a class="icon-btn home-link" href="../" title="Modern AI in 49 Papers">← 49 Papers</a>
+  <div class="spacer"></div>
+  <div class="progress-wrap" title="Chapters marked as read"><div class="progress-bar" id="progressBar"></div></div>
+  <span class="progress-label" id="progressLabel"></span>
+  <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode" title="Light / dark">◐</button>
+</div>
+
+<div class="layout">
+<nav class="sidebar" id="toc" aria-label="Contents"></nav>
+<main>
+
+<!-- ============================================================ COVER -->
+<div class="hero" id="top">
+  <div class="eyebrow">Modern AI in 49 Papers · Lesson 2</div>
+  <div class="lesson-strip" id="lessonStrip"></div>
+  <h1>Dropout,<br><em>from zero.</em></h1>
+  <p class="sub">In 2014 five researchers in Toronto published a strangely simple trick: while a neural network learns, switch off a random half of its units for every example it sees. The network cannot rely on any one unit, stops memorising its training data, and does better on new data. This book starts from “what is a neuron?” and ends with every equation, figure, table and result of the paper, including why the trick is a cheap way of averaging an astronomical number of networks. You need no background: every idea comes with something to play with.</p>
+  <p class="meta">Based on <a href="https://jmlr.org/papers/v15/srivastava14a.html">Nitish Srivastava, Geoffrey Hinton, Alex Krizhevsky, Ilya Sutskever, Ruslan Salakhutdinov, “Dropout: A Simple Way to Prevent Neural Networks from Overfitting”, Journal of Machine Learning Research 15 (2014)</a> and the first author’s code at <a href="https://github.com/nitishsrivastava/deepnet">nitishsrivastava/deepnet</a>. This book is an independent educational companion, not an official publication of the authors.</p>
+  <div class="hero-demo"><div data-widget="heroDemo"></div></div>
+  <div class="btn-row">
+    <a class="btn primary" href="#ch-neuron">Start reading →</a>
+    <a class="btn" id="resumeBtn" href="#">Resume where you left off</a>
+    <a class="btn" href="https://jmlr.org/papers/v15/srivastava14a.html">The paper</a>
+    <a class="btn" href="https://github.com/nitishsrivastava/deepnet">The code</a>
+  </div>
+</div>
+
+<!-- ============================================================ HOW TO READ -->
+<section class="chapter" id="ch-howto" data-title="How to read this book" data-part="Front matter" data-nonum>
+  <header>
+    <div class="kicker">Front matter</div>
+    <h2 class="title">How to read this book</h2>
+    <p class="lede">31 short chapters, 5 parts, and about 60 things you can poke.</p>
+  </header>
+  <p>This book assumes you know <strong>nothing</strong> about machine learning. Every new idea arrives with a picture or a widget you can play with, and every equation is unpacked symbol by symbol. It is lesson 2 of <a href="../">Modern AI in 49 Papers</a> and stands on its own: everything you need is inside. (Lesson 1, <a href="../word2vec/">Word2Vec</a>, also teaches neurons and gradient descent, but you do not need it.)</p>
+  <div class="roadmap">
+    <div class="card"><b>Part I · Foundations</b><span>Chapters 1–7. Neurons, learning, overfitting, weight penalties, averaging models, coin flips, and convolutional nets.</span></div>
+    <div class="card"><b>Part II · The dropout model</b><span>Chapters 8–15. The idea (Fig. 1), why it works (§2), the equations (Fig. 2, 3), model averaging, training with max-norm and momentum (§5).</span></div>
+    <div class="card"><b>Part III · Results</b><span>Chapters 16–21. All data sets and Tables 1–9: digits, house numbers, tiny images, ImageNet, speech, text, genetics, and other regularizers.</span></div>
+    <div class="card"><b>Part IV · Inside a dropout network</b><span>Chapters 22–27. Features, sparsity, the dropout rate, data set size, Monte-Carlo averaging (Fig. 7–11) and dropout RBMs (§8, Fig. 12–13).</span></div>
+    <div class="card"><b>Part V · Beyond Bernoulli noise</b><span>Chapters 28–31. Dropout as a penalty (§9), Gaussian dropout (§10, Table 10), the practical guide (App. A) and the limits.</span></div>
+  </div>
+  <h3>Signposts</h3>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>Plain-language pictures of what is going on. Read these even if you skip everything else.</p></div>
+  <div class="callout math"><div class="ct">∑ The math</div><p>The precise statement, exactly as it appears in the paper, with every symbol explained.</p></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Where this idea appears in the paper, with numbers taken directly from it. Tags like <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §4</a> link to the paper. The paper has no equation numbers, so the book names the equations (E1, E2, …) in the <a href="#ch-cheatsheet">cheat sheet</a>.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>How the first author’s implementation does it, with file names and line numbers from <a href="https://github.com/nitishsrivastava/deepnet">nitishsrivastava/deepnet</a> (commit f4e4ff2, January 2014). Deepnet is a GPU library in Python built on cudamat and cuda-convnet, the two CUDA libraries the paper names in Appendix B; the paper’s own code pointer is cs.toronto.edu/~nitish/dropout.</p></div>
+  <p>Widgets have a title, a one-line instruction, then controls. Your progress (chapters you mark as read, light/dark choice) is remembered in your own browser only.</p>
+  <div class="callout warn"><div class="ct">⚠ About the toy model</div><p>The paper trains networks with millions of weights on GPUs for a million steps. This page trains small networks live in your browser on <b>pixel digits</b>: ten hand-drawn digit shapes on a 7×7 grid (49 pixels, where MNIST has 784), each example spoilt by missing stroke pixels, specks and grey noise. The standard toy network is 49-96-96-10, trained on 500 examples for 3,000 steps of minibatch SGD with momentum, exactly the procedure of §5.1. What is <b>exact</b>: the dropout forward pass and masks, gradients, weight scaling, the enumeration of every thinned network of a tiny network, Monte-Carlo averaging, max-norm, the §9 linear-regression result, CD-1 for RBMs, the code-quality score. What is a <b>stand-in</b>: pixel digits for MNIST; convolutional nets, ImageNet, TIMIT, Reuters and the splicing data appear only through the paper’s own numbers. A few large sweeps (the toy versions of Fig. 4, 9, 10 and Tables 9, 10) show results precomputed with this page’s own code and seeds, and each has a “Re-run live” button. Toy numbers are labelled “toy”; at this tiny scale dropout’s gains are real but smaller than in the paper, which <a href="#ch-datasize">Chapter 24</a> explains.</p></div>
+  <div class="callout warn"><div class="ct">⚠ Two meanings of “p”</div><p>In the paper, \(p\) is the probability of <b>keeping</b> (retaining) a unit, so \(p = 1\) means no dropout. Most software, including deepnet’s <code>dropout_prob</code> and the shared library used here, takes the probability of <b>dropping</b>, which is \(1 - p\). This book always uses the paper’s \(p\).</p></div>
+</section>
+
+<!-- ============================================================ PART I · FOUNDATIONS -->
+<section class="chapter" id="ch-neuron" data-title="Neurons, layers and the forward pass" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Neurons, layers and the forward pass</h2>
+    <p class="lede">A neural network is a stack of layers; each unit in a layer adds up weighted inputs and bends the sum with a simple function.</p>
+  </header>
+  <p>A computer that recognises a handwritten “4” has to turn a grid of pixel brightnesses into an answer. A <strong>neural network</strong> does this with many tiny, identical calculators called <strong>units</strong> or <strong>neurons</strong>. One unit takes a few numbers in, multiplies each by its own <strong>weight</strong>, adds them up with a <strong>bias</strong>, and passes the total through an <strong>activation function</strong>:</p>
+  <div class="widget" data-widget="r_neuron"></div>
+  <p>Two activation functions appear in the paper. The <strong>logistic</strong> (or sigmoid) function \(f(x) = 1/(1 + e^{-x})\) squashes any number into the range 0 to 1. The <strong>rectified linear unit</strong> (<strong>ReLU</strong>), \(f(x) = \max(0, x)\), passes positive numbers and replaces negative ones by 0. Without an activation function, stacking units would only ever compute straight-line (linear) functions.</p>
+  <p>Units are organised in <strong>layers</strong>. The <strong>input layer</strong> just holds the data (for a 28×28 image, 784 numbers). Each <strong>hidden layer</strong> reads the outputs of the layer below. The <strong>output layer</strong> gives the answer, for digits one score per class. Computing layer after layer, from input to output, is the <strong>forward pass</strong>.</p>
+  <div class="widget" data-widget="layerForward"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §4, standard network)</div>
+    <p>The paper writes the forward pass of a standard network, for hidden layers \(l \in \{0, \dots, L-1\}\) and any unit \(i\):</p>
+    \[ z_i^{(l+1)} = \mathbf{w}_i^{(l+1)}\, \mathbf{y}^{(l)} + b_i^{(l+1)}, \qquad y_i^{(l+1)} = f\big(z_i^{(l+1)}\big). \]
+    <p>Read it aloud: “the input \(z\) of unit \(i\) in layer \(l+1\) is its weight vector times the outputs of layer \(l\), plus its bias; its output \(y\) is \(f\) of that”. The superscript \((l)\) is a layer number, not a power. \(\mathbf{y}^{(l)}\) is the vector of all outputs of layer \(l\), with \(\mathbf{y}^{(0)} = \mathbf{x}\), the input. \(\mathbf{w}_i^{(l+1)}\) is the row of weights belonging to unit \(i\); multiplying a row by a vector means multiplying entry by entry and adding up (a <strong>dot product</strong>). \(b_i^{(l+1)}\) is the unit’s bias and \(f\) its activation function. \(L\) is the number of hidden layers. Example: \(\mathbf{w} = (0.9, -0.4, 0.3)\), \(\mathbf{y} = (1, 0.5, -0.5)\), \(b = 0.1\): \(z = 0.9 - 0.2 - 0.15 + 0.1 = 0.65\), and the logistic \(f(0.65) = 0.657\). That is unit 1 in the widget above.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Section 4 sets out this notation before adding dropout to it, and names the logistic function as its example of \(f\) <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §4</a>. Most results use ReLUs; Table 2 shows that switching from logistic units to ReLUs lowers MNIST error from 1.35 % to 1.25 % <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper Table 2</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A unit has weights (2, −1), bias 0.5 and ReLU activation. The inputs are (1, 3). What is its output?","o":["0","−0.5","2.5"],"a":0,"e":"z = 2×1 + (−1)×3 + 0.5 = −0.5, and ReLU turns negative numbers into 0.","h":"Compute z = w·y + b first, then apply max(0, z)."},
+    {"q":"In \\(z_i^{(l+1)}\\), what does the superscript (l+1) mean?","o":["z raised to the power l+1","the layer the unit belongs to","the number of inputs"],"a":1,"e":"Superscripts in brackets are layer labels. Unit i lives in layer l+1 and reads the outputs of layer l.","h":"The paper uses superscripts in brackets for layers."},
+    {"q":"Why do networks need an activation function at all?","o":["To make the numbers smaller","Without it, any stack of layers computes only a linear function, no more powerful than one layer","It is needed to compute the dot product"],"a":1,"e":"A weighted sum of weighted sums is still a weighted sum. The bend in f is what lets deep networks represent complicated relationships.","h":"What is a weighted sum of weighted sums?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-learn" data-title="How a network learns" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">How a network learns</h2>
+    <p class="lede">Measure how wrong the network is with a loss, find which way each weight should move with backpropagation, and take small steps downhill.</p>
+  </header>
+  <p>At first the weights are random and the outputs are nonsense. To improve them we need a single number that says how wrong the network is: the <strong>loss</strong>. For classification the usual loss is the <strong>cross-entropy</strong>: the output layer turns its scores into probabilities with a <strong>softmax</strong> (exponentiate each score, divide by the total), and the loss is \(-\log\) of the probability given to the correct class. It is 0 when the network is certain and right, and large when it is confident and wrong.</p>
+  <p>Learning means changing the weights to make the loss smaller. The <strong>gradient</strong> says, for every weight, how much the loss would rise if that weight grew a little. <strong>Gradient descent</strong> moves every weight a small step the other way, of size <strong>learning rate</strong> × gradient:</p>
+  <div class="widget" data-widget="r_descent"></div>
+  <p>How do we get the gradient for a weight deep inside the network? By the chain rule of calculus, applied backwards from the loss through each layer: <strong>backpropagation</strong>. The widget below runs it on the smallest possible network so every number is visible.</p>
+  <div class="widget" data-widget="backpropTiny"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    <p>The chain rule says that if the loss \(L\) depends on \(w_2\) only through \(\hat y\), and \(\hat y\) through \(z_2 = w_2 h\), then</p>
+    \[ \frac{\partial L}{\partial w_2} = \frac{\partial L}{\partial \hat y}\cdot\frac{\partial \hat y}{\partial z_2}\cdot\frac{\partial z_2}{\partial w_2} = (\hat y - t)\cdot \hat y(1-\hat y)\cdot h, \qquad w \leftarrow w - \varepsilon\,\frac{\partial L}{\partial w}. \]
+    <p>\(\partial L/\partial w\) (“the partial derivative of \(L\) with respect to \(w\)”) is the slope of the loss when only \(w\) changes. \(t\) is the target, \(\hat y\) the prediction, and \(\hat y(1-\hat y)\) is the slope of the logistic function. \(\varepsilon\) is the learning rate. For \(w_1\), one more factor joins the chain: the error is sent back through \(w_2\) and through the slope \(h(1-h)\) of the hidden unit. A real network does the same for millions of weights at once.</p>
+  </div>
+  <p>Computing the gradient on the whole training set for every step is slow. <strong>Stochastic gradient descent</strong> (<strong>SGD</strong>) uses a <strong>minibatch</strong>: a small random handful of training cases, whose gradients are averaged. One pass over the whole training set is an <strong>epoch</strong>. Here a network with 8 hidden units learns to separate two classes of points; the shading is its current prediction:</p>
+  <div class="widget" data-widget="r_trainNet"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Dropout networks are trained “using stochastic gradient descent in a manner similar to standard neural nets”, with the gradients for each parameter “averaged over the training cases in each mini-batch” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §5.1</a>. The paper’s toy-sized MNIST setting in deepnet uses minibatches of 100 and one million steps <a class="cite" href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/examples/ff/train.pbtxt">examples/ff/train.pbtxt</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"The gradient of the loss with respect to a weight is +0.4 and the learning rate is 0.1. What does one gradient-descent step do to that weight?","o":["Adds 0.04","Subtracts 0.04","Subtracts 0.4"],"a":1,"e":"w ← w − ε·gradient = w − 0.1×0.4. Moving against the gradient lowers the loss.","h":"Step size = learning rate × gradient, in the downhill direction."},
+    {"q":"What is a minibatch used for in SGD?","o":["To compute a cheap estimate of the gradient by averaging over a few training cases","To test the network","To store the weights"],"a":0,"e":"The average gradient over a small random batch points roughly the same way as the full-data gradient, at a fraction of the cost.","h":"Why not use every training case for every step?"},
+    {"q":"In the tiny network, why does the gradient for w₁ include w₂?","o":["It does not","Because a change in w₁ affects the loss only through h, and h’s effect on the output is scaled by w₂","Because w₁ and w₂ are equal"],"a":1,"e":"The chain rule follows the path from w₁ to the loss: w₁ → h → (times w₂) → ŷ → L. Every factor on the path appears.","h":"Trace how a change in w₁ reaches the loss."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-overfit" data-title="Overfitting" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Overfitting</h2>
+    <p class="lede">A big network can learn its training examples perfectly, noise and all, and then do worse on new data.</p>
+  </header>
+  <p>We do not care how well a network does on the examples it learned from; we care how well it does on new ones. So data is split: a <strong>training set</strong> to learn from, and a <strong>test set</strong>, never shown during training, to measure <strong>generalization</strong>. The <strong>error</strong> is the percentage of examples classified wrongly.</p>
+  <p>The paper’s first paragraph explains the danger. Deep networks are very expressive, but “with limited training data, however, many of these complicated relationships will be the result of sampling noise”: accidents of which examples happened to be collected. They exist in the training set but not in new data. Learning them is <strong>overfitting</strong>.</p>
+  <div class="widget" data-widget="overfit2d"></div>
+  <p>The rest of this book uses a small data set of its own, close in spirit to the paper’s favourite, MNIST (handwritten digits):</p>
+  <div class="widget" data-widget="digitGallery"></div>
+  <p>Train a standard network on it and the same story appears. The training error goes to zero; the test error stops falling and creeps up:</p>
+  <div class="widget" data-widget="trainTest"></div>
+  <p>The oldest defence is <strong>early stopping</strong>: keep a third set of examples, the <strong>validation set</strong>, check its error during training, and keep the weights from the moment it was lowest. The validation set is also how people choose <strong>hyperparameters</strong> (settings such as the learning rate) without peeking at the test set.</p>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The introduction lists the classic remedies: “stopping the training as soon as performance on a validation set starts to get worse”, weight penalties such as L1 and L2, and soft weight sharing <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §1</a>. In the MNIST experiments the hyperparameters were tuned on 10,000 held-out training images, and they were chosen so that “early stopping was not required at all” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper App. B.1</a>.</p></div>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>A student who memorises last year’s exam answers scores 100 % on last year’s exam and fails this year’s. Overfitting is memorising instead of understanding. Dropout, as we will see, makes memorising hard.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A network has 0 % training error and 12 % test error. Another has 3 % training error and 8 % test error. Which generalizes better?","o":["The first, it is perfect on its training data","The second, because test error is what measures performance on new data","They are equal"],"a":1,"e":"Training error can always be driven down by memorising. Only held-out data tells you how the network will do on new cases.","h":"Which number measures new data?"},
+    {"q":"Why must the validation set be separate from the test set?","o":["Because choosing settings by looking at the test set makes the test error an over-optimistic estimate","Because it must be bigger","It need not be separate"],"a":0,"e":"Every decision made by looking at a data set fits that data set a little. The test set must stay untouched to remain an honest measurement.","h":"What happens to a measurement you have optimised for?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-penalty" data-title="Weight penalties" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Weight penalties</h2>
+    <p class="lede">Add the size of the weights to the loss, and the network prefers simple, smooth solutions.</p>
+  </header>
+  <p>Wild, overfitted fits usually need large weights. So a classic remedy, called <strong>regularization</strong>, adds a penalty for large weights to the loss. With the <strong>L2 penalty</strong> (also <strong>weight decay</strong>, <strong>Tikhonov regularization</strong> or, for linear models, <strong>ridge regression</strong>) the penalty is \(\lambda\) times the sum of squared weights. Its strength \(\lambda\) is a hyperparameter.</p>
+  <div class="widget" data-widget="ridgeFit"></div>
+  <p>The <strong>L1 penalty</strong> (the <strong>lasso</strong> for linear models) adds \(\lambda\) times the sum of absolute values instead. The two behave differently: L2 shrinks every weight a little, L1 pushes small weights all the way to zero.</p>
+  <div class="widget" data-widget="penaltyPaths"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \text{L2: } \; \text{loss}(\mathbf w) + \lambda \lVert \mathbf w\rVert_2^2 = \text{loss}(\mathbf w) + \lambda \sum_i w_i^2, \qquad \text{L1: } \; \text{loss}(\mathbf w) + \lambda \sum_i \lvert w_i\rvert. \]
+    <p>\(\lVert \mathbf w \rVert_2 = \sqrt{\sum_i w_i^2}\) is the length (the <strong>L2 norm</strong>) of the weight vector. For linear regression with data matrix \(X\) and targets \(\mathbf y\), the L2-penalised problem \(\min_{\mathbf w} \lVert \mathbf y - X\mathbf w\rVert^2 + \lambda\lVert \mathbf w\rVert^2\) has the exact solution \(\mathbf w = (X^\top X + \lambda I)^{-1} X^\top \mathbf y\), which is what the first widget computes. Remember this form: in <a href="#ch-marginal">Chapter 28</a> dropout turns out to be exactly such a penalty, with a twist.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Section 6.5 compares dropout with “L2 weight decay (more generally Tikhonov regularization (Tikhonov, 1943)), lasso (Tibshirani, 1996), KL-sparsity and max-norm regularization” on one MNIST network <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §6.5, Table 9</a>. Deepnet implements both penalties inside the weight update, as <code>apply_l2_decay</code> and <code>apply_l1_decay</code> <a class="cite" href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/parameter.py#L80-L106">parameter.py Update</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What happens to an L2-regularized fit as λ becomes very large?","o":["It passes through every training point","All weights shrink towards 0 and the fit becomes too simple (underfitting)","Nothing changes"],"a":1,"e":"A huge λ makes any non-zero weight expensive, so the best solution is almost flat. The art is a moderate λ.","h":"What does the penalty reward?"},
+    {"q":"Which penalty tends to make some weights exactly zero?","o":["L1","L2","Neither"],"a":0,"e":"The L1 penalty has a corner at zero (|w| is not smooth there), so small weights are pushed exactly onto it. L2 only shrinks them.","h":"Try the second widget with L1 and a moderate λ."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-ensemble" data-title="Combining many models" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Combining many models</h2>
+    <p class="lede">The average prediction of several different models is usually better than any one of them, but averaging big networks is expensive.</p>
+  </header>
+  <p>Ask many people to guess the weight of an ox and average their guesses: the average is often better than almost every individual guess, because their errors partly cancel. Machine learning uses the same trick, called <strong>model combination</strong> or an <strong>ensemble</strong>: train several models and average their predicted probabilities.</p>
+  <div class="widget" data-widget="ensembleAvg"></div>
+  <p>Averaging only helps if the models make <em>different</em> mistakes. For neural networks that means different architectures or different training data, and the paper points out why both are painful: each architecture needs its own hyperparameter search, big networks need lots of data, and at test time every model must be run, which is too slow when answers are needed quickly.</p>
+  <p>There are two natural ways to average probabilities. The <strong>arithmetic mean</strong> adds them and divides by the number of models. The <strong>geometric mean</strong> multiplies them and takes the root; it must then be <strong>renormalised</strong> (divided by its total) so the class probabilities add to 1 again.</p>
+  <div class="widget" data-widget="meanTypes"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \text{arithmetic: } \bar P(c) = \frac{1}{K}\sum_{k=1}^{K} P_k(c), \qquad \text{normalised geometric: } \tilde P(c) = \frac{\big(\prod_{k=1}^{K} P_k(c)\big)^{1/K}}{\sum_{c'} \big(\prod_{k=1}^{K} P_k(c')\big)^{1/K}}. \]
+    <p>\(P_k(c)\) is model \(k\)’s probability for class \(c\), and \(K\) is the number of models. \(\prod\) means “multiply together”. Taking logs turns the geometric mean into an average of log-probabilities, which is why it fits so naturally with softmax outputs (<a href="#ch-averaging">Chapter 12</a>).</p>
+  </div>
+  <p>The ideal average, the paper says, is <strong>Bayesian</strong>: average the predictions of <em>all possible settings of the weights</em>, each weighted by its <strong>posterior probability</strong>, i.e. how plausible it is given the training data. That is the “gold standard”, but it is only feasible for simple or small models.</p>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“With unlimited computation, the best way to ‘regularize’ a fixed-sized model is to average the predictions of all possible settings of the parameters, weighting each setting by its posterior probability given the training data.” The authors want to approach this Bayesian gold standard with much less computation, “by approximating an equally weighted geometric mean of the predictions of an exponential number of learned models that share parameters” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §1</a>. Section 6.4 later compares dropout with a real Bayesian neural network.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Three models give class A the probabilities 0.9, 0.9 and 0.01. Which average gives class A a lower score?","o":["The arithmetic mean","The geometric mean","They are the same"],"a":1,"e":"Arithmetic: 0.60. Geometric: (0.9×0.9×0.01)^(1/3) ≈ 0.20 before renormalising. One strong “no” drags the geometric mean down.","h":"Multiply, then take the cube root."},
+    {"q":"Why is averaging many large separately trained networks impractical, according to the paper?","o":["Averages are always worse","Training many architectures needs separate tuning and lots of data, and running all of them at test time is too slow","Networks cannot be averaged"],"a":1,"e":"The paper lists all three costs: hyperparameter search per architecture, data per network, and test-time computation (§1).","h":"Think of cost during training and at test time."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-random" data-title="Coin flips and averages" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Coin flips and averages</h2>
+    <p class="lede">Dropout is driven by biased coins; their averages behave in simple, exact ways.</p>
+  </header>
+  <p>A <strong>random variable</strong> is a number decided by chance. The simplest is a <strong>Bernoulli</strong> variable with parameter \(p\): it is 1 with probability \(p\) and 0 otherwise, like a coin that lands heads a fraction \(p\) of the time. We write \(r \sim \text{Bernoulli}(p)\), “r is drawn from Bernoulli(p)”.</p>
+  <p>Two summaries describe a random variable. Its <strong>expected value</strong> \(E[r]\) is its long-run average. Its <strong>variance</strong> \(\mathrm{Var}[r]\) is the average squared distance from that average: how much it wobbles. A <strong>Gaussian</strong> (normal) variable \(\mathcal N(\mu, \sigma^2)\) is the familiar bell curve with mean \(\mu\) and variance \(\sigma^2\) (\(\sigma\) is its <strong>standard deviation</strong>).</p>
+  <div class="widget" data-widget="bernoulliLab"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ r \sim \text{Bernoulli}(p): \quad E[r] = 1\cdot p + 0\cdot(1-p) = p, \qquad \mathrm{Var}[r] = E[(r - p)^2] = p(1-p). \]
+    <p>Two rules make dropout analysis easy. <b>Linearity of expectation:</b> the average of a sum is the sum of the averages, \(E[\sum_j a_j r_j] = \sum_j a_j E[r_j]\), for any fixed numbers \(a_j\). <b>Independence:</b> for independent \(r_j\), variances add: \(\mathrm{Var}[\sum_j a_j r_j] = \sum_j a_j^2\,\mathrm{Var}[r_j]\). Example: with \(p = 0.5\), \(\mathrm{Var}[r] = 0.25\); for the value \(1/p\) instead of 1 (used in <a href="#ch-gauss">Chapter 29</a>) the mean becomes 1 and the variance \((1-p)/p\).</p>
+  </div>
+  <p>These two rules tell us what happens when a unit adds up inputs that are each randomly kept or dropped:</p>
+  <div class="widget" data-widget="sumOfCoins"></div>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>If each of 8 friends shows up to a party with probability 0.5, you expect 4 of them, and the cake they bring is, on average, half of what all 8 would bring. That “on average, \(p\) times the full amount” is the whole reason behind dropout’s test-time rule in <a href="#ch-testtime">Chapter 11</a>.</p></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The dropout model is written with “a vector of independent Bernoulli random variables each of which has probability \(p\) of being 1” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §4</a>, and its Gaussian variant multiplies by \(\mathcal N(1, \sigma^2)\) noise <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §10</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"r ~ Bernoulli(0.8). What are E[r] and Var[r]?","o":["0.8 and 0.16","0.8 and 0.8","0.5 and 0.25"],"a":0,"e":"E[r] = p = 0.8; Var[r] = p(1 − p) = 0.8 × 0.2 = 0.16.","h":"E = p, Var = p(1 − p)."},
+    {"q":"z = 2r₁ + 3r₂ with independent r₁, r₂ ~ Bernoulli(0.5). What is E[z]?","o":["5","2.5","1.25"],"a":1,"e":"Linearity: E[z] = 2×0.5 + 3×0.5 = 2.5, half of the full sum 5.","h":"The average of a sum is the sum of the averages."},
+    {"q":"For which p does a Bernoulli variable wobble the most (largest variance)?","o":["p = 0.1","p = 0.5","p = 0.99"],"a":1,"e":"p(1 − p) peaks at p = 0.5, where it equals 0.25. Near 0 or 1 the outcome is almost certain.","h":"Maximise p(1 − p)."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-conv" data-title="Convolutional nets in one chapter" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Convolutional nets in one chapter</h2>
+    <p class="lede">For images, small filters slide over the picture and pooling summarises what they find; most parameters end up in the fully connected layers on top.</p>
+  </header>
+  <p>The networks so far are <strong>fully connected</strong>: every unit sees every input. For images there is a better design. A <strong>convolutional layer</strong> learns small <strong>filters</strong> (for example 5×5 pixels) and applies each one at every position of the image. Each filter produces a <strong>feature map</strong>: how strongly the pattern it looks for (an edge, a corner, a blob) appears at each place. Using the same few weights everywhere is called <strong>weight sharing</strong>. A <strong>max-pooling</strong> layer then keeps only the largest value in each small window, which makes the result smaller and less sensitive to small shifts.</p>
+  <div class="widget" data-widget="convDemo"></div>
+  <p>A typical <strong>convolutional neural network</strong> (conv net, LeCun et al., 1989) stacks a few convolution + pooling stages and finishes with fully connected layers that make the decision. The paper’s best network for house-number photos is exactly that:</p>
+  <div class="widget" data-widget="convParams"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>SVHN network: “three convolutional layers each followed by a max-pooling layer. The convolutional layers have 96, 128 and 256 filters respectively. Each convolutional layer has a 5 × 5 receptive field applied with a stride of 1 pixel. Each max pooling layer pools 3 × 3 regions at strides of 2 pixels. The convolutional layers are followed by two fully connected hidden layers having 2048 units each”, all ReLU <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper App. B.2</a>. The ImageNet network is that of Krizhevsky et al. (2012) <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §6.1.4</a>.</p></div>
+  <div class="callout warn"><div class="ct">⚠ Careful</div><p>The parameter counts in the second widget are the book’s arithmetic from App. B.2. The paper does not give the padding, so the size of the last feature map (and with it the first fully connected layer) is an assumption you can change.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A 5×5 filter on a colour image (3 channels) has how many weights, not counting its bias?","o":["25","75","3072"],"a":1,"e":"5 × 5 positions × 3 colour channels = 75 weights, reused at every position of the image.","h":"The filter covers 5×5 pixels in each of the 3 channels."},
+    {"q":"What does max-pooling do?","o":["Keeps the largest value in each window, shrinking the map and ignoring small shifts","Adds all values together","Doubles the image size"],"a":0,"e":"Pooling summarises each region by its strongest response, so a feature moved by one pixel still gives the same pooled value.","h":"The name says what it keeps."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART II · THE DROPOUT MODEL -->
+<section class="chapter" id="ch-idea" data-title="The big idea" data-part="Part II · The dropout model">
+  <header>
+    <div class="kicker">The dropout model</div>
+    <h2 class="title">The big idea</h2>
+    <p class="lede">For every training case, delete a random subset of units; at test time, use the whole network with its weights scaled down.</p>
+  </header>
+  <p>Here is the paper’s whole idea in one sentence: <strong>dropout</strong> means temporarily removing units from the network, “along with all its incoming and outgoing connections”, at random, independently for every presentation of every training case. In the simplest case each unit is kept (“retained”) with a fixed probability \(p\), independently of all others. The network that survives is called a <strong>thinned network</strong>.</p>
+  <div class="widget" data-widget="thinnedNet"></div>
+  <p>Count them: a network with \(n\) droppable units has \(2^n\) possible thinned networks, because each unit is either in or out. They all <em>share the same weights</em>, so the number of parameters does not grow. Training with dropout therefore “can be seen as training a collection of \(2^n\) thinned networks with extensive weight sharing, where each thinned network gets trained very rarely, if at all”.</p>
+  <p>At test time, running all \(2^n\) networks and averaging them is impossible. Instead the paper uses one network without dropout whose outgoing weights are multiplied by \(p\). <a href="#ch-testtime">Chapter 11</a> shows why this matches each unit’s expected output, and <a href="#ch-averaging">Chapter 12</a> why it approximates averaging all the thinned networks. Does it work? Here are two identical toy networks, one trained with dropout:</p>
+  <div class="widget" data-widget="dropVsPlain"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The idea and its vocabulary are in §1 and Fig. 1: “a neural net with \(n\) units, can be seen as a collection of \(2^n\) possible thinned neural networks. These networks all share weights so that the total number of parameters is still \(O(n^2)\), or less.” The retention probability “can simply be set at 0.5, which seems to be close to optimal for a wide range of networks and tasks. For the input units, however, the optimal probability of retention is usually closer to 1 than to 0.5” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §1, Fig. 1</a>. Compared with denoising autoencoders, where 5 % input noise typically works best, “dropping out 20 % of the input units and 50 % of the hidden units was often found to be optimal” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §3</a>.</p></div>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>Imagine a team where, every day, a random half of the members stay home. Nobody can count on a particular colleague to fix their mistakes, so everyone learns to do something useful alone. That is the next chapter.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A network has 10 hidden units that can be dropped. How many different thinned networks can dropout produce from them?","o":["10","20","1024"],"a":2,"e":"Each unit is in or out: 2¹⁰ = 1024 combinations, all using the same weights.","h":"Two choices per unit, ten units."},
+    {"q":"How often is a new thinned network sampled during training?","o":["Once, at the start","For every presentation of every training case","Once per epoch"],"a":1,"e":"§1: “For each presentation of each training case, a new thinned network is sampled and trained.”","h":"Look at the masks per row of a minibatch."},
+    {"q":"Why does dropout not multiply the number of parameters by 2ⁿ?","o":["Because the thinned networks share one set of weights","Because only one thinned network is ever used","Because n is small"],"a":0,"e":"A thinned network is just the full network with some units switched off, so all of them read and update the same weights.","h":"What does a thinned network own that the full one does not?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-motivation" data-title="Why it works: co-adaptation" data-part="Part II · The dropout model">
+  <header>
+    <div class="kicker">The dropout model</div>
+    <h2 class="title">Why it works: co-adaptation</h2>
+    <p class="lede">Units that cannot rely on specific partners must each learn something useful on their own.</p>
+  </header>
+  <p>The paper’s motivation comes from biology. Sexual reproduction takes half the genes of one parent and half of the other, which breaks up sets of genes that had evolved to work well together. That seems wasteful, yet most advanced organisms reproduce sexually. One explanation (Livnat et al., 2010) is that natural selection rewards <strong>mix-ability</strong>: a gene that works well with many random partners is more robust than one that only works inside a fixed team.</p>
+  <p>Translated to networks: during ordinary training, each weight is adjusted to reduce the loss “given what all other units are doing”, so units can learn to fix up each other’s mistakes. These delicate team arrangements are called <strong>co-adaptations</strong>. They fit the training set and often fail on new data. With dropout, any partner may be missing, so co-adaptations stop paying off.</p>
+  <div class="widget" data-widget="conspiracy"></div>
+  <p>Can we see the difference in trained networks? A direct test: remove units after training and see how badly each network suffers.</p>
+  <div class="widget" data-widget="knockout"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Section 2 gives both stories. Genes: “the role of sexual reproduction is not just to allow useful new genes to spread throughout the population, but also to facilitate this process by reducing complex co-adaptations”. Networks: “each hidden unit in a neural network trained with dropout must learn to work with a randomly chosen sample of other units”. Conspiracies: “Ten conspiracies each involving five people is probably a better way to create havoc than one big conspiracy that requires fifty people to all play their parts correctly” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §2</a>. Section 7.1 returns to the idea with pictures of learned features (<a href="#ch-features">Chapter 22</a>).</p></div>
+  <div class="callout warn"><div class="ct">⚠ Careful</div><p>Could the network beat dropout by keeping many copies of each unit? The paper says this is “a poor solution for exactly the same reason as replica codes are a poor way to deal with a noisy channel”: copies waste capacity. The units of a layer still learn different things. The knockout widget is the book’s own experiment, not one of the paper’s.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Each conspirator succeeds with probability 0.95. What is the chance that a plan needing all 50 succeeds?","o":["about 0.95","about 0.08","about 0.5"],"a":1,"e":"0.95⁵⁰ ≈ 0.077. A plan of 5 succeeds with 0.95⁵ ≈ 0.77.","h":"Multiply 0.95 by itself 50 times."},
+    {"q":"What does “co-adaptation” mean for hidden units?","o":["Units that learn identical features","Units that only work in combination with specific other units, for example by fixing each other’s mistakes","Units that are dropped together"],"a":1,"e":"Co-adapted units rely on each other. Dropout makes every partner unreliable, so each unit must be useful in many contexts.","h":"§2 and §7.1 use the word for units that depend on each other."},
+    {"q":"In the knockout widget, why does the dropout network degrade more gracefully?","o":["It has more units","During training it always worked with about half of its hidden units missing","Its weights are larger"],"a":1,"e":"Losing units at test time is a situation it practised on every training step.","h":"What did the dropout net experience during training?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-forward" data-title="The dropout forward pass" data-part="Part II · The dropout model">
+  <header>
+    <div class="kicker">The dropout model</div>
+    <h2 class="title">The dropout forward pass</h2>
+    <p class="lede">Before a layer’s outputs are passed on, multiply each one by its own random 0-or-1 gate.</p>
+  </header>
+  <p>Section 4 adds just one step to the standard forward pass of <a href="#ch-neuron">Chapter 1</a>. Each output \(y_j^{(l)}\) of layer \(l\) gets its own gate \(r_j^{(l)}\), a Bernoulli(\(p\)) coin. The <strong>thinned outputs</strong> \(\tilde y_j^{(l)} = r_j^{(l)} y_j^{(l)}\) are what the next layer reads. A gate of 0 deletes the unit for this case.</p>
+  <div class="widget" data-widget="fig3Unit"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §4, dropout network)</div>
+    \[ r_j^{(l)} \sim \text{Bernoulli}(p), \qquad \tilde{\mathbf y}^{(l)} = \mathbf r^{(l)} * \mathbf y^{(l)}, \qquad z_i^{(l+1)} = \mathbf w_i^{(l+1)}\,\tilde{\mathbf y}^{(l)} + b_i^{(l+1)}, \qquad y_i^{(l+1)} = f\big(z_i^{(l+1)}\big). \]
+    <p>\(\mathbf r^{(l)}\) is a vector of independent Bernoulli variables, one per unit of layer \(l\). \(*\) is the <strong>element-wise product</strong>: multiply the two vectors entry by entry (not a dot product). So \(\tilde{\mathbf y}^{(l)}\) equals \(\mathbf y^{(l)}\) with some entries set to 0. The last two lines are the standard network, reading \(\tilde{\mathbf y}\) instead of \(\mathbf y\). This is applied at every layer, with its own \(p\) per layer if wanted. Example from the widget: \(\mathbf y = (0.9, 0.2, 0.7)\), \(\mathbf r = (1, 0, 1)\) give \(\tilde{\mathbf y} = (0.9, 0, 0.7)\), and \(z = 1.2\cdot0.9 + 0.6\cdot0.7 - 0.3 = 1.2\).</p>
+  </div>
+  <p>In practice a whole minibatch goes through a layer at once, as a table with one row per training case and one column per unit. Every entry gets its own coin:</p>
+  <div class="widget" data-widget="maskBatch"></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>Deepnet’s forward pass fills a mask with uniform random numbers, keeps the entries greater than <code>dropout_prob</code> (the drop probability, \(1 - p\)), and multiplies the layer’s state by it, after the activation function: <code>layer.mask.fill_with_rand(); layer.mask.greater_than(layer.hyperparams.dropout_prob); layer.state.mult(layer.mask)</code> <a class="cite" href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/neuralnet.py#L186-L204">neuralnet.py l.186–204</a>. The dropout MNIST example sets <code>dropout_prob: 0.5</code> for hidden layers and <code>0.2</code> for the input layer, i.e. \(p = 0.5\) and \(p = 0.8\) <a class="cite" href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/examples/ff/model_dropout.pbtxt">examples/ff/model_dropout.pbtxt</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"y = (2, 4, 6) and r = (0, 1, 1). What is ỹ = r ∗ y?","o":["(0, 4, 6)","10","(2, 0, 0)"],"a":0,"e":"Element-wise: (0×2, 1×4, 1×6). The first unit is dropped for this case.","h":"Multiply entry by entry."},
+    {"q":"Deepnet’s dropout_prob is 0.2 for the input layer. What is the paper’s p for that layer?","o":["0.2","0.8","0.5"],"a":1,"e":"dropout_prob is the probability of dropping; the paper’s p is the probability of keeping, 1 − 0.2 = 0.8.","h":"The code compares the random number with the drop probability."},
+    {"q":"In a minibatch of 100 cases and a layer of 1024 units with p = 0.5, about how many gates are 1?","o":["512","51,200","102,400"],"a":1,"e":"Every one of the 100 × 1024 = 102,400 entries has its own coin; half of them, about 51,200, are 1.","h":"One coin per case per unit."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-testtime" data-title="Test time: shrink the weights" data-part="Part II · The dropout model">
+  <header>
+    <div class="kicker">The dropout model</div>
+    <h2 class="title">Test time: shrink the weights</h2>
+    <p class="lede">At test time every unit is present, so its outgoing weights are multiplied by p to give the next layer the input it saw on average during training.</p>
+  </header>
+  <p>After training we want one fixed network that gives repeatable answers. If we simply switched dropout off, each unit would suddenly receive about \(1/p\) times more input than it was used to (twice as much for \(p = 0.5\)). The fix (Fig. 2): keep every unit, but multiply its outgoing weights by \(p\).</p>
+  <div class="widget" data-widget="expectation"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §4)</div>
+    \[ W^{(l)}_{test} = p\,W^{(l)}, \qquad\text{because}\qquad E\Big[\sum_j w_{ij}\, r_j\, y_j\Big] = \sum_j w_{ij}\, E[r_j]\, y_j = \sum_j (p\, w_{ij})\, y_j. \]
+    <p>The left side is the average input a unit received during training (over the random gates \(r_j\), with the outputs \(y_j\) held fixed); the right side is what it receives at test time with weights \(p\,w_{ij}\). They are equal by linearity of expectation (<a href="#ch-random">Chapter 6</a>). For the input \(z\) this is exact. For the output \(f(z)\) it is only approximate, because \(f\) is curved and the average of \(f(z)\) is not \(f\) of the average; the widget’s right panel shows the small gap.</p>
+  </div>
+  <p>There is a second way to do the same bookkeeping. Section 10 mentions it in passing: instead of shrinking weights at test time, scale up the kept units by \(1/p\) during training and leave test time alone. This <strong>inverted dropout</strong> is what most libraries do, including the one that trains this book’s toy networks:</p>
+  <div class="widget" data-widget="invertedEquiv"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“If a unit is retained with probability \(p\) during training, the outgoing weights of that unit are multiplied by \(p\) at test time as shown in Figure 2. This ensures that for any hidden unit the expected output (under the distribution used to drop units at training time) is the same as the actual output at test time” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §1, Fig. 2, §4</a>. The inverted form: “scale up the retained activations by multiplying by \(1/p\) at training time and not modifying the weights at test time. These methods are equivalent with appropriate scaling of the learning rate and weight initializations at each layer” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §10</a>.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>Deepnet does neither literally: when not training it multiplies the layer’s <em>outputs</em> by \(p\), <code>layer.state.mult(1.0 - layer.hyperparams.dropout_prob)</code>, which has exactly the same effect on the next layer as multiplying the outgoing weights <a class="cite" href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/neuralnet.py#L199-L204">neuralnet.py l.199–204</a>. The shared library of this collection uses the inverted form (<code>NN.dropout</code> multiplies kept entries by \(1/p\)).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A unit was trained with p = 0.5. One of its outgoing weights is 0.8. What weight does the paper use for it at test time?","o":["0.8","0.4","1.6"],"a":1,"e":"W_test = pW = 0.5 × 0.8 = 0.4.","h":"Multiply by p."},
+    {"q":"Is the test-time output f(z) exactly equal to the average training-time output?","o":["Yes, always","Only the input z matches exactly; f(z) matches only approximately because f is non-linear","Neither matches"],"a":1,"e":"Linearity of expectation works for the weighted sum z. Passing through a curved f breaks exact equality.","h":"Compare the two panels of the expectation widget."},
+    {"q":"With inverted dropout (×1/p during training), what must be done at test time?","o":["Multiply weights by p","Nothing: use the trained weights as they are","Multiply weights by 1/p"],"a":1,"e":"The 1/p factor during training already made the average input equal to the full-network input, so the test network uses the weights unchanged.","h":"See the first bar of the second widget."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-averaging" data-title="Weight scaling as model averaging" data-part="Part II · The dropout model">
+  <header>
+    <div class="kicker">The dropout model</div>
+    <h2 class="title">Weight scaling as model averaging</h2>
+    <p class="lede">The one weight-scaled network is a cheap stand-in for averaging the predictions of all 2ⁿ thinned networks.</p>
+  </header>
+  <p>Training with dropout trains \(2^n\) weight-sharing networks. The “right” prediction is then an average over all of them, which <a href="#ch-ensemble">Chapter 5</a> taught us is usually better than any single model. The paper claims that the weight-scaled network approximates this average. For a tiny network we can check, by running every thinned network:</p>
+  <div class="widget" data-widget="enumerate"></div>
+  <p>Which average does weight scaling approximate? The introduction says “an equally weighted geometric mean”. For the very last layer the match is not approximate at all:</p>
+  <div class="widget" data-widget="oneLayerExact"></div>
+  <div class="callout math"><div class="ct">∑ The math (the book’s derivation)</div>
+    <p>Take a softmax output layer with weights \(W\) reading inputs \(\mathbf x\) that are dropped with gates \(\mathbf r\). Each thinned model predicts \(P_{\mathbf r}(c) \propto \exp(s_c(\mathbf r))\) with scores \(s_c(\mathbf r) = \sum_j w_{jc} r_j x_j + b_c\). The geometric mean, weighted by how likely each mask is, has logarithm</p>
+    \[ \sum_{\mathbf r} P(\mathbf r)\,\log P_{\mathbf r}(c) = \sum_{\mathbf r} P(\mathbf r)\, s_c(\mathbf r) - (\text{terms that do not depend on } c) = \sum_j (p\,w_{jc})\, x_j + b_c - \text{const}. \]
+    <p>After renormalising, the constant cancels and we get exactly \(\text{softmax}\big((pW)^\top \mathbf x + \mathbf b\big)\): the weight-scaled model. The middle step is linearity of expectation again, \(E[r_j] = p\). With hidden layers in between, the non-linear activations break this exactness, but the first widget shows that the approximation stays close. (With \(p = 0.5\) all masks are equally likely, so the weighting by \(P(\mathbf r)\) is the paper’s “equally weighted” mean. This derivation is the book’s; the paper states the conclusion without it.)</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“By doing this scaling, \(2^n\) networks with shared weights can be combined into a single neural network to be used at test time” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §1</a>. Dropout is “a way of doing an equally-weighted averaging of exponentially many models with shared weights” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §6.4</a>. Section 7.5 tests the approximation against Monte-Carlo averaging on MNIST (<a href="#ch-mc">Chapter 25</a>).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"For a single softmax layer with dropout on its inputs, the weight-scaled model equals which average of the thinned models?","o":["The arithmetic mean","The normalised geometric mean","Neither, only approximately"],"a":1,"e":"The log of the geometric mean is an average of scores, which linearity turns into the scores of the weight-scaled model.","h":"See the second widget’s two bold lines."},
+    {"q":"Why is the match only approximate in a network with hidden layers?","o":["Because there are too many thinned networks","Because the activation functions in between are non-linear, so averages do not pass through them","Because p is not 0.5"],"a":1,"e":"E[f(z)] ≠ f(E[z]) for curved f, so the hidden layers’ average outputs are not exactly the weight-scaled outputs.","h":"The same reason as in the expectation widget."},
+    {"q":"How many forward passes does exact averaging over all thinned networks need for one test case of a net with 12 droppable units, and how many does weight scaling need?","o":["4,096 and 1","12 and 12","4,096 and 4,096"],"a":0,"e":"2¹² = 4,096 thinned networks, versus one weight-scaled network. For real networks with thousands of units, exact averaging is out of the question.","h":"2 to the power of the number of droppable units."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-backprop" data-title="Training a thinned network" data-part="Part II · The dropout model">
+  <header>
+    <div class="kicker">The dropout model</div>
+    <h2 class="title">Training a thinned network</h2>
+    <p class="lede">Backpropagate through the thinned network only; weights of dropped units get zero gradient from that case.</p>
+  </header>
+  <p>Training needs almost no change. For each training case in a minibatch, sample a thinned network, run the forward pass and backpropagation “only on this thinned network”, then average the gradients over the minibatch as usual. A dropped unit’s output was multiplied by 0, so by the chain rule every gradient that flows through it is multiplied by 0 too: its incoming and outgoing weights learn nothing from that case.</p>
+  <div class="widget" data-widget="backpropMask"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \frac{\partial L}{\partial y_j^{(l)}} = r_j^{(l)}\,\frac{\partial L}{\partial \tilde y_j^{(l)}}, \qquad \frac{\partial L}{\partial w_{ij}^{(l+1)}} = \frac{\partial L}{\partial z_i^{(l+1)}}\,\tilde y_j^{(l)}. \]
+    <p>Both carry a factor \(r_j^{(l)}\): if the gate is 0, unit \(j\) passes back no error (left) and its outgoing weights see input 0 (right). The minibatch gradient is the average of these per-case gradients, so a weight’s update comes only from the cases that kept its unit. “Any training case which does not use a parameter contributes a gradient of zero for that parameter.”</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“The only difference is that for each training case in a mini-batch, we sample a thinned network by dropping out units. Forward and backpropagation for that training case are done only on this thinned network. The gradients for each parameter are averaged over the training cases in each mini-batch.” Momentum, annealed learning rates and L2 weight decay “were found to be useful for dropout neural networks as well” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §5.1</a>.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>Deepnet never builds a separate thinned network. The mask zeroes the stored state of dropped units, and the ReLU layer’s backward step multiplies the incoming error by the ReLU slope computed from that same state (<code>self.deriv.apply_rectified_linear_deriv(self.state)</code>), which is 0 for zeroed units <a class="cite" href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/relu_layer.py#L28-L30">relu_layer.py l.28–30</a>, <a class="cite" href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/neuralnet.py#L207-L235">neuralnet.py ComputeDown</a>. The book’s widget uses the shared autograd, where the mask enters as an ordinary multiplication.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Hidden unit 3 is dropped for training case A and kept for case B in a minibatch of two. What does unit 3’s outgoing weight gradient look like?","o":["Zero","Half of case B’s gradient (the average of 0 and case B’s value)","The sum of both cases’ gradients"],"a":1,"e":"Case A contributes 0, case B contributes its gradient, and the minibatch averages them.","h":"Average over the two cases."},
+    {"q":"Does dropout change the backpropagation algorithm itself?","o":["Yes, it needs a new algorithm","No: the mask is part of the forward computation, and the chain rule handles it like any multiplication","Yes, gradients are multiplied by p"],"a":1,"e":"A gate is just a multiplication by 0 or 1 (or 1/p). Ordinary backpropagation through it gives the right gradients.","h":"How does the chain rule treat multiplication by a constant?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-maxnorm" data-title="Max-norm, big steps and momentum" data-part="Part II · The dropout model">
+  <header>
+    <div class="kicker">The dropout model</div>
+    <h2 class="title">Max-norm, big steps and momentum</h2>
+    <p class="lede">Cap each unit’s weight vector, then take large, momentum-driven, gradually shrinking steps.</p>
+  </header>
+  <p>Dropout makes gradients very noisy: each step trains a different random network. The paper found a combination that works especially well with it. The first ingredient is <strong>max-norm regularization</strong>: limit the length of the vector of <em>incoming</em> weights of every hidden unit to at most a constant \(c\). Whenever an update pushes the vector outside the ball of radius \(c\), project it back onto the ball’s surface.</p>
+  <div class="widget" data-widget="maxNormBall"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §5.1)</div>
+    \[ \lVert \mathbf w \rVert_2 \le c, \qquad \text{after each update:}\quad \mathbf w \leftarrow \begin{cases} \mathbf w & \text{if } \lVert\mathbf w\rVert_2 \le c\\ c\,\mathbf w / \lVert\mathbf w\rVert_2 & \text{otherwise.}\end{cases} \]
+    <p>\(\mathbf w\) is the vector of weights coming into one hidden unit, \(\lVert\mathbf w\rVert_2\) its length. Unlike an L2 penalty, which always pulls weights towards 0, max-norm does nothing until the limit is reached, then stops the weights from growing further, whatever the learning rate.</p>
+  </div>
+  <p>The second ingredient is <strong>momentum</strong>: instead of stepping along the current gradient alone, keep a running “velocity” that remembers recent steps. It smooths out noisy gradients and speeds progress along long, gentle valleys.</p>
+  <div class="widget" data-widget="momentumBall"></div>
+  <p>The third is a <strong>large learning rate that decays</strong> over time. Early, big noisy steps explore; later, small steps settle into a minimum. Deepnet ramps the momentum up at the same time:</p>
+  <div class="widget" data-widget="schedules"></div>
+  <div class="callout math"><div class="ct">∑ The math (momentum and decay, as in deepnet and App. B.4)</div>
+    \[ \mathbf v \leftarrow \mu\,\mathbf v + \nabla L, \qquad \mathbf w \leftarrow \mathbf w - \varepsilon_t\,\mathbf v, \qquad \varepsilon_t = \varepsilon_0\,(1 + t/T)^{-1}. \]
+    <p>\(\mathbf v\) is the velocity, \(\mu\) the momentum (0 = plain SGD, close to 1 = long memory), \(\nabla L\) the minibatch gradient, \(\varepsilon_t\) the learning rate at step \(t\), \(\varepsilon_0\) its starting value and \(T\) the step count at which it has halved.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Max-norm, “previously used in the context of collaborative filtering (Srebro and Shraibman, 2005)”, “typically improves the performance of stochastic gradient descent training of deep neural nets, even when no dropout is used”. With dropout, “max-norm regularization, large decaying learning rates and high momentum provides a significant boost over just using dropout”. The proposed reason: the ball “makes it possible to use a huge learning rate without the possibility of weights blowing up”, and the dropout noise lets the optimizer explore regions it would not otherwise reach; as the learning rate decays it settles <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §5.1</a>. Values used: \(c = 2\) on MNIST, \(c = 4\) on SVHN and TIMIT; typical \(c\) is 3 to 4; momentum 0.95 to 0.99; learning rate 10 to 100 times that of a standard net; on TIMIT \(\varepsilon_0 = 0.1\) with decay \(\varepsilon_0(1 + t/T)^{-1}\) <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper App. A.2–A.3, B.1–B.4</a>.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>The update, then the projection: <code>w_delta.mult(momentum); …; w_delta.add_mult(gradient); w.add_mult(w_delta, -epsilon); if h.apply_weight_norm: w.norm_limit(h.weight_norm, axis=0)</code>. The projection works column by column, one column per receiving unit <a class="cite" href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/parameter.py#L80-L106">parameter.py l.80–106</a>. Schedules: momentum \(= \mu_{final} - (\mu_{final} - \mu_{initial})\,e^{-t/\tau}\), and learning rate <code>base_epsilon / (1 + step / epsilon_decay_half_life)</code> <a class="cite" href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/parameter.py#L108-L125">parameter.py l.108–125</a>. The dropout MNIST example uses <code>weight_norm: 3</code>, <code>base_epsilon: 1.0</code>, half-life 10,000, momentum 0.5 → 0.99 <a class="cite" href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/examples/ff/model_dropout.pbtxt">model_dropout.pbtxt</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A unit’s incoming weights are (3, 4) and c = 2. What are they after the max-norm projection?","o":["(3, 4)","(1.2, 1.6)","(2, 2)"],"a":1,"e":"‖w‖ = 5 > 2, so w ← 2·(3, 4)/5 = (1.2, 1.6). The direction is kept, the length becomes 2.","h":"Divide by the length, multiply by c."},
+    {"q":"Why does max-norm allow a very large learning rate?","o":["It makes gradients smaller","However big a step is, the weights are pulled back inside the ball, so they cannot blow up","It adds momentum"],"a":1,"e":"The projection bounds the weights regardless of the step size (§5.1).","h":"What stops the weights from growing?"},
+    {"q":"With momentum μ = 0.9, roughly how many recent gradients does the velocity average over?","o":["about 1","about 10","about 100"],"a":1,"e":"Each old gradient’s influence shrinks by a factor μ per step, so the memory is about 1/(1 − μ) = 10 steps. μ = 0.99 remembers about 100.","h":"The memory is about 1/(1 − μ)."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-pretrain" data-title="Pretraining, then dropout finetuning" data-part="Part II · The dropout model">
+  <header>
+    <div class="kicker">The dropout model</div>
+    <h2 class="title">Pretraining, then dropout finetuning</h2>
+    <p class="lede">Weights learned without labels can start a dropout network, if they are scaled up by 1/p and finetuned gently.</p>
+  </header>
+  <p>Labelled examples are expensive; unlabelled ones are cheap. <strong>Unsupervised pretraining</strong> first trains layers on unlabelled data to model the inputs, then uses those weights to start a classifier, which is then <strong>finetuned</strong> with labels by backpropagation. The paper mentions three ways: stacks of RBMs (a <strong>Deep Belief Net</strong>, DBN; RBMs are explained in <a href="#ch-rbm">Chapter 26</a>), <strong>autoencoders</strong>, which learn to reproduce their input through a hidden layer, and <strong>Deep Boltzmann Machines</strong> (DBM).</p>
+  <p>Pretraining ran without dropout, so a pretrained unit is used to seeing all of its inputs. To keep its expected input the same once dropout removes a fraction \(1 - p\) of them, the pretrained weights are scaled up by \(1/p\):</p>
+  <div class="widget" data-widget="scaleUp"></div>
+  <p>The paper’s second warning: the noise of dropout can wipe out what pretraining learned, if the finetuning learning rate is as large as the best one for a randomly started network. Try it on the toy, with an autoencoder as the pretrained layer:</p>
+  <div class="widget" data-widget="finetune"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“The weights obtained from pretraining should be scaled up by a factor of \(1/p\). This makes sure that for each unit, the expected output from it under random dropout will be the same as the output during pretraining.” The authors were concerned that dropout “might wipe out the information in the pretrained weights. This did happen when the learning rates used during finetuning were comparable to the best learning rates for randomly initialized nets. However, when the learning rates were chosen to be smaller, the information in the pretrained weights seemed to be retained” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §5.2</a>. On TIMIT, finetuning a DBN with dropout needed a smaller learning rate, about 0.01 <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper App. B.4</a>. Pretrained dropout nets give the best MNIST result of the paper, 0.79 % (<a href="#ch-mnist">Chapter 17</a>).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A pretrained weight is 0.3 and finetuning will use p = 0.5 on its input. In the paper’s convention, what value should it start from?","o":["0.15","0.3","0.6"],"a":2,"e":"Scale up by 1/p = 2, so the unit’s expected input under dropout equals its input during pretraining.","h":"Multiply by 1/p."},
+    {"q":"Why does the toy not need to rescale the autoencoder weights before finetuning?","o":["Because its dropout is inverted: kept units are already multiplied by 1/p during training","Because p = 1","Because autoencoders never use weights"],"a":0,"e":"Inverted dropout builds the 1/p factor into the training forward pass, so the expected input is already preserved.","h":"Recall Chapter 11’s two conventions."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART III · RESULTS -->
+<section class="chapter" id="ch-datasets" data-title="Seven data sets and how to score them" data-part="Part III · Results">
+  <header>
+    <div class="kicker">Results</div>
+    <h2 class="title">Seven data sets and how to score them</h2>
+    <p class="lede">The paper tests dropout on images, speech, text and genetics, to show it is a general technique, not a trick for one field.</p>
+  </header>
+  <p>The authors trained dropout networks on classification problems from four domains and report that “dropout improved generalization performance on <em>all</em> data sets compared to neural networks that did not use dropout”. Here are the data sets:</p>
+  <ul>
+    <li><b>MNIST</b>: handwritten digits, 28×28 grey pixels, 10 classes.</li>
+    <li><b>SVHN</b> (Street View House Numbers): 32×32 colour photos of digits on house fronts, from Google Street View.</li>
+    <li><b>CIFAR-10 and CIFAR-100</b>: 32×32 colour photos of 10 or 100 kinds of objects (planes, cats, ships…).</li>
+    <li><b>ImageNet</b>: large photos in 1000 categories (the ILSVRC competition subset).</li>
+    <li><b>TIMIT</b>: recordings of read English speech, labelled with the sound (phone) being spoken in each short time frame.</li>
+    <li><b>Reuters-RCV1</b>: newswire articles to be sorted into topics.</li>
+    <li><b>Alternative Splicing</b>: features of RNA, used to predict how genes are spliced in different tissues.</li>
+  </ul>
+  <div class="widget" data-widget="table1"></div>
+  <p>Each domain has its own score. For classification it is the <strong>classification error</strong>: the percentage of test cases whose most probable predicted class is wrong. With 1000 classes, ImageNet also uses the <strong>top-5 error</strong>: a case is wrong only if the true label is not among the five most probable ones. Speech uses the <strong>phone error rate</strong>, the error over predicted phone labels; and the splicing data uses <strong>code quality</strong>, explained in <a href="#ch-speech">Chapter 20</a>.</p>
+  <div class="widget" data-widget="topk"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Table 1 lists the sets with domain, dimensionality and sizes <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §6, Table 1</a>. The top-5 definition is in §6.1.4, and Fig. 6 shows four ImageNet test images with their four most probable labels: cheetah and bullet train are recognised; for a morel mushroom the top guess is stinkhorn, and for a hand glass it is scissors, “very reasonable predictions, even when its best guess is not correct” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §6.1.4, Fig. 6</a>. (The photos are not reproduced here.)</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A model’s five most probable labels for a photo are (dog, wolf, fox, cat, deer). The true label is fox. Is this case an error for top-1? For top-5?","o":["Error for both","Error for top-1, correct for top-5","Correct for both"],"a":1,"e":"Top-1 only counts the first guess (dog, wrong). Top-5 counts it correct because fox is among the five.","h":"Top-k asks whether the truth is among the k best guesses."},
+    {"q":"Which data set in Table 1 has the smallest training set?","o":["MNIST","Alternative Splicing","Reuters-RCV1"],"a":1,"e":"2932 training cases, against 60K for MNIST and 200K for Reuters. Small data is exactly where Bayesian methods shine (Chapter 20).","h":"Look at the bars on a log scale."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-mnist" data-title="MNIST" data-part="Part III · Results">
+  <header>
+    <div class="kicker">Results</div>
+    <h2 class="title">MNIST</h2>
+    <p class="lede">On handwritten digits, every ingredient of the dropout recipe lowers the error, and the gain holds across architectures.</p>
+  </header>
+  <p>MNIST is the paper’s workhorse. All results here are in the <strong>permutation-invariant</strong> setting: the network is not told that pixels form an image (shuffling the pixel order the same way for every image would not change anything), and no <strong>data augmentation</strong> (adding shifted or distorted copies of training images) is used. Under those rules the best standard networks reached about 1.60 % error.</p>
+  <div class="widget" data-widget="table2"></div>
+  <p>One more remarkable entry: the 2-layer network with 8192 units per layer has more than 65 million parameters and is trained on only 60,000 images. Standard regularization and early stopping struggle at that ratio; with dropout it reaches 0.95 % and “does not even need early stopping”.</p>
+  <p>Is dropout sensitive to the architecture? Figure 4 trains six architectures with the same hyperparameters, \(p\) included, and finds two separate bands of curves. The toy version:</p>
+  <div class="widget" data-widget="fig4Toy"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“With dropout the error reduces to 1.35 %. Replacing logistic units with rectified linear units (ReLUs) (Jarrett et al., 2009) further reduces the error to 1.25 %. Adding max-norm regularization again reduces it to 1.06 %.” All dropout nets use \(p = 0.5\) for hidden and \(p = 0.8\) for input units; DBM-pretrained dropout nets reach 0.79 % <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §6.1.1, Table 2</a>. Fig. 4’s networks have 2 to 4 hidden layers with 1024 or 2048 units each, all six combinations, with final momentum 0.95 and \(c = 2\); hyperparameters were tuned for the best validation error after 1 million updates, then the validation set was added back for the final training. Three-layer nets with 4096 or 8192 units did slightly worse than two-layer ones <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper Fig. 4, App. B.1</a>.</p></div>
+  <div class="callout warn"><div class="ct">⚠ Careful</div><p>Each step of the ladder changes one thing, but they are separate experiments from different sources; the rows are not one controlled ablation. The cleanest controlled comparison is Table 9 (<a href="#ch-regcompare">Chapter 21</a>).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Which single change lowers the MNIST error most in the random-start part of Table 2?","o":["Adding dropout (1.60 → 1.35)","Switching to ReLU (1.35 → 1.25)","Doubling the layer size (1.06 → 1.04)"],"a":0,"e":"0.25 points for dropout, 0.10 for ReLU, 0.19 for max-norm, 0.02 for doubling width.","h":"Subtract consecutive rows."},
+    {"q":"What does “permutation invariant” mean for MNIST?","o":["The network is not given the 2-D arrangement of pixels and no image-specific tricks are used","The digits are rotated","Labels are shuffled"],"a":0,"e":"The model treats the 784 pixels as an unordered list. Conv nets and distortions, which exploit image structure, are excluded.","h":"What would shuffling the pixel order change?"},
+    {"q":"What does Figure 4 show about hyperparameters?","o":["Each architecture needed its own tuned p","The same hyperparameters, p included, gave a large improvement for all six architectures","Dropout only helped the biggest network"],"a":1,"e":"The point of the experiment is robustness: one setting, two clearly separated bands of curves.","h":"Read the caption of Fig. 4 and §6.1.1."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-svhn" data-title="House numbers and tiny images" data-part="Part III · Results">
+  <header>
+    <div class="kicker">Results</div>
+    <h2 class="title">House numbers and tiny images</h2>
+    <p class="lede">In convolutional nets, dropping units in the convolutional layers too gives a further gain.</p>
+  </header>
+  <p>For real photographs the paper uses convolutional networks (<a href="#ch-conv">Chapter 7</a>). On SVHN about 600,000 training images of digits are available; the network has three conv layers and two fully connected layers. Dropout is applied everywhere, with a different \(p\) per layer:</p>
+  <div class="widget" data-widget="layerP"></div>
+  <div class="widget" data-widget="table3"></div>
+  <p>The surprise is the last step. One might expect dropout to matter only in the fully connected layers, which hold most of the parameters. But adding it to the convolutional layers too lowers the error from 3.02 % to 2.55 %.</p>
+  <p>CIFAR-10 and CIFAR-100 are small colour photos of 10 and 100 object classes. The images are preprocessed with <strong>global contrast normalization</strong> (subtract each colour channel’s mean intensity in each image) and <strong>ZCA whitening</strong> (decorrelate the pixels: centre the data, rotate onto its principal components, rescale each to unit variance, rotate back).</p>
+  <div class="widget" data-widget="table4"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“The best performing convolutional nets that do not use dropout achieve an error rate of 3.95 %. Adding dropout only to the fully connected layers reduces the error to 3.02 %. Adding dropout to the convolutional layers as well further reduces the error to 2.55 %.” Max-norm (\(c = 4\)) was used in all layers, momentum 0.95; validation used 6000 images (400 per class from the standard set, 200 per class from the extra set); inputs were RGB pixels normalised to zero mean and unit variance <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §6.1.2, Table 3, App. B.2</a>. CIFAR: 50,000 training and 10,000 test images, 5,000 held out for validation; same architecture and dropout rates as SVHN, smaller learning rates in the input layer; “No data augmentation was used for either data set (apart from the input dropout)” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §6.1.3, Table 4, App. B.3</a>. Fig. 5 shows sample images of both sets (not reproduced). <b>Maxout</b> (Goodfellow et al., 2013), the best entry in Tables 2–4, is a later unit type designed to work with dropout.</p></div>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>The paper’s explanation for the conv-layer gain: dropout low in the network “provides noisy inputs for the higher fully connected layers which prevents them from overfitting”. The conv layers do not need regularizing much themselves; the noise they pass up regularizes the layers that do.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"In the SVHN network, which layer drops the fewest units?","o":["The input layer (p = 0.9)","The first convolutional layer (p = 0.75)","The fully connected layers (p = 0.5)"],"a":0,"e":"Only 10 % of input pixels are dropped. Inputs carry the raw information and are dropped least, as §1 recommends.","h":"Highest p = fewest drops."},
+    {"q":"Why does dropout in the convolutional layers help, even though they have few parameters?","o":["It speeds up training","It feeds noisy inputs to the fully connected layers above, which keeps those from overfitting","It increases the number of filters"],"a":1,"e":"§6.1.2: the benefit comes through the layers above, which receive noisy inputs.","h":"Which layers overfit, and what do they read?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-imagenet" data-title="ImageNet" data-part="Part III · Results">
+  <header>
+    <div class="kicker">Results</div>
+    <h2 class="title">ImageNet</h2>
+    <p class="lede">A dropout conv net won the 2012 ImageNet competition, cutting the top-5 error from about 26 % to about 16 %.</p>
+  </header>
+  <p>ImageNet has over 15 million labelled high-resolution images in roughly 22,000 categories. The annual ILSVRC competition uses a subset of about 1000 images in each of 1000 categories. Test labels are public only for the 2010 edition, so most experiments use ILSVRC-2010; the 2012 competition is scored by the organisers on hidden labels. The network is the one of Krizhevsky et al. (2012), a large conv net with dropout in its fully connected layers.</p>
+  <div class="widget" data-widget="table56"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Our model based on convolutional nets and dropout won the ILSVRC-2012 competition.” “While the best methods based on standard vision features achieve a top-5 error rate of about 26 %, convolutional nets with dropout achieve a test error of about 16 % which is a staggering difference” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §6.1.4, Tables 5–6</a>. Architecture and implementation details are in Krizhevsky, Sutskever and Hinton, <a href="https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks">“ImageNet classification with deep convolutional neural networks”</a>, NIPS 2012.</p></div>
+  <div class="callout warn"><div class="ct">⚠ Careful</div><p>This comparison is between whole systems (conv net with dropout vs hand-designed features with SVMs), so it shows what dropout made possible, not dropout’s effect alone. The paper does not report the same ImageNet net without dropout.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Why are most of the paper’s ImageNet experiments on ILSVRC-2010 rather than 2012?","o":["2010 is bigger","Only the 2010 test labels are publicly available","2012 has no photos"],"a":1,"e":"§6.1.4: “ILSVRC-2010 is the only version of ILSVRC for which the test set labels are available.”","h":"How can you score a test set whose labels you do not have?"},
+    {"q":"In Table 6, averaging five dropout conv nets lowers top-5 validation error from 18.2 % to 16.4 %. What idea from Part I is that?","o":["Model combination (an ensemble)","Early stopping","Max-norm"],"a":0,"e":"An ensemble of five networks, each of which is itself an implicit average of thinned networks.","h":"Chapter 5."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-speech" data-title="Speech, text and genetics" data-part="Part III · Results">
+  <header>
+    <div class="kicker">Results</div>
+    <h2 class="title">Speech, text and genetics</h2>
+    <p class="lede">Dropout helps speech recognition a lot, news classification a little, and on a tiny genetics data set it comes second only to a Bayesian network.</p>
+  </header>
+  <h3>Speech: TIMIT</h3>
+  <p>TIMIT has recordings of 680 speakers from 8 major dialects of American English, each reading ten phonetically rich sentences. The sound is cut into short frames, each described by 120 numbers (log filter-bank energies); the network sees a window of 21 consecutive frames (21 × 120 = 2520 inputs, Table 1) and predicts the phone label of the middle frame.</p>
+  <div class="widget" data-widget="table7"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“A 6-layer net gives a phone error rate of 23.4 %. Dropout further improves it to 21.8 %. … A 4-layer net pretrained with a stack of RBMs get a phone error rate of 22.7 %. With dropout, this reduces to 19.7 %” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §6.2, Table 7</a>. Setup: Kaldi toolkit preprocessing, \(p = 0.8\) input and 0.5 hidden, max-norm \(c = 4\), momentum 0.95, learning rate 0.1 decayed as \(\varepsilon_0(1+t/T)^{-1}\); RBMs trained with CD-1; finetuning a DBN with dropout needed a smaller rate (about 0.01), and max-norm then gave no improvement <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper App. B.4</a>.</p></div>
+  <h3>Text: Reuters-RCV1</h3>
+  <p>A document is turned into a <strong>bag of words</strong>: how often each of the 2000 vocabulary words occurs, ignoring order. From over 800,000 Reuters articles in 103 topic classes the authors built a subset of 402,738 articles in 50 topics, each in exactly one, split into equal training and test halves. The best network without dropout had 31.05 % error; with dropout 29.62 %, a much smaller gain than for images and speech. The paper’s suggested reason: with more than 200,000 training examples, overfitting “is not a very serious problem” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §6.3, App. B.5</a>.</p>
+  <h3>Genetics: dropout vs a Bayesian neural network</h3>
+  <p>A <strong>Bayesian neural network</strong> (Neal, 1996) does the proper averaging of <a href="#ch-ensemble">Chapter 5</a>: over network weights, weighting each by how well it fits the data and a prior. Dropout weights all its thinned networks equally. Bayesian nets are excellent when data is scarce, but slow to train and hard to scale. The test: predicting <strong>alternative splicing</strong> (which pieces of a gene’s RNA are kept, depending on the tissue) from 1014 RNA features of 3665 cassette exons, in 4 tissue types derived from 27 mouse tissues. For each exon and tissue the target is a distribution over 3 states (inc, exc, nc), and the score is <strong>code quality</strong>:</p>
+  <div class="widget" data-widget="codeQuality"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper App. B.6)</div>
+    \[ \text{Code quality} = \sum_{i=1}^{|\text{data points}|}\ \sum_{t \in \text{tissue types}}\ \sum_{s \in \{inc,\,exc,\,nc\}} p^s_{i,t}\,\log\!\left(\frac{q^s_t(r_i)}{\bar p^{\,s}}\right). \]
+    <p>\(p^s_{i,t}\) is the target probability (from lab experiments) of state \(s\) for exon \(i\) in tissue \(t\); \(q^s_t(r_i)\) is the model’s predicted probability given the exon’s features \(r_i\); \(\bar p^{\,s}\) is the average of \(p^s_{i,t}\) over all \(i\) and \(t\). Each term rewards predicting more probability than the average where the target puts its mass. It equals “bits gained over always predicting the average” minus the <strong>KL divergence</strong> \(\sum_s p^s \log(p^s/q^s)\), the standard measure of how far a predicted distribution is from a target one; that is the paper’s “negative KL divergence between the target and the predicted probability distributions (higher is better)” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §6.4, App. B.6</a>. The unit “bits” means the log is taken in base 2.</p>
+  </div>
+  <div class="widget" data-widget="table8"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“As expected, we found that Bayesian neural nets perform better than dropout. However, we see that dropout improves significantly upon the performance of standard neural nets and outperforms all other methods.” Other methods fight overfitting by shrinking the 1014 inputs with PCA first; dropout did not need that. “The dropout nets are very large (1000s of hidden units) compared to a few tens of units in the Bayesian network.” Setup: two layers of 1024 units, \(p = 0.5\) hidden and 0.7 input, max-norm with high decaying learning rates, the same 5 folds as Xiong et al. (2011) <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §6.4, Table 8, App. B.6</a>.</p></div>
+  <div class="callout warn"><div class="ct">⚠ Careful</div><p>Table 7 lists 20.7 % for the 8-layer DBN-pretrained net without dropout, but the text says the 8-layer error “reduces from 20.5 % to 19.7 %”; 20.5 % is the 5-layer mcRBM row. The widget shows the table’s values.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Why was dropout’s gain on Reuters much smaller than on images?","o":["Text cannot be dropped out","The data set is large (over 200,000 training documents), so overfitting was not a serious problem","The network was too small"],"a":1,"e":"Dropout is a regularizer: it helps most where overfitting hurts most (App. B.5).","h":"What does dropout fight?"},
+    {"q":"A model predicts exactly the average distribution p̄ for every exon. What code quality does it get?","o":["0","Infinitely negative","The maximum"],"a":0,"e":"Every term is p·log(p̄/p̄) = p·log 1 = 0. Code quality measures improvement over the average.","h":"log(1) = 0."},
+    {"q":"How does dropout’s averaging differ from a Bayesian neural network’s?","o":["Dropout weights all thinned networks equally; a Bayesian net weights each network by its prior and how well it fits the data","They are the same","Bayesian nets average only two networks"],"a":0,"e":"§6.4: equally weighted vs posterior-weighted averaging. The Bayesian way is more correct, but much more expensive.","h":"What weight does each model get?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-regcompare" data-title="Against other regularizers" data-part="Part III · Results">
+  <header>
+    <div class="kicker">Results</div>
+    <h2 class="title">Against other regularizers</h2>
+    <p class="lede">On one fixed network, dropout with max-norm beats L2, L1, KL-sparsity and max-norm alone.</p>
+  </header>
+  <p>The cleanest comparison in the paper: one architecture, 784-1024-1024-2048-10 with ReLUs, trained on MNIST with SGD and a different regularizer each time, each tuned on a validation set. Two regularizers are new here. Applying <strong>L1</strong> “towards the end of training” adds the absolute-value penalty of <a href="#ch-penalty">Chapter 4</a> late. <strong>KL-sparsity</strong> penalises hidden units whose average activation differs from a small target value, measured by the KL divergence between the two, which encourages each unit to be active only rarely.</p>
+  <div class="widget" data-widget="table9"></div>
+  <div class="widget" data-widget="regToy"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“The values of different hyperparameters associated with each kind of regularization (decay constants, target sparsity, dropout rate, max-norm upper bound) were obtained using a validation set. We found that dropout combined with max-norm regularization gives the lowest generalization error” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §6.5, Table 9</a>.</p></div>
+  <div class="callout warn"><div class="ct">⚠ Careful</div><p>On the toy, the regularizer strengths were set by hand and KL-sparsity is not implemented, so the toy is a sanity check of the ranking (dropout variants on top), not a reproduction. In the toy, max-norm alone rarely bites because plain SGD with a small learning rate keeps the weights short; in the paper, with large learning rates, it does.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"In Table 9, how much does adding dropout to max-norm lower the error?","o":["from 1.35 % to 1.05 %","from 1.62 % to 1.60 %","from 1.25 % to 1.05 %"],"a":0,"e":"Max-norm alone 1.35 %, dropout + max-norm 1.05 %.","h":"Compare the “Max-norm” and “Dropout + Max-norm” rows."},
+    {"q":"Why is Table 9 a fairer comparison than the ladder of Table 2?","o":["It uses more data","The architecture and training procedure are fixed and only the regularizer changes, each tuned on validation data","It uses a conv net"],"a":1,"e":"Holding everything else fixed isolates the effect of the regularizer.","h":"What changes between rows?"}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART IV · INSIDE A DROPOUT NETWORK -->
+<section class="chapter" id="ch-features" data-title="Features and sparsity" data-part="Part IV · Inside a dropout network">
+  <header>
+    <div class="kicker">Inside a dropout network</div>
+    <h2 class="title">Features and sparsity</h2>
+    <p class="lede">With dropout, each hidden unit learns a pattern that means something on its own, and only a few units are active at a time.</p>
+  </header>
+  <p>Section 7 looks inside trained networks to test the co-adaptation story of <a href="#ch-motivation">Chapter 9</a>. The simplest place to look is an <strong>autoencoder</strong>: a network that squeezes its input through one hidden layer and tries to reproduce it at the output. The incoming weights of each hidden unit are a <strong>feature</strong>: the input pattern that excites it most, which can be drawn as an image.</p>
+  <div class="widget" data-widget="aeFeatures"></div>
+  <p>A related property is <strong>sparsity</strong>. In a <strong>sparse representation</strong> each input activates only a few hidden units strongly, and each unit is active for only a few inputs. Dropout produced sparse codes in the paper even though nothing in the loss asked for them:</p>
+  <div class="widget" data-widget="sparsity"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Fig. 7 shows features of MNIST autoencoders with one hidden layer of 256 ReLUs. “Both autoencoders had similar test reconstruction errors. However, it is apparent that the features shown in Figure 7a have co-adapted in order to produce good reconstructions. Each hidden unit on its own does not seem to be detecting a meaningful feature. On the other hand, in Figure 7b, the hidden units seem to detect edges, strokes and spots in different parts of the image” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §7.1, Fig. 7</a>. On sparsity, with the same autoencoders and a random test minibatch: “The overall mean activation of hidden units is close to 2.0 for the autoencoder without dropout but drops to around 0.7 when dropout is used”, and the activation histogram with dropout has “a sharp peak at zero” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §7.2, Fig. 8</a>.</p></div>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>Why would dropout make codes sparse? A unit that is often switched off cannot be part of a delicate sum where many units each contribute a little; it is safer for each unit to signal something clearly, and for most units to stay silent when their pattern is absent. The paper reports the effect without proving why.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What is a hidden unit’s “feature” in Figures 7 and 12?","o":["Its vector of incoming weights, drawn as an image","Its bias","Its activation on one test image"],"a":0,"e":"The incoming weights show which input pattern makes the unit respond most strongly.","h":"Each small picture has one value per input pixel."},
+    {"q":"Both autoencoders in Fig. 7 reconstruct equally well. Why does the paper prefer the dropout one?","o":["It is faster","Its units detect meaningful parts (edges, strokes, spots) on their own instead of co-adapting, which tends to generalize better","It has more units"],"a":1,"e":"Equal reconstruction error, different internal organisation: the dropout units are individually meaningful (§7.1).","h":"What do the features look like?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-rate" data-title="How much to drop" data-part="Part IV · Inside a dropout network">
+  <header>
+    <div class="kicker">Inside a dropout network</div>
+    <h2 class="title">How much to drop</h2>
+    <p class="lede">Dropping too much makes a fixed-size network underfit; if the network grows to compensate, a wide range of p works, and 0.5 is close to best.</p>
+  </header>
+  <p>The retention probability \(p\) is dropout’s one new hyperparameter. Section 7.3 varies it in two ways. First, hold the number of hidden units \(n\) fixed: small \(p\) then leaves only a handful of units on during training. Second, hold \(pn\), the <em>expected</em> number of units kept, fixed: small \(p\) then means a bigger network.</p>
+  <div class="widget" data-widget="fig9"></div>
+  <div class="widget" data-widget="rateToy"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>With \(n\) fixed (784-2048-2048-2048-10, no input dropout), “having a small \(p\) means very few units will turn on during training. It can be seen that this has led to underfitting since the training error is also high … It becomes flat when \(0.4 \le p \le 0.8\) and then increases as \(p\) becomes close to 1.” With \(pn = 256\) for the first two hidden layers and \(pn = 512\) for the last, “the magnitude of errors for small values of \(p\) has reduced by a lot … (for \(p = 0.1\) it fell from 2.7 % to 1.7 %). Values of \(p\) that are close to 0.6 seem to perform best for this choice of \(pn\) but our usual default value of 0.5 is close to optimal” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §7.3, Fig. 9</a>. The curve values in the first widget are read off Fig. 9 and are approximate; note that panel (a) itself shows about 3.2 % at \(p = 0.1\), not the 2.7 % of the text.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"With n fixed and p = 0.1, both training and test error are high. What is the problem?","o":["Overfitting","Underfitting: too few units are present during training to fit even the training data","The learning rate is too small"],"a":1,"e":"High training error is the signature of underfitting. Only about 10 % of the units work on each case.","h":"Look at the training curve, not only the test curve."},
+    {"q":"A layer should keep about 256 units on average. With p = 0.25, how many units should it have?","o":["64","256","1024"],"a":2,"e":"pn = 256 → n = 256/0.25 = 1024. This is the n/p rule of the practical guide (App. A.1).","h":"Solve p·n = 256."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-datasize" data-title="How much data" data-part="Part IV · Inside a dropout network">
+  <header>
+    <div class="kicker">Inside a dropout network</div>
+    <h2 class="title">How much data</h2>
+    <p class="lede">Dropout cannot save a huge network on a tiny data set, and matters less when data is plentiful; in between there is a sweet spot.</p>
+  </header>
+  <p>A good regularizer should let big models generalize from small data sets. Section 7.4 trains the same large network on MNIST subsets from 100 to 50,000 images:</p>
+  <div class="widget" data-widget="fig10"></div>
+  <div class="widget" data-widget="sizeToy"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Data set sizes 100, 500, 1K, 5K, 10K and 50K, network 784-1024-1024-2048-10, \(p = 0.5\) hidden and 0.8 input. “For extremely small data sets (100, 500) dropout does not give any improvements. The model has enough parameters that it can overfit on the training data, even with all the noise coming from dropout. As the size of the data set is increased, the gain from doing dropout increases up to a point and then declines. This suggests that for any given architecture and dropout rate, there is a ‘sweet spot’ corresponding to some amount of data that is large enough to not be memorized in spite of the noise but not so large that overfitting is not a problem anyways” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §7.4, Fig. 10</a>. Values in the first widget are read off the log-scale plot and are approximate.</p></div>
+  <div class="callout warn"><div class="ct">⚠ About the toy’s small gains</div><p>This chapter also explains the toy: with 49 inputs, 500 training digits and networks small enough for a browser, the toy sits near the bottom-left of the paper’s curve, where gains are modest. The trend is the same as in the paper: no gain for the smallest sets, growing gains as data grows. The toy stops at 2,000 digits, so it does not reach the decline the paper sees at 50,000.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Why does dropout not help with only 100 training images?","o":["Dropout is switched off for small data","The network has so many parameters that it memorises the 100 images despite the noise","100 images cannot be dropped out"],"a":1,"e":"§7.4: the model “can overfit on the training data, even with all the noise coming from dropout”.","h":"Can noise stop memorisation of 100 images by millions of weights?"},
+    {"q":"Why does the gain shrink again for very large data sets?","o":["Because with enough data the standard network hardly overfits, so there is little left for a regularizer to fix","Because dropout breaks with big data","It does not shrink"],"a":0,"e":"The same reason as Reuters (Chapter 20): with plenty of data, overfitting “is not a problem anyways”.","h":"What does a regularizer remove?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-mc" data-title="Monte-Carlo averaging vs weight scaling" data-part="Part IV · Inside a dropout network">
+  <header>
+    <div class="kicker">Inside a dropout network</div>
+    <h2 class="title">Monte-Carlo averaging vs weight scaling</h2>
+    <p class="lede">Averaging about 50 random thinned networks matches the single weight-scaled network; weight scaling is a good approximation at a fiftieth of the cost.</p>
+  </header>
+  <p><a href="#ch-averaging">Chapter 12</a> checked weight scaling by running every thinned network of a tiny net. For real networks there are far too many. The practical alternative is <strong>Monte-Carlo model averaging</strong>: for each test case, sample \(k\) thinned networks with the training-time dropout, run each, and average their predicted probabilities. As \(k\) grows this approaches the true average over all thinned networks.</p>
+  <div class="widget" data-widget="mcToy"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \hat P_k(c \mid \mathbf x) = \frac{1}{k}\sum_{s=1}^{k} P\big(c \mid \mathbf x;\ \mathbf r^{[s]}\big), \qquad \mathbf r^{[s]} \sim \text{Bernoulli}(p) \text{ independently}, \qquad \hat P_k \xrightarrow{\;k\to\infty\;} E_{\mathbf r}\big[P(c\mid\mathbf x;\mathbf r)\big]. \]
+    <p>\(P(c \mid \mathbf x; \mathbf r^{[s]})\) is the prediction of the thinned network picked by the \(s\)-th random mask. The limit is the arithmetic average over all thinned networks, each weighted by its probability. The cost grows linearly with \(k\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>On MNIST, “It can be seen that around \(k = 50\), the Monte-Carlo method becomes as good as the approximate method. Thereafter, the Monte-Carlo method is slightly better than the approximate method but well within one standard deviation of it. This suggests that the weight scaling method is a fairly good approximation of the true model average” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §7.5, Fig. 11</a>. In Fig. 11 the weight-scaling error is about 1.05 % and Monte-Carlo starts near 1.3 % for one or two samples (read off, approximate).</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>Deepnet has a script for exactly this experiment: it writes the output-layer predictions of many dropout samples to disk (<code>WriteRepresentationToDisk(…, drop=True)</code>), then averages random subsets of \(k\) of them and reports the mean and standard deviation of the error over repeats <a class="cite" href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/mc_avg.py">mc_avg.py</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Monte-Carlo averaging with k = 50 costs how many forward passes per test case, compared with weight scaling?","o":["50 vs 1","1 vs 50","50 vs 50"],"a":0,"e":"Each sample is a full forward pass through a thinned network; weight scaling needs one pass through the full network.","h":"One pass per sampled network."},
+    {"q":"Which average does Monte-Carlo averaging converge to as k grows?","o":["The geometric mean of the thinned networks","The arithmetic mean of all thinned networks, weighted by their probability","The weight-scaled network"],"a":1,"e":"Averaging predicted probabilities of random samples estimates their expected value, an arithmetic mean. That both it and weight scaling (≈ geometric mean) agree so well is the evidence.","h":"It averages probabilities directly."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-rbm" data-title="Restricted Boltzmann machines" data-part="Part IV · Inside a dropout network">
+  <header>
+    <div class="kicker">Inside a dropout network</div>
+    <h2 class="title">Restricted Boltzmann machines</h2>
+    <p class="lede">An RBM gives every on/off pattern of its units an energy, and learns to make the patterns in the data likely.</p>
+  </header>
+  <p>Dropout is not only for feed-forward networks. Section 8 applies it to <strong>Restricted Boltzmann Machines</strong> (RBMs), the building block of the DBN pretraining used in Tables 2 and 7. An RBM has a layer of <strong>visible units</strong> \(\mathbf v\) (for example the pixels of a binarised image, each 0 or 1) and a layer of <strong>hidden units</strong> \(\mathbf h\), also 0 or 1. Every visible unit is connected to every hidden unit, and there are no connections within a layer: that is the “restricted”. Instead of computing an output, an RBM defines a probability for every joint pattern \((\mathbf v, \mathbf h)\).</p>
+  <div class="callout math"><div class="ct">∑ The math (paper §8.1)</div>
+    \[ P(\mathbf h, \mathbf v; \theta) = \frac{1}{\mathcal Z(\theta)} \exp\big(\mathbf v^\top W \mathbf h + \mathbf a^\top \mathbf h + \mathbf b^\top \mathbf v\big), \qquad \mathbf v \in \{0,1\}^D,\ \mathbf h \in \{0,1\}^F. \]
+    <p>\(D\) and \(F\) are the numbers of visible and hidden units, \(\theta = \{W, \mathbf a, \mathbf b\}\) the parameters: weights \(W\) (\(D\times F\)) and biases \(\mathbf a\) (hidden) and \(\mathbf b\) (visible). The exponent is minus the <strong>energy</strong> \(E(\mathbf v, \mathbf h)\): low energy, high probability. \(\mathcal Z(\theta)\), the <strong>partition function</strong>, adds \(\exp(-E)\) over all \(2^{D+F}\) patterns so that the probabilities sum to 1. Because hidden units do not talk to each other, given \(\mathbf v\) they are independent, each switching on with a logistic probability:</p>
+    \[ P(h_j = 1 \mid \mathbf v) = \sigma\Big(a_j + \sum_i W_{ij} v_i\Big), \qquad P(v_i = 1 \mid \mathbf h) = \sigma\Big(b_i + \sum_j W_{ij} h_j\Big), \]
+    <p>where \(\sigma\) is the logistic function. (The paper writes the hidden bias as \(b_j\) and the visible bias as \(a_i\) in these two conditionals, swapping the letters of its energy formula; the book keeps one convention throughout.)</p>
+  </div>
+  <div class="widget" data-widget="rbmEnumerate"></div>
+  <p>Training an RBM means raising the probability of the training patterns, which requires lowering the energy at the data and raising it elsewhere. The exact gradient needs \(\mathcal Z\), which is impossible to compute for real sizes, so RBMs are trained with <strong>contrastive divergence</strong> (Hinton et al., 2006). <strong>CD-1</strong>, the one-step version used in the paper, compares the data with a one-step reconstruction:</p>
+  <div class="widget" data-widget="cd1Step"></div>
+  <div class="callout math"><div class="ct">∑ The math (CD-1, background the paper cites)</div>
+    \[ \Delta W_{ij} = \varepsilon\big(v_i\,P(h_j{=}1\mid\mathbf v) - v'_i\,P(h_j{=}1\mid\mathbf v')\big), \qquad \mathbf h \sim P(\mathbf h\mid\mathbf v),\ \ \mathbf v' \sim P(\mathbf v\mid\mathbf h). \]
+    <p>The first term (the “positive phase”) strengthens connections active on the data; the second (the “negative phase”) weakens those active on the model’s own reconstruction \(\mathbf v'\). Biases are updated the same way. The toy uses probabilities instead of samples for \(\mathbf v'\), a common choice.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The RBM definition is in §8.1; “Learning algorithms developed for RBMs such as Contrastive Divergence (Hinton et al., 2006) can be directly applied for learning Dropout RBMs … In our experiments, we use CD-1” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §8.1–8.2</a>. A <strong>Deep Belief Net</strong> stacks RBMs, each trained on the hidden activities of the one below; a <strong>Deep Boltzmann Machine</strong> trains all layers jointly. The TIMIT RBMs were trained with CD-1, with Gaussian input units of variance 1 <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper App. B.4</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"An RBM has 3 visible and 2 hidden binary units. How many terms does the partition function Z add up?","o":["5","6","32"],"a":2,"e":"Every joint pattern of the 5 units: 2⁵ = 32. For 784 + 256 units this is 2¹⁰⁴⁰, hopeless to sum.","h":"Each of the 5 units is 0 or 1."},
+    {"q":"Why can all hidden units of an RBM be sampled at the same time given v?","o":["Because there are no hidden-to-hidden connections, so given v they are independent","Because they share one weight","Because Z is known"],"a":0,"e":"The “restricted” structure makes P(h | v) a product of one logistic probability per hidden unit.","h":"What connections does an RBM lack?"},
+    {"q":"In CD-1, what does the negative phase do?","o":["Weakens connections that are active on the model’s own reconstruction","Deletes hidden units","Strengthens connections on the data"],"a":0,"e":"Positive phase: data. Negative phase: reconstruction. The difference moves probability from what the model imagines towards what the data shows.","h":"Which term has the minus sign?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-drbm" data-title="Dropout RBMs" data-part="Part IV · Inside a dropout network">
+  <header>
+    <div class="kicker">Inside a dropout network</div>
+    <h2 class="title">Dropout RBMs</h2>
+    <p class="lede">Gate every hidden unit of an RBM with a random coin: the model becomes a mixture of exponentially many RBMs sharing weights.</p>
+  </header>
+  <p>A <strong>dropout RBM</strong> adds a vector of binary gates \(\mathbf r\), one per hidden unit, each 1 with probability \(p\). A gate of 0 removes its hidden unit: that unit is forced to be 0.</p>
+  <div class="callout math"><div class="ct">∑ The math (paper §8.1)</div>
+    \[ P(\mathbf r, \mathbf h, \mathbf v; p, \theta) = P(\mathbf r; p)\,P(\mathbf h, \mathbf v \mid \mathbf r; \theta), \qquad P(\mathbf r; p) = \prod_{j=1}^{F} p^{r_j}(1-p)^{1-r_j}, \]
+    \[ P(\mathbf h, \mathbf v \mid \mathbf r; \theta) = \frac{1}{\mathcal Z'(\theta, \mathbf r)} \exp\big(\mathbf v^\top W\mathbf h + \mathbf a^\top\mathbf h + \mathbf b^\top\mathbf v\big) \prod_{j=1}^{F} g(h_j, r_j), \qquad g(h_j, r_j) = \mathbb 1(r_j = 1) + \mathbb 1(r_j = 0)\,\mathbb 1(h_j = 0). \]
+    <p>\(P(\mathbf r; p)\) is the probability of a gate pattern: each gate contributes \(p\) if it is 1 and \(1 - p\) if it is 0. \(\mathbb 1(\cdot)\) is the <strong>indicator</strong>: 1 if the condition is true, 0 otherwise. So \(g(h_j, r_j) = 1\) whenever the gate is open, and when it is closed (\(r_j = 0\)) it is 1 only if \(h_j = 0\): a closed gate makes every pattern with \(h_j = 1\) impossible. \(\mathcal Z'(\theta, \mathbf r)\) normalises for each \(\mathbf r\). The conditionals become</p>
+    \[ P(\mathbf h \mid \mathbf r, \mathbf v) = \prod_{j=1}^{F} P(h_j \mid r_j, \mathbf v), \qquad P(h_j = 1 \mid r_j, \mathbf v) = \mathbb 1(r_j = 1)\,\sigma\Big(a_j + \sum_i W_{ij} v_i\Big), \qquad P(\mathbf v \mid \mathbf h) = \prod_{i=1}^{D} P(v_i \mid \mathbf h), \]
+    <p>with \(P(v_i = 1 \mid \mathbf h)\) unchanged from <a href="#ch-rbm">Chapter 26</a>. (Again the book writes \(a_j\) for the hidden bias where the paper writes \(b_j\).) The “Drop h₂” button in the previous chapter’s widget is exactly \(r_2 = 0\).</p>
+  </div>
+  <p>For a fixed \(\mathbf r\), the model is an ordinary RBM with some hidden units removed. So a dropout RBM is a mixture of \(2^F\) RBMs with shared weights, the same structure as a dropout network. Learning is CD-1 with one change: draw a fresh \(\mathbf r\) for every training case, and use only the retained hidden units.</p>
+  <div class="widget" data-widget="drbmTrain"></div>
+  <div class="widget" data-widget="drbmSparsity"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Conditioned on \(\mathbf r\), the distribution over \(\{\mathbf v, \mathbf h\}\) is same as the distribution that an RBM would impose, except that the units for which \(r_j = 0\) are dropped from \(\mathbf h\). Therefore, the Dropout RBM model can be seen as a mixture of exponentially many RBMs with shared weights each using a different subset of \(\mathbf h\)” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §8.1</a>. With 256 hidden units on MNIST, the dropout RBM’s features “seem to capture features that are coarser compared to the sharply defined stroke-like features in the standard RBM. There seem to be very few dead units in the dropout RBM relative to the standard RBM” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §8.3, Fig. 12</a>, and “dropout RBMs learn much sparser representations than standard RBMs even when no additional sparsity inducing regularizer is present” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §8.4, Fig. 13</a>.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>In deepnet’s Boltzmann-machine code the mask is drawn only in the positive phase (<code>if not neg_phase: layer.mask.fill_with_rand(); …</code>) and reused in the negative phase, so a training case keeps the same \(\mathbf r\) in both halves of CD; when not training, states are multiplied by \(p\) as in feed-forward nets <a class="cite" href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/dbm.py#L106-L115">dbm.py l.106–115</a>. The toy RBM does the same.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"If r₃ = 0, what is P(h₃ = 1 | r₃, v)?","o":["σ(a₃ + Σᵢ Wᵢ₃ vᵢ)","0","p"],"a":1,"e":"The indicator 𝟙(r₃ = 1) is 0, so the dropped unit is never on.","h":"Look at the indicator in front of σ."},
+    {"q":"What is \\(g(h_j, r_j)\\) when \\(r_j = 0\\) and \\(h_j = 1\\)?","o":["1","0","p"],"a":1,"e":"𝟙(r_j = 1) = 0 and 𝟙(r_j = 0)𝟙(h_j = 0) = 1·0 = 0. That pattern gets probability 0.","h":"Evaluate both indicator terms."},
+    {"q":"Why must the same r be used in the positive and negative phases of CD-1 for one training case?","o":["To save random numbers","Both phases must use the same thinned RBM, otherwise the update compares two different models","It does not matter"],"a":1,"e":"CD-1 measures the difference between data and reconstruction under one model; a fixed r defines that model (here, one member of the mixture).","h":"What model is being trained on this case?"}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART V · BEYOND BERNOULLI NOISE -->
+<section class="chapter" id="ch-marginal" data-title="Marginalising the noise" data-part="Part V · Beyond Bernoulli noise">
+  <header>
+    <div class="kicker">Beyond Bernoulli noise</div>
+    <h2 class="title">Marginalising the noise</h2>
+    <p class="lede">For linear regression, dropout on the inputs is exactly ridge regression with a penalty that grows as p shrinks.</p>
+  </header>
+  <p>Dropout minimises the loss “stochastically under a noise distribution”: every step sees a different random mask. What objective is it really minimising? Its average over all masks, the <strong>expected loss</strong>. Computing that average in closed form is called <strong>marginalising</strong> the noise. It is hard for deep networks, but for <strong>linear regression</strong> (predict a number \(y\) as a weighted sum \(\mathbf x\cdot\mathbf w\) of the inputs, by least squares) it can be done exactly.</p>
+  <div class="widget" data-widget="margCheck"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §9.1)</div>
+    <p>Data matrix \(X \in \mathbb R^{N\times D}\) (\(N\) data points as rows, \(D\) features as columns), targets \(\mathbf y \in \mathbb R^{N}\), weights \(\mathbf w \in \mathbb R^{D}\). Plain linear regression minimises \(\lVert \mathbf y - X\mathbf w \rVert^2\). Dropout on the inputs multiplies \(X\) element-wise by a random matrix \(R \in \{0,1\}^{N\times D}\), \(R_{ij} \sim \text{Bernoulli}(p)\). The marginalised objective and what it reduces to:</p>
+    \[ \underset{\mathbf w}{\text{minimize}}\ \ \mathbb E_{R\sim\text{Bernoulli}(p)}\big[\lVert \mathbf y - (R * X)\mathbf w\rVert^2\big] \;=\; \underset{\mathbf w}{\text{minimize}}\ \ \lVert \mathbf y - pX\mathbf w\rVert^2 + p(1-p)\,\lVert \Gamma \mathbf w\rVert^2, \qquad \Gamma = \big(\text{diag}(X^\top X)\big)^{1/2}. \]
+    <p>Why: for each row \(i\), the prediction \(\sum_j R_{ij}X_{ij}w_j\) has mean \(p\,(X\mathbf w)_i\) and variance \(p(1-p)\sum_j X_{ij}^2 w_j^2\) (<a href="#ch-random">Chapter 6</a>). The expected squared error is (mean error)² + variance, and summing the variances over rows gives \(p(1-p)\sum_j w_j^2 \sum_i X_{ij}^2 = p(1-p)\lVert\Gamma\mathbf w\rVert^2\). \(\text{diag}(X^\top X)\) keeps only the diagonal of \(X^\top X\): the sum of squares of each feature’s column, so \(\Gamma\) scales each weight by its feature’s spread. Dropout is therefore, in expectation, <strong>ridge regression</strong> (<a href="#ch-penalty">Chapter 4</a>) with a per-feature penalty: “If a particular data dimension varies a lot, the regularizer tries to squeeze its weight more.”</p>
+  </div>
+  <div class="widget" data-widget="ridgeEquiv"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §9.1, absorbing p)</div>
+    \[ \underset{\mathbf w}{\text{minimize}}\ \ \lVert \mathbf y - X\tilde{\mathbf w}\rVert^2 + \frac{1-p}{p}\,\lVert \Gamma \tilde{\mathbf w}\rVert^2, \qquad \tilde{\mathbf w} = p\,\mathbf w. \]
+    <p>Substitute \(\mathbf w = \tilde{\mathbf w}/p\) and divide by \(p^2\). Now the penalty strength \((1-p)/p\) is explicit: 0 at \(p = 1\) (no dropout), 1 at \(p = 0.5\), and growing without bound as \(p \to 0\). And \(\tilde{\mathbf w} = p\mathbf w\) is the test-time weight scaling of <a href="#ch-testtime">Chapter 11</a> appearing by itself.</p>
+  </div>
+  <p>For logistic regression and deep networks no exact formula exists. Wang and Manning (2013) observed that a unit’s input, a sum of many randomly kept terms, is close to Gaussian, and trained with that Gaussian instead of sampled masks (<strong>fast dropout</strong>):</p>
+  <div class="widget" data-widget="fastDropout"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>§9.1 derives the ridge equivalence. §9.2: “For logistic regression and deep neural nets, it is hard to obtain a closed form marginalized model. However, Wang and Manning (2013) showed that in the context of dropout applied to logistic regression, the corresponding marginalized model can be trained approximately. Under reasonable assumptions, the distributions over the inputs to the logistic unit and over the gradients of the marginalized model are Gaussian … This approximate marginalization outperforms Monte-Carlo dropout in terms of training time and generalization performance. However, the assumptions involved in this technique become successively weaker as more layers are added” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §9.1–9.2</a>. Related work cited: Chen et al. (2012), van der Maaten et al. (2013, “blankout noise”), Wager et al. (2013, dropout as an adaptive regularizer), Srivastava’s 2013 Master’s thesis <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §3, §9</a>.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>Deepnet contains a fast-dropout network (<code>FastDropoutNet</code>, with its own <code>GetFastDropoutGradient</code>) next to the ordinary one <a class="cite" href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/fastdropoutnet.py">fastdropoutnet.py</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"In the absorbed form, what is the penalty strength (1 − p)/p for p = 0.8?","o":["0.25","0.8","4"],"a":0,"e":"(1 − 0.8)/0.8 = 0.2/0.8 = 0.25. For p = 0.5 it is 1; for p = 0.2 it is 4.","h":"Plug p = 0.8 into (1 − p)/p."},
+    {"q":"Feature A’s column has sum of squares 100, feature B’s has 1. Which weight does the dropout penalty squeeze harder?","o":["A’s","B’s","Equally"],"a":0,"e":"The penalty is p(1 − p) Σⱼ Γⱼ² wⱼ² with Γⱼ² the column’s sum of squares, so A’s weight costs 100 times more.","h":"Γ = (diag(XᵀX))^½."},
+    {"q":"Why is the marginalised (deterministic) version attractive?","o":["It needs no random numbers and gives exact gradients of the expected loss, so training can be faster","It is always more accurate","It works for any network"],"a":0,"e":"§9 and §11: removing the sampling noise could cut dropout’s long training times; the catch is that exact versions exist only for simple models.","h":"What makes dropout training slow?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-gauss" data-title="Multiplicative Gaussian noise" data-part="Part V · Beyond Bernoulli noise">
+  <header>
+    <div class="kicker">Beyond Bernoulli noise</div>
+    <h2 class="title">Multiplicative Gaussian noise</h2>
+    <p class="lede">Multiplying activations by Gaussian noise with mean 1 works as well as dropping them, perhaps better.</p>
+  </header>
+  <p>Dropout multiplies each activation by a Bernoulli coin. Nothing forces the multiplier to be 0 or 1. Section 10 tries a bell curve: multiply each hidden activation \(h_i\) by \(r' \sim \mathcal N(1, \sigma^2)\). With mean 1, the expected activation is unchanged, so no weight scaling is needed at test time. With \(\sigma^2 = (1-p)/p\) the Gaussian multiplier has exactly the mean and variance of the inverted Bernoulli multiplier:</p>
+  <div class="widget" data-widget="noiseCompare"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §10)</div>
+    \[ h_i + h_i r,\ \ r \sim \mathcal N(0, 1) \;\equiv\; h_i r',\ \ r' \sim \mathcal N(1, 1), \qquad \text{generalised: } r' \sim \mathcal N(1, \sigma^2). \]
+    \[ r_b = \begin{cases} 1/p & \text{with probability } p\\ 0 & \text{otherwise}\end{cases}:\ \ E[r_b] = 1,\ \ \mathrm{Var}[r_b] = \frac{1-p}{p}; \qquad r_g \sim \mathcal N\Big(1, \frac{1-p}{p}\Big):\ \ E[r_g] = 1,\ \ \mathrm{Var}[r_g] = \frac{1-p}{p}. \]
+    <p>Check \(r_b\): \(E = p\cdot\frac1p = 1\), \(E[r_b^2] = p\cdot\frac{1}{p^2} = \frac1p\), so \(\mathrm{Var} = \frac1p - 1 = \frac{1-p}{p}\). Adding Gaussian noise whose standard deviation equals the activation itself is the same as multiplying by \(\mathcal N(1, 1)\), i.e. \(\sigma = 1\), which matches \(p = 0.5\). \(\sigma\) becomes a hyperparameter “just like \(p\)”.</p>
+  </div>
+  <div class="widget" data-widget="gaussToy"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“We recently discovered that multiplying by a random variable drawn from \(\mathcal N(1, 1)\) works just as well, or perhaps better than using Bernoulli noise.” For the same mean and variance, “\(r_g\) has the highest entropy and \(r_b\) has the lowest. Both these extremes work well, although preliminary experimental results shown in Table 10 suggest that the high entropy case might work slightly better.” Table 10: MNIST (2 layers of 1024 units; Bernoulli \(p = 0.5\) hidden, 0.8 input) 1.08 ± 0.04 vs 0.95 ± 0.04; CIFAR-10 (3 conv + 2 fully connected; \(p = (0.9, 0.75, 0.75, 0.5, 0.5, 0.5)\)) 12.6 ± 0.1 vs 12.5 ± 0.1; \(\sigma = \sqrt{(1-p)/p}\) per layer; 10 random seeds <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §10, Table 10</a>.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>Deepnet’s <code>mult_dropout</code> option is exactly \(\mathcal N(1, 1)\) noise: <code>layer.mask.fill_with_randn(); layer.mask.add(1); layer.state.mult(layer.mask)</code>, and at test time it does nothing (<code>pass</code>) <a class="cite" href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/neuralnet.py#L186-L204">neuralnet.py l.186–204</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Which σ gives Gaussian dropout the same noise variance as Bernoulli dropout with p = 0.8?","o":["0.8","0.5","0.2"],"a":1,"e":"σ² = (1 − p)/p = 0.25, so σ = 0.5.","h":"σ = √((1 − p)/p)."},
+    {"q":"Why does Gaussian dropout need no weight scaling at test time?","o":["Because the multiplier has mean 1, so the expected activation equals the noise-free activation","Because σ is small","Because Gaussian noise is never negative"],"a":0,"e":"E[h·r'] = h·E[r'] = h. (The inverted Bernoulli multiplier r_b has mean 1 for the same reason.)","h":"What is E[r']?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-guide" data-title="A practical guide" data-part="Part V · Beyond Bernoulli noise">
+  <header>
+    <div class="kicker">Beyond Bernoulli noise</div>
+    <h2 class="title">A practical guide</h2>
+    <p class="lede">Appendix A’s rules: make layers bigger by 1/p, raise the learning rate and momentum, cap weights with max-norm, and keep p between 0.5 and 0.8.</p>
+  </header>
+  <p>“Neural networks are infamous for requiring extensive hyperparameter tuning. Dropout networks are no exception.” Appendix A collects the authors’ heuristics, each of which you have now met in a chapter:</p>
+  <ul>
+    <li><b>A.1 Network size.</b> Only \(pn\) of a layer’s \(n\) units are present on average, and they cannot co-adapt freely. So if \(n\) units are right for a standard net, a dropout net should have at least \(n/p\) (<a href="#ch-rate">Chapter 23</a>).</li>
+    <li><b>A.2 Learning rate and momentum.</b> Dropout’s noisy gradients partly cancel each other, so use 10–100 times the learning rate that is best for a standard net, and momentum around 0.95 to 0.99 instead of the usual 0.9 (<a href="#ch-maxnorm">Chapter 14</a>).</li>
+    <li><b>A.3 Max-norm.</b> Large learning rates and momentum can make weights grow very large; cap each unit’s incoming weight vector at \(c\), typically 3 to 4.</li>
+    <li><b>A.4 Dropout rate.</b> Hidden \(p\) is typically 0.5 to 0.8; for real-valued inputs (image patches, speech frames) input \(p\) is typically 0.8. Small \(p\) needs a big \(n\), which slows training and can underfit; large \(p\) may not drop enough.</li>
+  </ul>
+  <div class="widget" data-widget="recipe"></div>
+  <p>And the settings the paper actually used (Appendix B):</p>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Data set</th><th>Network</th><th>p (input / hidden)</th><th>Max-norm c</th><th>Other</th></tr>
+    <tr><td>MNIST (B.1)</td><td>2–4 layers × 1024–2048 (Fig. 4); up to 2 × 8192 (Table 2)</td><td>0.8 / 0.5</td><td>2</td><td>final momentum 0.95; tuned for 1M updates; validation 10,000, then merged</td></tr>
+    <tr><td>SVHN (B.2)</td><td>conv 96-128-256 (5×5, pool 3×3 stride 2) + 2 × 2048, ReLU</td><td>0.9 / (0.75, 0.75, 0.5, 0.5, 0.5)</td><td>4</td><td>momentum 0.95; validation 6000</td></tr>
+    <tr><td>CIFAR-10/100 (B.3)</td><td>as SVHN</td><td>as SVHN</td><td>as SVHN</td><td>GCN + ZCA whitening; smaller input-layer learning rate; validation 5,000</td></tr>
+    <tr><td>TIMIT (B.4)</td><td>4–8 layers, 21 frames in</td><td>0.8 / 0.5</td><td>4</td><td>momentum 0.95, lr 0.1, \(\varepsilon_0(1+t/T)^{-1}\); finetuning lr ≈ 0.01</td></tr>
+    <tr><td>Reuters (B.5)</td><td>many architectures tried</td><td>—</td><td>—</td><td>50 classes, 2000-word vocabulary</td></tr>
+    <tr><td>Splicing (B.6)</td><td>2 × 1024</td><td>0.7 / 0.5</td><td>yes (value not given)</td><td>high decaying learning rates; 5 folds</td></tr>
+  </table></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>All four heuristics are quoted from <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper App. A.1–A.4</a>; the table from <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper App. B.1–B.6</a>. “The implementation is GPU-based. We used the excellent CUDA libraries—cudamat (Mnih, 2009) and cuda-convnet (Krizhevsky et al., 2012)” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper App. B</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A standard net works best with 400 units per layer. Following A.1, how many units should a dropout net with p = 0.5 have, at least?","o":["200","400","800"],"a":2,"e":"n/p = 400/0.5 = 800, so that about 400 are present on average.","h":"Divide by p."},
+    {"q":"Why does A.2 recommend a much larger learning rate for dropout nets?","o":["Because dropout gradients are noisy and many of them cancel each other","Because dropout nets have fewer weights","Because max-norm slows learning"],"a":0,"e":"“A lot of gradients tend to cancel each other. In order to make up for this, a dropout net should typically use 10–100 times the learning rate” (App. A.2).","h":"What does dropout do to the gradients?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-next" data-title="Limits and where this leads" data-part="Part V · Beyond Bernoulli noise">
+  <header>
+    <div class="kicker">Beyond Bernoulli noise</div>
+    <h2 class="title">Limits and where this leads</h2>
+    <p class="lede">Dropout costs training time; marginalising it, normalising activations and later architectures took the idea further.</p>
+  </header>
+  <p>The conclusion restates the paper in one line: “Standard backpropagation learning builds up brittle co-adaptations that work for the training data but do not generalize to unseen data. Random dropout breaks up these co-adaptations by making the presence of any particular hidden unit unreliable.” It improved networks in object classification, digit recognition, speech recognition, document classification and computational biology, giving state-of-the-art results on SVHN, ImageNet, CIFAR-100 and MNIST. “The central idea of dropout is to take a large model that overfits easily and repeatedly sample and train smaller sub-models from it.”</p>
+  <h3>Limits</h3>
+  <ul>
+    <li><b>Slower training.</b> “A dropout network typically takes 2-3 times longer to train than a standard neural network of the same architecture”, because each update trains a different random architecture, so the gradients “are not gradients of the final architecture that will be used at test time”. This noise is also what prevents overfitting: a trade-off <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §11</a>.</li>
+    <li><b>Exact marginalisation only for simple models.</b> For linear regression the equivalent regularizer is a modified L2 penalty; “For more complicated models, it is not obvious how to obtain an equivalent regularizer. Speeding up dropout is an interesting direction for future work” <a class="cite" href="https://jmlr.org/papers/v15/srivastava14a.html">Paper §11</a>.</li>
+    <li><b>Small or huge data.</b> No gain on tiny data sets, less gain on very large ones (<a href="#ch-datasize">Chapter 24</a>, Reuters in <a href="#ch-speech">Chapter 20</a>).</li>
+    <li><b>Equal weights, not Bayesian weights.</b> Where data is scarce, a real Bayesian network still wins (Table 8).</li>
+  </ul>
+  <div class="widget" data-widget="tradeoff"></div>
+  <h3>Where this leads in the collection</h3>
+  <p>The next lessons pick up threads from this one. <a href="../adam/">Adam (lesson 3)</a> is an optimizer that adapts the step size of every weight, an answer to the paper’s struggle with learning rates and momentum. <a href="../batchnorm/">Batch Normalization (lesson 4)</a> normalises activations inside the network; it also regularizes, and changed how much dropout people needed in conv nets. <a href="../resnet/">ResNet (lesson 5)</a> made very deep conv nets trainable. In <a href="../transformer/">the Transformer (lesson 8)</a> and <a href="../bert/">BERT (lesson 9)</a>, dropout is applied to attention weights and to every sub-layer’s output, a direct descendant of this paper. <a href="../word2vec/">Word2Vec (lesson 1)</a>, the previous lesson, shares this book’s foundations on neurons and gradient descent.</p>
+  <div class="quiz"><script type="application/json">[
+    {"q":"According to §11, what is the main cause of dropout’s longer training time?","o":["The masks take long to compute","Parameter updates are very noisy, since each case trains a different random architecture","Max-norm projections are slow"],"a":1,"e":"The gradients are not gradients of the final test-time network, so progress is slower; the same noise prevents overfitting.","h":"What changes from one training case to the next?"},
+    {"q":"What does the paper suggest as a way to get dropout’s benefits without its stochasticity?","o":["Marginalise the noise into an equivalent regularizer","Use p = 1","Train for fewer steps"],"a":0,"e":"§9 and §11: compute the expected loss directly. Exact for linear regression, approximate (fast dropout) for logistic regression, open for deep networks.","h":"Part V, Chapter 28."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ BACK MATTER -->
+<section class="chapter" id="ch-cheatsheet" data-title="Cheat sheet: every equation" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Cheat sheet: every equation of the paper</h2>
+  </header>
+  <p>The paper does not number its equations; the labels E1–E16 are the book’s, in the paper’s order.</p>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Eq.</th><th>Formula</th><th>In words</th><th>Chapter</th></tr>
+    <tr><td>E1 (§1)</td><td>\( 2^n \) thinned nets, \( O(n^2) \) parameters</td><td>a net with n droppable units hides 2ⁿ weight-sharing sub-networks</td><td><a href="#ch-idea">8</a></td></tr>
+    <tr><td>E2 (§4)</td><td>\( z_i^{(l+1)} = \mathbf w_i^{(l+1)}\mathbf y^{(l)} + b_i^{(l+1)},\ y_i^{(l+1)} = f(z_i^{(l+1)}) \)</td><td>standard forward pass; e.g. \(f(x) = 1/(1+e^{-x})\)</td><td><a href="#ch-neuron">1</a></td></tr>
+    <tr><td>E3 (§4)</td><td>\( r_j^{(l)} \sim \text{Bernoulli}(p),\ \tilde{\mathbf y}^{(l)} = \mathbf r^{(l)} * \mathbf y^{(l)},\ z_i^{(l+1)} = \mathbf w_i^{(l+1)}\tilde{\mathbf y}^{(l)} + b_i^{(l+1)} \)</td><td>dropout forward pass: gate every output with its own coin</td><td><a href="#ch-forward">10</a></td></tr>
+    <tr><td>E4 (§4)</td><td>\( W^{(l)}_{test} = pW^{(l)} \)</td><td>test time: all units present, outgoing weights × p (equivalently: ×1/p while training)</td><td><a href="#ch-testtime">11</a></td></tr>
+    <tr><td>—</td><td>\( \text{softmax}((pW)^\top\mathbf x + \mathbf b) = \text{normalised geometric mean over } \mathbf r \)</td><td>for one softmax layer, weight scaling = geometric mean of all thinned models (book’s derivation)</td><td><a href="#ch-averaging">12</a></td></tr>
+    <tr><td>E5 (§5.1)</td><td>\( \lVert\mathbf w\rVert_2 \le c;\ \mathbf w \leftarrow c\,\mathbf w/\lVert\mathbf w\rVert_2 \text{ if outside} \)</td><td>max-norm: cap each unit’s incoming weight vector</td><td><a href="#ch-maxnorm">14</a></td></tr>
+    <tr><td>E6 (App. B.4)</td><td>\( \varepsilon_t = \varepsilon_0(1 + t/T)^{-1};\ \mathbf v \leftarrow \mu\mathbf v + \nabla L,\ \mathbf w \leftarrow \mathbf w - \varepsilon_t\mathbf v \)</td><td>decaying learning rate with momentum (update form from deepnet)</td><td><a href="#ch-maxnorm">14</a></td></tr>
+    <tr><td>E7 (§5.2)</td><td>\( W_{pretrained} \times 1/p \)</td><td>scale pretrained weights up so expected inputs are unchanged under dropout</td><td><a href="#ch-pretrain">15</a></td></tr>
+    <tr><td>E8 (App. B.6)</td><td>\( \sum_i\sum_t\sum_{s} p^s_{i,t}\log\big(q^s_t(r_i)/\bar p^{\,s}\big) \)</td><td>code quality: bits gained over predicting the average, i.e. a negative KL divergence</td><td><a href="#ch-speech">20</a></td></tr>
+    <tr><td>—</td><td>\( \hat P_k = \frac1k\sum_{s=1}^k P(c\mid\mathbf x;\mathbf r^{[s]}) \)</td><td>Monte-Carlo model averaging over k sampled thinned nets (§7.5)</td><td><a href="#ch-mc">25</a></td></tr>
+    <tr><td>E9 (§8.1)</td><td>\( P(\mathbf h,\mathbf v;\theta) = \frac{1}{\mathcal Z(\theta)}\exp(\mathbf v^\top W\mathbf h + \mathbf a^\top\mathbf h + \mathbf b^\top\mathbf v) \)</td><td>RBM: probability from energy, normalised by the partition function</td><td><a href="#ch-rbm">26</a></td></tr>
+    <tr><td>E10 (§8.1)</td><td>\( P(h_j{=}1\mid\mathbf v) = \sigma(a_j + \sum_i W_{ij}v_i),\ P(v_i{=}1\mid\mathbf h) = \sigma(b_i + \sum_j W_{ij}h_j) \)</td><td>RBM conditionals (factorial); the paper swaps the bias letters here</td><td><a href="#ch-rbm">26</a></td></tr>
+    <tr><td>E11 (§8.1)</td><td>\( P(\mathbf r,\mathbf h,\mathbf v;p,\theta) = P(\mathbf r;p)P(\mathbf h,\mathbf v\mid\mathbf r;\theta),\ P(\mathbf r;p) = \prod_j p^{r_j}(1-p)^{1-r_j} \)</td><td>dropout RBM: gates on hidden units, independent coins</td><td><a href="#ch-drbm">27</a></td></tr>
+    <tr><td>E12 (§8.1)</td><td>\( P(\mathbf h,\mathbf v\mid\mathbf r;\theta) = \frac{1}{\mathcal Z'(\theta,\mathbf r)}\exp(\dots)\prod_j g(h_j,r_j),\ g = \mathbb 1(r_j{=}1) + \mathbb 1(r_j{=}0)\mathbb 1(h_j{=}0) \)</td><td>a closed gate forces its hidden unit to 0</td><td><a href="#ch-drbm">27</a></td></tr>
+    <tr><td>E13 (§8.1)</td><td>\( P(h_j{=}1\mid r_j,\mathbf v) = \mathbb 1(r_j{=}1)\,\sigma(a_j + \sum_i W_{ij}v_i) \)</td><td>dropout RBM hidden conditional</td><td><a href="#ch-drbm">27</a></td></tr>
+    <tr><td>E14 (§9.1)</td><td>\( \min_{\mathbf w}\ \mathbb E_R\lVert\mathbf y - (R*X)\mathbf w\rVert^2 = \min_{\mathbf w}\ \lVert\mathbf y - pX\mathbf w\rVert^2 + p(1-p)\lVert\Gamma\mathbf w\rVert^2 \)</td><td>input dropout in linear regression = ridge with \(\Gamma = (\text{diag}(X^\top X))^{1/2}\)</td><td><a href="#ch-marginal">28</a></td></tr>
+    <tr><td>E15 (§9.1)</td><td>\( \min_{\tilde{\mathbf w}}\ \lVert\mathbf y - X\tilde{\mathbf w}\rVert^2 + \frac{1-p}{p}\lVert\Gamma\tilde{\mathbf w}\rVert^2,\ \tilde{\mathbf w} = p\mathbf w \)</td><td>the same with p absorbed: penalty strength (1 − p)/p</td><td><a href="#ch-marginal">28</a></td></tr>
+    <tr><td>E16 (§10)</td><td>\( h_i r',\ r' \sim \mathcal N(1,\sigma^2);\ \ \sigma^2 = \frac{1-p}{p} \Rightarrow E[r'] = E[r_b] = 1,\ \mathrm{Var} = \frac{1-p}{p} \)</td><td>Gaussian dropout matched to Bernoulli dropout’s mean and variance</td><td><a href="#ch-gauss">29</a></td></tr>
+    <tr><td>—</td><td>\( E[r] = p,\ \mathrm{Var}[r] = p(1-p);\ E[\sum_j a_j r_j] = p\sum_j a_j \)</td><td>Bernoulli facts behind E4 and E14 (background)</td><td><a href="#ch-random">6</a></td></tr>
+    <tr><td>—</td><td>\( \Delta W_{ij} = \varepsilon(v_iP(h_j{=}1\mid\mathbf v) - v'_iP(h_j{=}1\mid\mathbf v')) \)</td><td>CD-1 update (background, Hinton et al. 2006)</td><td><a href="#ch-rbm">26</a></td></tr>
+    <tr><td>—</td><td>\( \mu \pm \text{Gaussian: } \sigma(\mu/\sqrt{1+\pi s^2/8}) \)</td><td>fast-dropout style Gaussian approximation of a logistic unit’s average output (§9.2, background)</td><td><a href="#ch-marginal">28</a></td></tr>
+    <tr><td>—</td><td>\( n \to n/p \)</td><td>practical guide: enlarge layers by 1/p (App. A.1)</td><td><a href="#ch-guide">30</a></td></tr>
+  </table></div>
+</section>
+
+<section class="chapter" id="ch-glossary" data-title="Glossary" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Glossary</h2>
+  </header>
+  <dl class="glossary" data-terms="Neuron; Weight; Bias; Activation function; ReLU; Sigmoid; Hidden layer; Neural network; Parameter; Dot product; Vector; Matrix; Dimension; Loss; Cross-entropy; Softmax; Logit; Probability distribution; Classification; Gradient; Gradient descent; Learning rate; Stochastic gradient descent (SGD); Batch; Epoch; Backpropagation; Optimizer; Adam; Hyperparameter; Training; Test set; Dataset; Generalization; Overfitting">
+    <dt>Alternative splicing</dt><dd>The way one gene’s RNA can be cut and joined in different ways in different tissues; the paper’s genetics task predicts it.</dd>
+    <dt>Autoencoder</dt><dd>A network trained to reproduce its input at its output through a hidden layer; its hidden units become features (Fig. 7).</dd>
+    <dt>Bag of words</dt><dd>A document represented by how often each vocabulary word occurs, ignoring order (Reuters, §6.3).</dd>
+    <dt>Bayesian neural network</dt><dd>A network whose prediction averages over all weight settings, each weighted by its posterior probability given the data (§6.4).</dd>
+    <dt>Bernoulli variable</dt><dd>A random number that is 1 with probability p and 0 otherwise.</dd>
+    <dt>Classification error</dt><dd>The percentage of test cases whose most probable predicted class is wrong.</dd>
+    <dt>Code quality</dt><dd>The splicing score: bits gained over predicting the average distribution (App. B.6).</dd>
+    <dt>Co-adaptation</dt><dd>Hidden units that only work in combination with specific other units, for example by fixing each other’s mistakes (§2, §7.1).</dd>
+    <dt>Contrastive divergence (CD-1)</dt><dd>The usual way to train RBMs: compare statistics on the data with those on a one-step reconstruction.</dd>
+    <dt>Convolutional layer</dt><dd>A layer that applies the same small filter at every position of an image, producing a feature map.</dd>
+    <dt>Deep Belief Net (DBN)</dt><dd>A stack of RBMs trained one layer at a time, used to pretrain networks.</dd>
+    <dt>Deep Boltzmann Machine (DBM)</dt><dd>A multi-layer Boltzmann machine trained jointly; used for pretraining in Table 2.</dd>
+    <dt>Data augmentation</dt><dd>Adding transformed copies (shifted, distorted) of training images; not used for the paper’s MNIST, CIFAR or SVHN results.</dd>
+    <dt>Dropout</dt><dd>Randomly removing units, with their connections, independently for every training case; using the full network with weights × p at test time.</dd>
+    <dt>Dropout RBM</dt><dd>An RBM whose hidden units are gated by Bernoulli(p) variables; a mixture of 2^F RBMs sharing weights (§8).</dd>
+    <dt>Early stopping</dt><dd>Stopping training when the error on a validation set stops improving.</dd>
+    <dt>Element-wise product</dt><dd>Multiplying two vectors or matrices entry by entry; written ∗ in the paper.</dd>
+    <dt>Energy</dt><dd>In an RBM, a number for each joint state; lower energy means higher probability.</dd>
+    <dt>Ensemble (model combination)</dt><dd>Averaging the predictions of several models.</dd>
+    <dt>Expected value</dt><dd>The long-run average of a random quantity; for Bernoulli(p) it is p.</dd>
+    <dt>Fast dropout</dt><dd>Wang and Manning’s method of replacing sampled dropout masks with a Gaussian approximation of their effect (§9.2).</dd>
+    <dt>Feature</dt><dd>The input pattern a hidden unit responds to, visible as its incoming weights.</dd>
+    <dt>Feature map</dt><dd>The output of one convolutional filter: its response at every image position.</dd>
+    <dt>Finetuning</dt><dd>Training a pretrained network further with labels and backpropagation.</dd>
+    <dt>Fully connected layer</dt><dd>A layer in which every unit receives every output of the layer below.</dd>
+    <dt>Gaussian dropout</dt><dd>Multiplying activations by N(1, σ²) noise instead of Bernoulli gates (§10).</dd>
+    <dt>Geometric mean</dt><dd>The K-th root of the product of K numbers; for predictions it must be renormalised to sum to 1.</dd>
+    <dt>Global contrast normalization</dt><dd>Subtracting each colour channel’s mean intensity from every image (CIFAR, App. B.3).</dd>
+    <dt>Indicator 𝟙(·)</dt><dd>1 if the condition in brackets is true, 0 otherwise.</dd>
+    <dt>Inverted dropout</dt><dd>Multiplying kept units by 1/p during training so that nothing changes at test time; equivalent to the paper’s weight scaling (§10).</dd>
+    <dt>KL divergence</dt><dd>A measure of how far a predicted distribution q is from a target p: Σ p log(p/q); zero only when they are equal.</dd>
+    <dt>KL-sparsity</dt><dd>A penalty pushing each hidden unit’s average activation towards a small target value (Table 9).</dd>
+    <dt>L1 penalty (lasso)</dt><dd>Adding λ times the sum of absolute weights to the loss; drives some weights to exactly zero.</dd>
+    <dt>L2 penalty (weight decay, ridge)</dt><dd>Adding λ times the sum of squared weights to the loss; shrinks all weights.</dd>
+    <dt>Learning-rate decay</dt><dd>Lowering the learning rate during training, e.g. ε₀/(1 + t/T).</dd>
+    <dt>Linear regression</dt><dd>Predicting a number as a weighted sum of the inputs, choosing weights that minimise the squared error.</dd>
+    <dt>Marginalisation</dt><dd>Replacing a random quantity by its average over all possible noise values, here to get dropout’s expected loss (§9).</dd>
+    <dt>Max-norm regularization</dt><dd>Keeping the length of each unit’s incoming weight vector at most c by projecting it back when it grows (§5.1).</dd>
+    <dt>Max-pooling</dt><dd>Keeping only the largest value in each small window of a feature map.</dd>
+    <dt>Maxout</dt><dd>A unit type that outputs the maximum of several linear functions (Goodfellow et al., 2013); best entries in Tables 2–4.</dd>
+    <dt>Minibatch</dt><dd>The small random set of training cases used for one gradient step.</dd>
+    <dt>Momentum</dt><dd>Keeping a running velocity of past gradient steps, v ← μv + g, to smooth and speed up descent.</dd>
+    <dt>Monte-Carlo model averaging</dt><dd>Averaging the predictions of k randomly sampled thinned networks at test time (§7.5).</dd>
+    <dt>Partition function</dt><dd>The sum of exp(−energy) over all states of an RBM; it makes the probabilities add to 1.</dd>
+    <dt>Permutation invariant</dt><dd>A setting in which the model may not use the spatial arrangement of pixels (MNIST, Table 2).</dd>
+    <dt>Phone error rate</dt><dd>The error rate over predicted phone (speech sound) labels, used for TIMIT.</dd>
+    <dt>Posterior probability</dt><dd>How plausible a setting of the weights is after seeing the training data.</dd>
+    <dt>Pretraining</dt><dd>Learning initial weights from unlabelled data (RBMs, autoencoders) before supervised finetuning.</dd>
+    <dt>Restricted Boltzmann Machine (RBM)</dt><dd>A two-layer probabilistic model of binary visible and hidden units with connections only between the layers.</dd>
+    <dt>Regularization</dt><dd>Any technique that reduces overfitting, such as weight penalties, early stopping or dropout.</dd>
+    <dt>Retention probability p</dt><dd>The probability that a unit is kept by dropout; p = 1 means no dropout.</dd>
+    <dt>Sparse representation</dt><dd>A code in which only a few units are strongly active for any input.</dd>
+    <dt>Thinned network</dt><dd>The sub-network made of the units that survived dropout for one training case.</dd>
+    <dt>Top-5 error</dt><dd>The fraction of test images whose true label is not among the model’s five most probable labels.</dd>
+    <dt>Unit</dt><dd>One neuron of a network; dropout drops whole units.</dd>
+    <dt>Validation set</dt><dd>Held-out examples, separate from the test set, used to choose hyperparameters and for early stopping.</dd>
+    <dt>Variance</dt><dd>The average squared distance of a random quantity from its mean; for Bernoulli(p) it is p(1 − p).</dd>
+    <dt>Weight scaling</dt><dd>Multiplying a unit’s outgoing weights by p at test time, to approximate averaging all thinned networks.</dd>
+    <dt>Weight sharing</dt><dd>Using the same weights in many places: across positions in a conv layer, or across all thinned networks in dropout.</dd>
+    <dt>ZCA whitening</dt><dd>Rotating data onto its principal components, rescaling each to unit variance and rotating back, so pixels become uncorrelated.</dd>
+  </dl>
+</section>
+
+<section class="chapter" id="ch-refs" data-title="Sources and further reading" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Sources and further reading</h2>
+  </header>
+  <ul>
+    <li><b>The paper:</b> Nitish Srivastava, Geoffrey Hinton, Alex Krizhevsky, Ilya Sutskever, Ruslan Salakhutdinov. <a href="https://jmlr.org/papers/v15/srivastava14a.html">Dropout: A Simple Way to Prevent Neural Networks from Overfitting</a>. Journal of Machine Learning Research 15(56):1929–1958, 2014 (submitted 11/13, published 6/14; editor Yoshua Bengio). Numbers in this book are quoted from this final JMLR version.</li>
+    <li><b>The code:</b> <a href="https://github.com/nitishsrivastava/deepnet">nitishsrivastava/deepnet</a>, the first author’s GPU implementation of feed-forward nets, RBMs, DBNs, autoencoders, DBMs and conv nets on cudamat and cuda-convnet, BSD-style licence (Copyright 2012–13 Nitish Srivastava), commit f4e4ff2 (16 Jan 2014). Files referenced: <a href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/neuralnet.py">neuralnet.py</a> (dropout forward pass l.186–204, ComputeDown l.207–235), <a href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/parameter.py">parameter.py</a> (Update with momentum and max-norm l.80–106, schedules l.108–125), <a href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/relu_layer.py">relu_layer.py</a>, <a href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/dbm.py">dbm.py</a> (l.106–115), <a href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/mc_avg.py">mc_avg.py</a>, <a href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/fastdropoutnet.py">fastdropoutnet.py</a>, <a href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/examples/ff/model_dropout.pbtxt">examples/ff/model_dropout.pbtxt</a> and <a href="https://github.com/nitishsrivastava/deepnet/blob/master/deepnet/examples/ff/train.pbtxt">train.pbtxt</a>. The paper’s own pointer is http://www.cs.toronto.edu/~nitish/dropout (App. B).</li>
+    <li><b>Earlier versions of the idea:</b> G. E. Hinton, N. Srivastava, A. Krizhevsky, I. Sutskever, R. Salakhutdinov, <a href="https://arxiv.org/abs/1207.0580">Improving neural networks by preventing co-adaptation of feature detectors</a>, arXiv 1207.0580 (2012); N. Srivastava, Improving Neural Networks with Dropout, Master’s thesis, University of Toronto (2013).</li>
+    <li><b>Key background cited by the paper:</b> Krizhevsky, Sutskever, Hinton, ImageNet classification with deep convolutional neural networks, NIPS 2012; Livnat, Papadimitriou, Pippenger, Feldman, Sex, mixability, and modularity, PNAS 2010; Vincent et al., denoising autoencoders, ICML 2008 and JMLR 2010; Hinton and Salakhutdinov, Reducing the dimensionality of data with neural networks, Science 2006; Hinton, Osindero, Teh, A fast learning algorithm for deep belief nets, 2006; Salakhutdinov and Hinton, Deep Boltzmann machines, AISTATS 2009; Srebro and Shraibman, Rank, trace-norm and max-norm, COLT 2005; Wang and Manning, Fast dropout training, ICML 2013; Wager, Wang, Liang, Dropout training as adaptive regularization, NIPS 2013; van der Maaten et al., Learning with marginalized corrupted features, ICML 2013; Goodfellow et al., Maxout networks, ICML 2013; Xiong, Barash, Frey, Bayesian prediction of tissue-regulated splicing, Bioinformatics 2011; Neal, Bayesian Learning for Neural Networks, 1996.</li>
+    <li><b>In this collection:</b> previous lesson <a href="../word2vec/">Word2Vec</a>; next lessons <a href="../adam/">Adam</a> and <a href="../batchnorm/">Batch Normalization</a>; dropout reappears in <a href="../transformer/">the Transformer</a> and <a href="../bert/">BERT</a>.</li>
+  </ul>
+  <p class="small">Figures: the paper is published by JMLR under the authors’ copyright with no Creative Commons licence, so no figure is reproduced. Figures 1–3 are redrawn as original interactive SVG; Figures 4 and 7–13 are explored with toy re-runs and, for Figures 9–11, with values read off the plots (marked approximate); the photographs of Figures 5 and 6 are described in words only; Tables 1–10 are retyped as data with citations. What is toy and what is paper: every number cited to a section, table or figure is the paper’s; every number labelled “toy” is computed in your browser (or precomputed with the same code and seeds, in <code>toy-results.js</code>) from the pixel-digit data generated by <code>toy.js</code>.</p>
+</section>
+
+<nav class="lesson-pager" id="lessonPager" aria-label="Previous and next lessons"></nav>
+
+<footer class="book-foot">Dropout Interactive Web Book, lesson 2 of <a href="../">Modern AI in 49 Papers</a>. An independent educational companion to Srivastava, Hinton, Krizhevsky, Sutskever and Salakhutdinov (2014), not an official publication of the authors; all interactive models run locally in your browser.</footer>
+
+</main>
+</div>
+
+<script src="../collection.js"></script>
+<script src="../shared/glossary.js"></script>
+<script src="../shared/lesson-nav.js"></script>
+<script src="../shared/core.js"></script>
+<script src="../shared/lib/math.js"></script>
+<script src="../shared/lib/nn.js"></script>
+<script src="../shared/widgets/refreshers.js"></script>
+<script src="toy.js"></script>
+<script src="toy-results.js"></script>
+<script src="widgets-found.js"></script>
+<script src="widgets-method.js"></script>
+<script src="widgets-evidence.js"></script>
+</body>
+</html>
