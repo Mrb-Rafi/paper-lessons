@@ -1,0 +1,961 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adam · Interactive Web Book · Modern AI in 49 Papers</title>
+<meta name="description" content="An interactive web book that teaches Adam (Kingma &amp; Ba, ICLR 2015) from absolute zero, with live widgets for every idea and every equation, including bias correction, the step-size bound, the regret proof, AdaMax and all experiments. Lesson 3 of Modern AI in 49 Papers.">
+<link rel="icon" href="../cover.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="../shared/book.css">
+<style>
+  :root { --accent: #1b7a60; --accent-soft: #ddf1e9; --accent-ink: #0e4d3c; }
+  :root[data-theme="dark"] { --accent: #5ccfa6; --accent-soft: #163329; --accent-ink: #a6ecd2; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --accent: #5ccfa6; --accent-soft: #163329; --accent-ink: #a6ecd2; } }
+  .algo { font-family: var(--font-ui); font-size: 14px; line-height: 1.95; background: var(--code-bg); border-radius: 10px; padding: 12px 16px; overflow-x: auto; }
+  .algo b { color: var(--accent-ink); }
+  .katex-display { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</head>
+<body data-store="ai49:adam:" data-lesson="adam" data-theme-key="ai49:theme">
+
+<div class="topbar">
+  <button class="icon-btn" id="menuBtn" aria-label="Open contents">☰</button>
+  <a class="brand" href="#top"><span class="mark">AD</span><span>Interactive Web Book</span></a>
+  <a class="icon-btn home-link" href="../" title="Modern AI in 49 Papers">← 49 Papers</a>
+  <div class="spacer"></div>
+  <div class="progress-wrap" title="Chapters marked as read"><div class="progress-bar" id="progressBar"></div></div>
+  <span class="progress-label" id="progressLabel"></span>
+  <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode" title="Light / dark">◐</button>
+</div>
+
+<div class="layout">
+<nav class="sidebar" id="toc" aria-label="Contents"></nav>
+<main>
+
+<!-- ============================================================ COVER -->
+<div class="hero" id="top">
+  <div class="eyebrow">Modern AI in 49 Papers · Lesson 3</div>
+  <div class="lesson-strip" id="lessonStrip"></div>
+  <h1>Adam,<br><em>from zero.</em></h1>
+  <p class="sub">Almost every neural network of the last ten years, from image classifiers to large language models, was trained with one short recipe published in 2014: Adam. It keeps two running averages for every weight, one of the gradient and one of its square, corrects them for starting at zero, and takes a step whose size is set by you, not by the gradient. This book starts from “what is a gradient?” and ends with every line of Algorithm 1, every equation, the convergence theorem and its proof (including the gap found in it later), AdaMax, and every experiment in the paper. You need no background: every idea comes with something to play with.</p>
+  <p class="meta">Based on <a href="https://arxiv.org/abs/1412.6980">Diederik P. Kingma and Jimmy Lei Ba, “Adam: A Method for Stochastic Optimization”, ICLR 2015 (arXiv:1412.6980)</a>. The paper has no official code release; the book follows Algorithm 1 itself and the reference implementation in <a href="https://github.com/pytorch/pytorch/blob/v2.5.0/torch/optim/adam.py">PyTorch’s torch/optim/adam.py</a> (v2.5.0). This book is an independent educational companion, not an official publication of the authors.</p>
+  <div class="hero-demo"><div class="widget" data-widget="heroDemo"></div></div>
+  <div class="btn-row">
+    <a class="btn primary" href="#ch-objective">Start reading →</a>
+    <a class="btn" id="resumeBtn" href="#">Resume where you left off</a>
+    <a class="btn" href="https://arxiv.org/abs/1412.6980">The paper</a>
+    <a class="btn" href="https://github.com/pytorch/pytorch/blob/v2.5.0/torch/optim/adam.py">Reference code</a>
+  </div>
+</div>
+
+<!-- ============================================================ HOW TO READ -->
+<section class="chapter" id="ch-howto" data-title="How to read this book" data-part="Front matter" data-nonum>
+  <header>
+    <div class="kicker">Front matter</div>
+    <h2 class="title">How to read this book</h2>
+    <p class="lede">32 short chapters, 5 parts, and about 50 things you can poke.</p>
+  </header>
+  <p>This book assumes you know <strong>nothing</strong> about machine learning or optimization. Every new idea arrives with a picture or a widget, and every equation is unpacked symbol by symbol. It is lesson 3 of <a href="../">Modern AI in 49 Papers</a> and stands on its own. (Lessons 1 and 2, <a href="../word2vec/">Word2Vec</a> and <a href="../dropout/">Dropout</a>, also train networks, but you do not need them.)</p>
+  <div class="roadmap">
+    <div class="card"><b>Part I · Foundations</b><span>Chapters 1–8. Parameters and loss, gradients, noisy minibatch gradients, why one step size fails, momentum, running averages, moments, AdaGrad and RMSProp.</span></div>
+    <div class="card"><b>Part II · The Adam algorithm</b><span>Chapters 9–18. The idea (§1), Algorithm 1 line by line, the hyper-parameters, the fast form (§2), step-size bounds, trust region and SNR (§2.1), scale invariance, bias correction (§3, Eq. 1–4).</span></div>
+    <div class="card"><b>Part III · Does Adam converge?</b><span>Chapters 19–23. Online learning and regret (Eq. 5), convexity, Theorem 4.1 term by term, sparsity, Corollary 4.2, and the proof in Appendix 10.1.</span></div>
+    <div class="card"><b>Part IV · Relatives and extensions</b><span>Chapters 24–26. RMSProp, AdaGrad and natural gradient (§5), AdaMax (§7.1, Eq. 6–12, Algorithm 2), temporal averaging (§7.2).</span></div>
+    <div class="card"><b>Part V · The experiments</b><span>Chapters 27–32. Set-up, logistic regression (Fig. 1), multilayer nets and SFO (Fig. 2), convolutional nets (Fig. 3), the bias-correction study (Fig. 4), limits and later work.</span></div>
+  </div>
+  <h3>Signposts</h3>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>Plain-language pictures of what is going on. Read these even if you skip everything else.</p></div>
+  <div class="callout math"><div class="ct">∑ The math</div><p>The precise statement, exactly as it appears in the paper, with every symbol explained.</p></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Where this idea appears in the paper, with numbers taken directly from it. Tags like <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §2.1</a> link to the paper. Numbers are quoted from arXiv version 9 (30 January 2017), the latest, which carries the ICLR 2015 header.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>The authors did not release code; Algorithm 1 is short enough to be the reference. The book cites the widely used implementation in <a href="https://github.com/pytorch/pytorch/blob/v2.5.0/torch/optim/adam.py">PyTorch v2.5.0, torch/optim/adam.py</a> (BSD licence) with line numbers, and this collection’s own <a href="../shared/lib/nn.js">shared/lib/nn.js</a>, whose <code>NN.Adam</code> runs every Adam in this page.</p></div>
+  <p>Widgets have a title, a one-line instruction, then controls. Your progress (chapters you mark as read, light/dark choice) is remembered in your own browser only.</p>
+  <div class="callout warn"><div class="ct">⚠ About the toy models</div><p>Adam itself is tiny, so everything about the algorithm in this book is <b>exact</b>: Algorithm 1 and 2, bias correction, the bounds, Eq. 1–12, the regret of Theorem 4.1 on real runs, and every optimizer it is compared with (SGD, momentum, Nesterov, AdaGrad, RMSProp, AdaDelta, AdaMax, AMSGrad) run for real in your browser. The <b>toys</b> are the problems: two-dimensional loss surfaces drawn as maps (the book’s own, not the paper’s), small online games for the theory, and small data sets standing in for the paper’s: 8×8-pixel “glyphs” for MNIST, a synthetic 3,000-word bag of words for IMDB reviews, a 64-64-64-10 network for the 1000-unit networks, and a small softmax regression for the variational auto-encoder of Fig. 4. Convolutional networks appear only through the paper’s numbers and a two-layer stand-in. Toy numbers are labelled “toy”; numbers read off the paper’s plots are marked ≈.</p></div>
+</section>
+
+<!-- ============================================================ PART I · FOUNDATIONS -->
+<section class="chapter" id="ch-objective" data-title="Parameters, objectives and loss" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Parameters, objectives and loss</h2>
+    <p class="lede">Training a model means searching for the parameter values that make one number, the loss, as small as possible.</p>
+  </header>
+  <p>A machine-learning model is a function with adjustable knobs. A straight line \(y = w\,x + b\) has two knobs, the slope \(w\) and the intercept \(b\). A <strong>neural network</strong> is a much bigger function with millions of knobs. The knobs are called <strong>parameters</strong> (or <strong>weights</strong>), and the paper collects all of them into one long list, a <strong>vector</strong> written \(\theta\) (the Greek letter theta).</p>
+  <p>To say how good a choice of \(\theta\) is, we compute a single number, the <strong>loss</strong>: how wrong the model is on the data. The paper calls the function that turns \(\theta\) into this number the <strong>objective function</strong> \(f(\theta)\). <strong>Training</strong> means changing \(\theta\) to make \(f(\theta)\) small; the method that does it is the <strong>optimizer</strong>, and Adam is one.</p>
+  <div class="widget" data-widget="fitLine"></div>
+  <p>With two parameters we can draw the whole loss as a map, with the lowest point marked by a star. With millions we cannot. An optimizer must find low ground using only what it can measure where it stands, like a hiker in fog.</p>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    <p>The task the paper sets itself (§1, §2):</p>
+    \[ \theta^{*} = \arg\min_{\theta}\; f(\theta) \]
+    <p>Read it as “\(\theta^*\) is the value of \(\theta\) at which \(f\) is smallest”. \(\theta\) is a vector of \(d\) numbers, \(\theta = (\theta_1, \dots, \theta_d)\); \(d\) is the number of parameters. \(\arg\min\) means “the argument (input) that gives the minimum”, as opposed to \(\min\), which is the smallest value itself. In the widget, \(\theta = (w, b)\), \(d = 2\), and \(f(\theta)\) is the mean squared error \(\tfrac{1}{8}\sum_{n=1}^{8} (w\,x_n + b - y_n)^2\) over the 8 points.</p>
+  </div>
+  <p>A single unit of a neural network is the same kind of thing: a weighted sum plus a bias, then a bend.</p>
+  <div class="widget" data-widget="r_neuron"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The introduction frames the whole subject this way: many problems “can be cast as the optimization of some scalar parameterized objective function” to be minimized with respect to its parameters <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §1</a>. The paper’s focus is objectives with “high-dimensional parameter spaces”: very many parameters.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A model has parameters \\(\\theta = (w, b)\\). What does an optimizer change during training?","o":["The data points","The numbers w and b","The loss function’s formula"],"a":1,"e":"The data and the formula of the loss stay fixed; the optimizer moves the parameters to make the loss small.","h":"Which of these are the knobs?"},
+    {"q":"What is the difference between \\(\\min_\\theta f(\\theta)\\) and \\(\\arg\\min_\\theta f(\\theta)\\)?","o":["None","min is the smallest loss value; arg min is the θ that achieves it","arg min is the largest value"],"a":1,"e":"In the widget, min f ≈ the lowest loss and arg min f is the starred (w, b).","h":"One is a value of f, the other is an input to f."},
+    {"q":"Why can an optimizer for a real network not simply look at the loss map and pick the star?","o":["Because the map has millions of dimensions and cannot be computed everywhere","Because the star moves","Because maps are not allowed"],"a":0,"e":"With millions of parameters there are astronomically many points; the optimizer can only measure the loss and its slope where it currently is.","h":"How many parameters does a real network have?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-gradient" data-title="Gradients and gradient descent" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Gradients and gradient descent</h2>
+    <p class="lede">The gradient says which way is uphill and how steep it is; gradient descent takes small steps the other way.</p>
+  </header>
+  <p>Stand somewhere on the loss map. Nudge one parameter a tiny bit while holding all others fixed, and see how much the loss changes per unit of nudge. That rate is the <strong>partial derivative</strong> of \(f\) with respect to that parameter, written \(\partial f/\partial\theta_i\). Do it for every parameter and collect the answers in a vector: the <strong>gradient</strong>, written \(\nabla_\theta f\) (“nabla f”). It points in the direction in which the loss rises fastest.</p>
+  <div class="widget" data-widget="gradField"></div>
+  <p><strong>Gradient descent</strong> repeats one move: step a little against the gradient. The size of the step is set by the <strong>learning rate</strong> (the paper calls it the <strong>stepsize</strong>, \(\alpha\)).</p>
+  <div class="widget" data-widget="r_descent"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \nabla_\theta f(\theta) = \Big(\frac{\partial f}{\partial \theta_1}, \dots, \frac{\partial f}{\partial \theta_d}\Big), \qquad \theta_t = \theta_{t-1} - \alpha\, \nabla_\theta f(\theta_{t-1}). \]
+    <p>\(\partial f/\partial\theta_i\) is “how fast \(f\) changes when only \(\theta_i\) moves”. \(\theta_t\) is the parameter vector after \(t\) steps; the subscript \(t\) is a step counter (the paper calls it the <strong>timestep</strong>), not a power. \(\alpha\) is the stepsize. Worked example on the ravine \(f = 0.05x^2 + 2y^2\): at \((x, y) = (-3, 1.5)\) the gradient is \((0.1\cdot(-3),\; 4\cdot 1.5) = (-0.3, 6)\). With \(\alpha = 0.1\) one step moves to \((-3 + 0.03,\; 1.5 - 0.6) = (-2.97, 0.9)\).</p>
+  </div>
+  <p>Methods that use only the gradient (first derivatives) are called <strong>first-order</strong> methods. Methods that also use second derivatives (curvature) are <strong>higher-order</strong>; they need a \(d \times d\) table of numbers, impossible to store when \(d\) is in the millions.</p>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Gradient descent is “relatively efficient … since the computation of first-order partial derivatives w.r.t. all the parameters is of the same computational complexity as just evaluating the function”. For high-dimensional problems “higher-order optimization methods are ill-suited”, so the paper is “restricted to first-order methods” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §1</a>. The computation of all those partial derivatives for a network is <strong>backpropagation</strong>; the shared library of this collection does it in <a href="../shared/lib/nn.js">nn.js</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"At some point the gradient is \\((2, -0.5)\\) and \\(\\alpha = 0.1\\). How does gradient descent change \\(\\theta\\)?","o":["Adds (0.2, −0.05)","Subtracts (0.2, −0.05), i.e. adds (−0.2, +0.05)","Subtracts (2, −0.5)"],"a":1,"e":"θ ← θ − α∇f = θ − (0.2, −0.05). The second coordinate goes up because its partial derivative is negative.","h":"Multiply the gradient by α and subtract."},
+    {"q":"Why does the paper limit itself to first-order methods?","o":["They are always more accurate","Second-order methods need curvature information that is too costly with millions of parameters","Gradients cannot be computed"],"a":1,"e":"A curvature matrix has d² entries; with d in the millions that is far too much. Gradients cost about as much as the loss itself.","h":"How big is a d×d table when d = 10⁶?"},
+    {"q":"On the ravine, the gradient at (−3, 1.5) is (−0.3, 6). Where does −∇f point mostly?","o":["Along the valley, towards the star","Across the valley (mostly in y)","Nowhere: it is zero"],"a":1,"e":"The y-component (6) dwarfs the x-component (−0.3): steepest descent points mostly across the valley, not along it. This is the root of the zig-zag in Chapter 4.","h":"Compare the sizes of the two components."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-stochastic" data-title="Noisy objectives and SGD" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Noisy objectives and SGD</h2>
+    <p class="lede">With big data we never see the true gradient, only noisy samples of it: Adam is built for exactly that.</p>
+  </header>
+  <p>The loss of a model is usually an average over training examples. With a million examples, computing the exact gradient for every step is slow. <strong>Stochastic gradient descent</strong> (<strong>SGD</strong>) estimates it from a small random handful of examples, a <strong>minibatch</strong>. Each estimate is noisy, but it is right <em>on average</em>.</p>
+  <div class="widget" data-widget="minibatchNoise"></div>
+  <p>“On average” has a precise meaning. The <strong>expected value</strong> \(\mathbb{E}[X]\) of a random quantity \(X\) is its long-run average over many draws. A minibatch gradient \(g\) is a random vector whose expected value is the true gradient. A function whose value is random like this is a <strong>stochastic objective</strong>. Noise can also come from the model itself: <a href="../dropout/">dropout</a> switches off random units at every step.</p>
+  <div class="callout math"><div class="ct">∑ The math (paper §2)</div>
+    <p>The paper writes \(f(\theta)\) for a <em>noisy</em> objective and minimizes its expected value \(\mathbb{E}[f(\theta)]\). The noise makes a different function appear at each step:</p>
+    \[ f_1(\theta),\; f_2(\theta),\; \dots,\; f_T(\theta), \qquad g_t = \nabla_\theta f_t(\theta). \]
+    <p>\(f_t\) is the <strong>realisation</strong> of the noisy function at timestep \(t\) (for example the loss on minibatch number \(t\)); \(T\) is the last step. \(g_t\) is “the gradient, i.e. the vector of partial derivatives of \(f_t\)” at step \(t\). Example from the widget: each \(f_t\) is the squared error on \(B\) random points; its gradient scatters around the full-data gradient, with a spread that shrinks like \(1/\sqrt{B}\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Often, objective functions are stochastic”: sums of subfunctions on subsamples of the data, where stepping on individual subfunctions gives SGD; other noise sources include dropout. “For all such noisy objectives, efficient stochastic optimization techniques are required” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §1</a>. The stochasticity “might come from the evaluation at random subsamples (minibatches) of datapoints, or arise from inherent function noise” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §2</a>. All experiments use minibatches of 128 <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §6</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Minibatch gradients scatter with standard deviation 4 when B = 8. Roughly what spread do you expect with B = 32?","o":["4","2","1"],"a":1,"e":"Spread ∝ 1/√B: four times more points halves the noise (√4 = 2).","h":"How does the spread scale with B in the widget?"},
+    {"q":"What does \\(\\mathbb{E}[g_t]\\) equal for a minibatch gradient?","o":["Zero","The full-data gradient at the same θ","The gradient of the last minibatch"],"a":1,"e":"Averaged over all possible minibatches, the minibatch gradient equals the full-data gradient: it is an unbiased estimate.","h":"What is the black line in the widget?"},
+    {"q":"Near the best weight, which is larger in the widget: the true gradient or the minibatch noise?","o":["The true gradient","The noise","They are always equal"],"a":1,"e":"The true gradient goes to 0 at the optimum, the noise does not. Close to the optimum a single minibatch gradient is mostly noise: Chapter 14 shows how Adam exploits this.","h":"Set w ≈ 1.5 and look at the histogram."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-stepsize" data-title="One step size does not fit all" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">One step size does not fit all</h2>
+    <p class="lede">When some directions are steep and others flat, any single learning rate is too big for one and too small for the other.</p>
+  </header>
+  <p>Real loss surfaces are rarely round bowls. More often they are long, narrow valleys: steep across, almost flat along. Plain gradient descent then faces a dilemma.</p>
+  <div class="widget" data-widget="ravineLR"></div>
+  <p>The same problem appears between parameters. In a network, the gradients of different weights can differ by orders of magnitude, for example between layers. One learning rate scales all of them by the same factor:</p>
+  <div class="widget" data-widget="scaleDiff"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    <p>On \(f = \tfrac{a}{2}x^2 + \tfrac{b}{2}y^2\), one gradient step multiplies each coordinate by its own factor:</p>
+    \[ x \leftarrow (1 - \alpha a)\,x, \qquad y \leftarrow (1 - \alpha b)\,y. \]
+    <p>\(a\) and \(b\) are the curvatures (steepness) of the two directions; for the ravine \(a = 0.1\) and \(b = 4\). The step is stable only if \(|1 - \alpha b| < 1\), i.e. \(\alpha < 2/b = 0.5\). With \(\alpha = 0.3\), \(x\) shrinks by only \(1 - 0.03 = 0.97\) per step, so it needs \(\ln 0.01/\ln 0.97 \approx 152\) steps to fall to 1 % of its start. The ratio \(b/a = 40\) (the <strong>condition number</strong>) measures how hard the problem is for a single learning rate.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Adam “computes individual adaptive learning rates for different parameters” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §1</a>. The experiments note the same problem in convolutional networks: “weight sharing in CNNs results in vastly different gradients in different layers”, so with SGD “a smaller learning rate for the convolution layers is often used in practice” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §6.3</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"On f = 0.05x² + 2y², what is the largest learning rate for which y does not blow up?","o":["0.5","2","20"],"a":0,"e":"y is multiplied by 1 − 4α each step; we need |1 − 4α| < 1, i.e. α < 0.5.","h":"The y-curvature (second derivative) is 4."},
+    {"q":"Weight A has gradient 5, weight B gradient 0.05. With SGD and one learning rate, how do their step sizes compare?","o":["Equal","A’s step is 100× larger","B’s step is 100× larger"],"a":1,"e":"SGD’s step is lr × gradient, so it inherits the 100× ratio.","h":"Step = learning rate × gradient."},
+    {"q":"What would fix the dilemma of the ravine?","o":["A larger single learning rate","A separate effective step size for each direction or parameter","More data"],"a":1,"e":"Giving each parameter its own scale lets the steep direction take small steps and the flat one big steps. That is the “adaptive” in Adam.","h":"What does the paper say Adam computes for different parameters?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-momentum" data-title="Momentum and Nesterov" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Momentum and Nesterov</h2>
+    <p class="lede">Adding up past gradients cancels the zig-zag and builds speed along the valley.</p>
+  </header>
+  <p>A ball rolling down a valley does not stop and restart at every bump: it keeps <strong>momentum</strong>. In optimization, momentum keeps a running “velocity”, the sum of past gradients with older ones gradually forgotten. Gradients that keep flipping sign (across the valley) cancel; gradients that keep pointing the same way (along it) add up.</p>
+  <div class="widget" data-widget="momentumRace"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    <p>Classical momentum, with \(\mu\) (“mu”, typically 0.9) the momentum coefficient:</p>
+    \[ v_t = \mu\, v_{t-1} + g_t, \qquad \theta_t = \theta_{t-1} - \alpha\, v_t. \]
+    <p>\(v_t\) is the velocity. If the gradient is a constant \(g\), \(v_t\) grows towards \(g/(1-\mu)\): with \(\mu = 0.9\) the steps become 10× longer. If it alternates \(+g, -g\), \(v_t\) stays near \(\pm g/(1+\mu)\): about half a step. <strong>Nesterov momentum</strong> (as used by Sutskever et al., 2013) evaluates the gradient after a look-ahead step, which damps overshooting; the book uses the equivalent form \(v_t = \mu v_{t-1} + g_t\), \(\theta_t = \theta_{t-1} - \alpha(g_t + \mu v_t)\).</p>
+  </div>
+  <p>Adam’s first running average \(m_t\) is a close cousin of this velocity: an average of past gradients rather than a sum.</p>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“SGD with Nesterov momentum” (labelled SGDNesterov) is the main baseline in every experiment <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §6.1–6.3</a>. The paper also cites Sutskever et al. (2013) for the observation that “reducing the momentum coefficient in the end of training can improve convergence” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §4</a>: Chapter 21 meets this again.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>This page’s momentum is the shared <code>NN.SGD</code> with its <code>momentum</code> option (<a href="../shared/lib/nn.js">shared/lib/nn.js</a>); Nesterov and every other optimizer are written out in this book’s <a href="opt.js">opt.js</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"With μ = 0.9 and a constant gradient g, the velocity v approaches…","o":["g","10g","0.9g"],"a":1,"e":"v = 0.9v + g has the fixed point v = g/(1 − 0.9) = 10g.","h":"Solve v = μv + g for v."},
+    {"q":"Why does momentum help in the ravine?","o":["It makes the gradient exact","Components that flip sign cancel in the running sum, while steady components accumulate","It lowers the learning rate"],"a":1,"e":"Across the valley the gradient alternates and cancels; along the valley it is consistent and builds up speed.","h":"What happens to +g, −g, +g, … when you add them up?"},
+    {"q":"Which method is the paper’s main baseline in the experiments?","o":["Plain SGD","SGD with Nesterov momentum","Newton’s method"],"a":1,"e":"SGDNesterov appears in Fig. 1, 2 and 3.","h":"Look at the legends of the paper’s figures."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-ema" data-title="Running averages" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Running averages</h2>
+    <p class="lede">An exponential moving average keeps a smooth estimate of a noisy stream with one number and one knob, β.</p>
+  </header>
+  <p>Adam needs to know, for every weight, what its gradient typically looks like, while the gradients keep arriving one noisy sample at a time. The tool is the <strong>exponential moving average</strong> (<strong>EMA</strong>): keep one number \(m\); when a new value \(g\) arrives, move \(m\) a fraction \(1-\beta\) of the way towards it.</p>
+  <div class="widget" data-widget="emaDemo"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ m_t = \beta\, m_{t-1} + (1 - \beta)\, g_t, \qquad m_0 = 0. \]
+    <p>\(\beta\) (“beta”) is the <strong>decay rate</strong>, between 0 and 1: the fraction of the old average that is kept. \(\beta = 0\) means “no memory” (\(m_t = g_t\)); \(\beta = 0.9\) keeps 90 % of the old value. The <strong>effective memory</strong> is about \(1/(1-\beta)\) steps: 10 for \(\beta = 0.9\), 1,000 for \(\beta = 0.999\). Worked example with \(\beta = 0.9\), values \(2, 2, 2\): \(m_1 = 0.2\), \(m_2 = 0.38\), \(m_3 = 0.542\). The true level is 2, but \(m\) starts far below it because \(m_0 = 0\).</p>
+  </div>
+  <p>Unrolling the recursion shows exactly how much each past value counts:</p>
+  <div class="widget" data-widget="emaWeights"></div>
+  <div class="callout math"><div class="ct">∑ Unrolled</div>
+    \[ m_t = (1 - \beta) \sum_{i=1}^{t} \beta^{\,t-i}\, g_i, \qquad \sum_{i=1}^{t} (1-\beta)\beta^{\,t-i} = 1 - \beta^{t}. \]
+    <p>\(\sum_{i=1}^{t}\) means “add up for \(i = 1, 2, \dots, t\)”. Here \(\beta^{\,t-i}\) <em>is</em> a power: \(\beta\) multiplied by itself \(t - i\) times, so a value \(k\) steps old is discounted by \(\beta^k\). The weights form a geometric series whose sum is \(1 - \beta^t\), less than 1. In the example, \(t = 3\): \(1 - 0.9^3 = 0.271\), and indeed \(m_3 = 0.271 \times 2 = 0.542\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“The algorithm updates exponential moving averages of the gradient (\(m_t\)) and the squared gradient (\(v_t\)) where the hyper-parameters \(\beta_1, \beta_2 \in [0, 1)\) control the exponential decay rates of these moving averages” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §2</a>. The unrolled form is the paper’s Eq. 1 (for \(v_t\)) <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §3, Eq. 1</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"β = 0.99. About how many recent steps does the EMA effectively remember?","o":["1","100","0.99"],"a":1,"e":"1/(1 − 0.99) = 100.","h":"Use 1/(1 − β)."},
+    {"q":"β = 0.5, m₀ = 0, values 4 and 4. What is m₂?","o":["4","3","2"],"a":1,"e":"m₁ = 0.5·0 + 0.5·4 = 2; m₂ = 0.5·2 + 0.5·4 = 3. Also: (1 − 0.5²)·4 = 3.","h":"Apply the recursion twice."},
+    {"q":"Why is \\(m_t\\) too small at the start even if every value equals the true level?","o":["Because of noise","Because the weights only add up to \\(1 - \\beta^t\\); the rest sits on the starting value 0","Because β is too small"],"a":1,"e":"The missing weight β^t is attached to m₀ = 0, which drags the average down until β^t becomes negligible.","h":"Look at the sum of the bars in the second widget."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-moments" data-title="Mean, square and variance" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Mean, square and variance</h2>
+    <p class="lede">The average of a gradient and the average of its square together tell how big it is and how consistent it is.</p>
+  </header>
+  <p>Treat one weight’s gradient as a random number. Two summaries describe it. The <strong>first moment</strong> is its mean, \(\mathbb{E}[g]\): which way it pushes on average. The <strong>second raw moment</strong> is the mean of its square, \(\mathbb{E}[g^2]\): how big it typically is, regardless of sign. The <strong>variance</strong>, \(\mathbb{E}[g^2] - \mathbb{E}[g]^2\), measures how much it scatters around its mean.</p>
+  <div class="widget" data-widget="momentsDemo"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \mathbb{E}[g^2] = \operatorname{Var}[g] + \mathbb{E}[g]^2, \qquad \frac{|\mathbb{E}[g]|}{\sqrt{\mathbb{E}[g^2]}} \le 1. \]
+    <p>The first identity says the second raw moment is “variance plus squared mean”, which is why the paper calls it the <strong>uncentered variance</strong> (the variance measures spread around the mean; the raw moment measures spread around 0). The inequality follows because \(\operatorname{Var}[g] \ge 0\). Example: mean 0.5, spread (standard deviation) 1 gives \(\mathbb{E}[g^2] = 1 + 0.25 = 1.25\) and a ratio \(0.5/\sqrt{1.25} = 0.447\). With no noise the ratio is exactly 1; with pure noise (mean 0) it is 0.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The name Adam “is derived from adaptive moment estimation”: it uses “estimates of first and second moments of the gradients” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §1</a>. The moving averages “are estimates of the 1st moment (the mean) and the 2nd raw moment (the uncentered variance) of the gradient” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §2</a>. The ratio inequality, \(|\mathbb{E}[g]/\sqrt{\mathbb{E}[g^2]}| \le 1\), is used in §2.1 to bound Adam’s steps (Chapter 13).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A gradient has mean 3 and variance 16. What is its second raw moment E[g²]?","o":["16","25","19"],"a":1,"e":"E[g²] = Var + mean² = 16 + 9 = 25.","h":"Variance plus squared mean."},
+    {"q":"For that gradient, what is |E[g]|/√E[g²]?","o":["0.6","0.75","1"],"a":0,"e":"3/√25 = 3/5 = 0.6.","h":"Divide the mean by the square root of the raw second moment."},
+    {"q":"A weight’s gradient is pure noise with mean 0. What is the ratio |E[g]|/√E[g²]?","o":["0","1","It depends on the noise size"],"a":0,"e":"The numerator is 0 whatever the noise. A small ratio means: no consistent direction.","h":"What is the numerator?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-adaptive" data-title="AdaGrad and RMSProp" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">AdaGrad and RMSProp</h2>
+    <p class="lede">Two earlier methods divide each gradient by its own typical size; Adam inherits a strength from each.</p>
+  </header>
+  <p>If one learning rate cannot fit all parameters, give each parameter its own. <strong>AdaGrad</strong> (Duchi, Hazan &amp; Singer, 2011) divides each weight’s gradient by the square root of the sum of all its past squared gradients. A weight whose gradient is usually zero, like the weight of a rare word or a rare feature (<strong>sparse gradients</strong>), has a small sum and therefore gets large steps when its gradient finally appears.</p>
+  <div class="widget" data-widget="adagradSparse"></div>
+  <p>AdaGrad’s sum never forgets, so its steps can only shrink. If the problem changes over time (a <strong>non-stationary</strong> objective), AdaGrad becomes too timid to follow. <strong>RMSProp</strong> (Tieleman &amp; Hinton, 2012, from a lecture of a Coursera course) replaces the sum by an exponential moving average, which forgets.</p>
+  <div class="widget" data-widget="rmspropVsAdagrad"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \text{AdaGrad:}\quad \theta_{t+1} = \theta_t - \alpha \cdot \frac{g_t}{\sqrt{\sum_{i=1}^{t} g_i^2}} \]
+    \[ \text{RMSProp:}\quad v_t = \rho\, v_{t-1} + (1-\rho)\, g_t^2, \qquad \theta_t = \theta_{t-1} - \alpha\, \frac{g_t}{\sqrt{v_t} + \epsilon}. \]
+    <p>All operations are <strong>elementwise</strong>: each weight uses its own \(g\), its own sum and its own \(v\). \(g_i^2\) is the square of the gradient at step \(i\). \(\rho\) (“rho”) is RMSProp’s decay rate, and \(v_t\) is an EMA of squared gradients, so \(\sqrt{v_t}\) is a running “root mean square” (RMS) of the gradient. \(\epsilon\) is a tiny number that prevents division by zero. Example: a weight with past gradients \(3, 4\) has AdaGrad denominator \(\sqrt{9 + 16} = 5\), so its next gradient is divided by 5.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Adam “is designed to combine the advantages of two recently popular methods: AdaGrad …, which works well with sparse gradients, and RMSProp …, which works well in on-line and non-stationary settings” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §1</a>. The AdaGrad formula above is written exactly so in <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §5</a>, which also shows that AdaGrad is a special case of Adam (Chapter 24).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A weight’s past gradients were 0, 0, 0, 2. AdaGrad with α = 1: how big is its step at the fourth gradient?","o":["2","1","0.5"],"a":1,"e":"Sum of squares = 4, √4 = 2, step = 1 · 2/2 = 1. A rare feature gets a full-size step.","h":"Divide the gradient by √(sum of squared gradients)."},
+    {"q":"Why can AdaGrad struggle when the objective changes during training?","o":["Its accumulated sum only grows, so its steps keep shrinking","It has no learning rate","It forgets too quickly"],"a":0,"e":"The denominator √Σg² never decreases, so late in training AdaGrad takes tiny steps even when a large change is needed.","h":"What happens to Σg² over time?"},
+    {"q":"What does RMSProp change compared with AdaGrad?","o":["It uses the sign of the gradient","It replaces the sum of squared gradients by an exponential moving average","It adds momentum"],"a":1,"e":"The EMA forgets old gradients, so the denominator can shrink again when gradients become small.","h":"Compare the two denominators."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART II · THE ADAM ALGORITHM -->
+<section class="chapter" id="ch-idea" data-title="The big idea" data-part="Part II · The Adam algorithm">
+  <header>
+    <div class="kicker">The Adam algorithm</div>
+    <h2 class="title">The big idea</h2>
+    <p class="lede">Keep a running average of each weight’s gradient and of its square, correct both for starting at zero, and step by their ratio.</p>
+  </header>
+  <p>Put Part I together. Momentum (Chapter 5) smooths the direction with a running average of gradients. RMSProp (Chapter 8) normalises the size with a running average of squared gradients. Adam does both, for every weight, and adds one fix that the others lack: a correction for the fact that both averages start at zero (Chapter 16). The step is then roughly “average gradient ÷ typical gradient size”, a number around ±1, times a stepsize \(\alpha\) that you choose.</p>
+  <div class="widget" data-widget="optimizerRace"></div>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>Adam’s step answers two questions per weight: “which way has the gradient been pointing lately?” (the first moment, \(m\)) and “how big is the gradient usually?” (the second moment, \(v\)). Dividing one by the square root of the other gives a direction with a confidence: close to ±1 when the gradient is consistent, close to 0 when it is mostly noise. The stepsize \(\alpha\) turns that into a distance.</p></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The paper lists Adam’s advantages: “the magnitudes of parameter updates are invariant to rescaling of the gradient, its stepsizes are approximately bounded by the stepsize hyperparameter, it does not require a stationary objective, it works with sparse gradients, and it naturally performs a form of step size annealing” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §1</a>. The abstract adds that it is “straightforward to implement, is computationally efficient, has little memory requirements”, and that its hyper-parameters “typically require little tuning”. This part of the book takes these claims one by one: invariance (Chapter 15), the bound (Chapter 13), annealing (Chapter 14), sparse gradients (Chapters 18 and 22). The name was coined by Ivo Danihelka and Tom Schaul, and the author order was decided “by coin flip over a Google Hangout” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §9 and p. 1 footnote</a>.</p></div>
+  <div class="callout warn"><div class="ct">⚠ Careful</div><p>The race uses the book’s toy surfaces and the book’s learning rates, chosen so that no optimizer blows up. Races on toy surfaces can be won by any method with the right settings; the paper’s evidence is in Part V.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What does the name Adam stand for?","o":["Adaptive momentum","Adaptive moment estimation","Advanced descent method"],"a":1,"e":"From the paper: “the name Adam is derived from adaptive moment estimation”.","h":"Which statistical quantities does it estimate?"},
+    {"q":"Which two older methods does Adam set out to combine?","o":["Newton’s method and SGD","AdaGrad (sparse gradients) and RMSProp (non-stationary settings)","Dropout and momentum"],"a":1,"e":"The paper names AdaGrad for sparse gradients and RMSProp for on-line, non-stationary problems.","h":"See Chapter 8."},
+    {"q":"Roughly what size is Adam’s step for a weight whose gradient has been consistent?","o":["About α","About α times the gradient","About α divided by the gradient"],"a":0,"e":"Average gradient ÷ √(average squared gradient) ≈ ±1 when the gradient is consistent, so the step is about α, whatever the gradient’s size.","h":"What is m/√v when every gradient is the same number?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-alg1" data-title="Algorithm 1, line by line" data-part="Part II · The Adam algorithm">
+  <header>
+    <div class="kicker">The Adam algorithm</div>
+    <h2 class="title">Algorithm 1, line by line</h2>
+    <p class="lede">Seven lines per step: count, get the gradient, update two averages, correct them, and move.</p>
+  </header>
+  <p>Here is the paper’s Algorithm 1, written out in full (notation as in the paper):</p>
+  <div class="algo">
+    <b>Require:</b> \(\alpha\): stepsize<br>
+    <b>Require:</b> \(\beta_1, \beta_2 \in [0, 1)\): exponential decay rates for the moment estimates<br>
+    <b>Require:</b> \(f(\theta)\): stochastic objective function with parameters \(\theta\)<br>
+    <b>Require:</b> \(\theta_0\): initial parameter vector<br>
+    \(m_0 \leftarrow 0\) (initialize 1st moment vector)<br>
+    \(v_0 \leftarrow 0\) (initialize 2nd moment vector)<br>
+    \(t \leftarrow 0\) (initialize timestep)<br>
+    <b>while</b> \(\theta_t\) not converged <b>do</b><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;\(t \leftarrow t + 1\)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;\(g_t \leftarrow \nabla_\theta f_t(\theta_{t-1})\) (get gradients w.r.t. stochastic objective at timestep \(t\))<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;\(m_t \leftarrow \beta_1 \cdot m_{t-1} + (1-\beta_1)\cdot g_t\) (update biased first moment estimate)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;\(v_t \leftarrow \beta_2 \cdot v_{t-1} + (1-\beta_2)\cdot g_t^2\) (update biased second raw moment estimate)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;\(\widehat{m}_t \leftarrow m_t/(1-\beta_1^t)\) (compute bias-corrected first moment estimate)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;\(\widehat{v}_t \leftarrow v_t/(1-\beta_2^t)\) (compute bias-corrected second raw moment estimate)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;\(\theta_t \leftarrow \theta_{t-1} - \alpha\cdot \widehat{m}_t/(\sqrt{\widehat{v}_t}+\epsilon)\) (update parameters)<br>
+    <b>end while</b><br>
+    <b>return</b> \(\theta_t\) (resulting parameters)
+  </div>
+  <p>Run it yourself, one line at a time, on two weights whose gradients differ in size by a factor of 100:</p>
+  <div class="widget" data-widget="adamStepper"></div>
+  <div class="callout math"><div class="ct">∑ Every symbol</div>
+    \[ \begin{aligned} m_t &= \beta_1 m_{t-1} + (1-\beta_1)\, g_t, & v_t &= \beta_2 v_{t-1} + (1-\beta_2)\, g_t^2, \\ \widehat{m}_t &= \frac{m_t}{1-\beta_1^t}, & \widehat{v}_t &= \frac{v_t}{1-\beta_2^t}, \\ \theta_t &= \theta_{t-1} - \alpha\,\frac{\widehat{m}_t}{\sqrt{\widehat{v}_t}+\epsilon}. \end{aligned} \]
+    <p>\(t\): the timestep, counting from 1. \(g_t\): the stochastic gradient at the previous parameters \(\theta_{t-1}\). \(m_t\): EMA of gradients, decay \(\beta_1\) (“the 1st moment estimate”). \(v_t\): EMA of squared gradients, decay \(\beta_2\) (“the 2nd raw moment estimate”). \(g_t^2\) means \(g_t \odot g_t\), each entry squared: the paper writes \(\odot\) for elementwise multiplication. \(\beta_1^t, \beta_2^t\): <em>powers</em>, \(\beta\) to the \(t\)-th. The hats mark the bias-corrected versions. \(\alpha\): the stepsize. \(\epsilon\): a tiny constant. Every operation on vectors is elementwise, so each parameter has its own \(m\), \(v\) and effective step. Example, first step, one weight, \(g_1 = 0.4\), defaults: \(m_1 = 0.04\), \(v_1 = 0.00016\), \(\widehat{m}_1 = 0.04/0.1 = 0.4\), \(\widehat{v}_1 = 0.00016/0.001 = 0.16\), step \(= 0.001 \times 0.4/0.4 = 0.001 = \alpha\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Algorithm 1 is on page 2 <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper Algorithm 1</a>. Its caption: “\(g_t^2\) indicates the elementwise square \(g_t \odot g_t\) … All operations on vectors are element-wise. With \(\beta_1^t\) and \(\beta_2^t\) we denote \(\beta_1\) and \(\beta_2\) to the power \(t\).”</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>PyTorch’s <code>_single_tensor_adam</code> does the same work: <code>step_t += 1</code> (<a class="cite" href="https://github.com/pytorch/pytorch/blob/v2.5.0/torch/optim/adam.py#L364">adam.py L364</a>), <code>exp_avg.lerp_(grad, 1 - beta1)</code>, which is \(m \leftarrow m + (1-\beta_1)(g - m)\), the same thing as line 3, and <code>exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2)</code> for line 4 (<a class="cite" href="https://github.com/pytorch/pytorch/blob/v2.5.0/torch/optim/adam.py#L378-L379">L378–379</a>); the corrections and the update are folded together in <a class="cite" href="https://github.com/pytorch/pytorch/blob/v2.5.0/torch/optim/adam.py#L416-L432">L416–432</a> (Chapter 12 explains how). The shared <code>NN.Adam.prototype.step</code> in <a href="../shared/lib/nn.js">shared/lib/nn.js</a> is a line-for-line copy of Algorithm 1; the widget checks itself against it after every step.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"At which parameters is the gradient \\(g_t\\) evaluated?","o":["\\(\\theta_t\\), after the update","\\(\\theta_{t-1}\\), the parameters from the previous step","\\(\\theta_0\\) always"],"a":1,"e":"\\(g_t \\leftarrow \\nabla f_t(\\theta_{t-1})\\): the gradient is taken where we stand before moving.","h":"Read the second line of the loop."},
+    {"q":"In the stepper, θ₂’s gradient is 100× smaller than θ₁’s. Why do both weights still move by similar amounts?","o":["Because m̂/√v̂ removes each weight’s own gradient scale","Because α is different per weight","Because θ₂ is closer to its optimum"],"a":0,"e":"Both m̂ and √v̂ scale with the gradient’s size, so their ratio does not.","h":"Compare the m̂/√v̂ row for both columns."},
+    {"q":"First step, defaults, gradient g₁ = −2. What is the update θ₁ − θ₀ (ignoring ε)?","o":["−0.002","+0.001","−2"],"a":1,"e":"m̂₁ = g₁ = −2, v̂₁ = g₁² = 4, so the step is −α·(−2)/2 = +α = +0.001. The first step always has length α.","h":"After correction, m̂₁ = g₁ and v̂₁ = g₁²."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-hyper" data-title="The four knobs" data-part="Part II · The Adam algorithm">
+  <header>
+    <div class="kicker">The Adam algorithm</div>
+    <h2 class="title">The four knobs: α, β1, β2, ε</h2>
+    <p class="lede">The stepsize sets the length of the steps, the two decay rates set the memories, and ε only matters for tiny gradients.</p>
+  </header>
+  <p>Adam has four <strong>hyper-parameters</strong>, settings chosen by people rather than learned. The paper gives defaults that worked across all its experiments; they are still the defaults of every major library.</p>
+  <div class="widget" data-widget="hyperExplorer"></div>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Knob</th><th>Default</th><th>What it controls</th><th>Memory</th></tr>
+    <tr><td>\(\alpha\)</td><td>0.001</td><td>the typical length of a step in parameter space</td><td>–</td></tr>
+    <tr><td>\(\beta_1\)</td><td>0.9</td><td>how much the direction is smoothed (the first moment)</td><td>≈ 10 steps</td></tr>
+    <tr><td>\(\beta_2\)</td><td>0.999</td><td>how long the gradient-size estimate remembers (the second moment)</td><td>≈ 1,000 steps</td></tr>
+    <tr><td>\(\epsilon\)</td><td>10⁻⁸</td><td>a floor under \(\sqrt{\widehat v}\); prevents division by zero</td><td>–</td></tr>
+  </table></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    <p>The memories follow from Chapter 6: \(1/(1-\beta_1) = 1/0.1 = 10\) steps and \(1/(1-\beta_2) = 1/0.001 = 1000\) steps. The size estimate deliberately remembers far longer than the direction estimate: it should be a stable yardstick, while the direction should react within a few steps. \(\epsilon\) matters only where \(\sqrt{\widehat v_t}\) is comparable to it, i.e. for gradients around \(10^{-8}\) (Chapter 30).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Good default settings for the tested machine learning problems are \(\alpha = 0.001\), \(\beta_1 = 0.9\), \(\beta_2 = 0.999\) and \(\epsilon = 10^{-8}\)” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper Algorithm 1 caption</a>. The decay rates must satisfy \(\beta_1, \beta_2 \in [0, 1)\): 1 itself is excluded (Algorithm 1, “Require”).</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>PyTorch’s defaults are the paper’s: <code>lr=1e-3, betas=(0.9, 0.999), eps=1e-8</code> (<a class="cite" href="https://github.com/pytorch/pytorch/blob/v2.5.0/torch/optim/adam.py#L36-L38">adam.py L36–38</a>), and it rejects \(\beta \ge 1\) (L59–62).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"With β2 = 0.9999, about how many steps does the second-moment estimate remember?","o":["100","1,000","10,000"],"a":2,"e":"1/(1 − 0.9999) = 10,000.","h":"1/(1 − β2)."},
+    {"q":"With the paper’s α = 0.001, the toy start is about 3 units from the star. Roughly how many steps does Adam need at minimum?","o":["About 30","About 3,000","About 3"],"a":1,"e":"Steps are at most about α long, so covering 3 units needs at least about 3/0.001 = 3,000 steps. The paper’s default suits real networks, whose weights are small numbers.","h":"Distance ÷ step length."},
+    {"q":"Why is β2 closer to 1 than β1 by default?","o":["To make the size estimate a stable, long-memory yardstick while the direction reacts quickly","Because squares are larger","It is an arbitrary choice with no effect"],"a":0,"e":"The step divides by √v̂: if v̂ jittered, step sizes would jitter too. The direction m̂ should follow changes within a few steps.","h":"Which estimate do you want to be stable?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-efficient" data-title="A faster order of computation" data-part="Part II · The Adam algorithm">
+  <header>
+    <div class="kicker">The Adam algorithm</div>
+    <h2 class="title">A faster order of computation</h2>
+    <p class="lede">Both corrections can be folded into one number per step, so each weight needs less arithmetic.</p>
+  </header>
+  <p>Lines 5–7 of Algorithm 1 divide every weight’s \(m\) and \(v\) by a correction factor. But those factors are the same for every weight: they depend only on \(t\). The paper suggests computing them once per step, as a single adjusted stepsize \(\alpha_t\).</p>
+  <div class="widget" data-widget="efficientForm"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §2)</div>
+    \[ \alpha_t = \alpha \cdot \frac{\sqrt{1 - \beta_2^{\,t}}}{1 - \beta_1^{\,t}}, \qquad \theta_t \leftarrow \theta_{t-1} - \alpha_t \cdot \frac{m_t}{\sqrt{v_t} + \hat\epsilon}. \]
+    <p>Why it is the same: \(\dfrac{\widehat m_t}{\sqrt{\widehat v_t}} = \dfrac{m_t/(1-\beta_1^t)}{\sqrt{v_t}/\sqrt{1-\beta_2^t}} = \dfrac{\sqrt{1-\beta_2^t}}{1-\beta_1^t}\cdot\dfrac{m_t}{\sqrt{v_t}}\). Only \(\epsilon\) moves: \(\sqrt{\widehat v_t} + \epsilon\) becomes \(\big(\sqrt{v_t} + \epsilon\sqrt{1-\beta_2^t}\big)/\sqrt{1-\beta_2^t}\), so the fast form is exactly Algorithm 1 when \(\hat\epsilon = \epsilon\sqrt{1 - \beta_2^t}\). Example at \(t = 1\) with defaults: \(\alpha_1 = 0.001 \times \sqrt{0.001}/0.1 = 0.000316\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“The efficiency of algorithm 1 can, at the expense of clarity, be improved upon by changing the order of computation, e.g. by replacing the last three lines in the loop with” the two lines above <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §2</a>. The paper writes \(\hat\epsilon\) without saying how it relates to \(\epsilon\); the relation above is the book’s algebra.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>PyTorch also computes the corrections once per tensor: <code>step_size = lr / bias_correction1</code> and <code>denom = (exp_avg_sq.sqrt() / bias_correction2_sqrt).add_(eps)</code>, then <code>param.addcdiv_(exp_avg, denom, value=-step_size)</code> (<a class="cite" href="https://github.com/pytorch/pytorch/blob/v2.5.0/torch/optim/adam.py#L416-L432">adam.py L416–432</a>). It keeps ε exactly where Algorithm 1 puts it (added to \(\sqrt{\widehat v}\)), so it matches Algorithm 1, not the fast form with plain ε.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Why can the two bias corrections be computed once per step instead of once per weight?","o":["Because they depend only on t (and the βs), not on the weight","Because they are always 1","Because m and v are equal"],"a":0,"e":"1 − β1^t and 1 − β2^t are the same for every parameter at step t.","h":"What do the correction factors depend on?"},
+    {"q":"In the fast form, when does using plain ε instead of ε̂ visibly change the result?","o":["Never","Only when the gradients are about as small as ε","Always, by a lot"],"a":1,"e":"ε only matters when √v is comparable to it; the widget shows a difference for gradients near 10⁻⁸.","h":"Try the gradient-size slider."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-bound" data-title="How big is a step?" data-part="Part II · The Adam algorithm">
+  <header>
+    <div class="kicker">The Adam algorithm</div>
+    <h2 class="title">How big is a step?</h2>
+    <p class="lede">Adam’s step is almost never longer than α, and never longer than about 3α with the defaults.</p>
+  </header>
+  <p>With SGD the step is learning rate × gradient, so a huge gradient means a huge step. Adam’s step is \(\alpha\) × a ratio of averages. The paper calls it the <strong>effective step</strong> \(\Delta_t\) and shows that it has a ceiling.</p>
+  <div class="widget" data-widget="stepBound"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §2.1)</div>
+    <p>Assuming \(\epsilon = 0\), the effective step is</p>
+    \[ \Delta_t = \alpha \cdot \frac{\widehat m_t}{\sqrt{\widehat v_t}}, \qquad |\Delta_t| \le \begin{cases} \alpha \cdot \dfrac{1-\beta_1}{\sqrt{1-\beta_2}} & \text{if } (1-\beta_1) > \sqrt{1-\beta_2}, \\ \alpha & \text{otherwise.} \end{cases} \]
+    <p>The first, larger bound is reached “only in the most severe case of sparsity”: a gradient that was zero at every step except the current one. Then \(m_t = (1-\beta_1)g\) and \(v_t = (1-\beta_2)g^2\), so for large \(t\) (corrections ≈ 1) the ratio is \((1-\beta_1)/\sqrt{1-\beta_2}\). With the defaults, \(1 - \beta_1 = 0.1\) and \(\sqrt{1-\beta_2} = \sqrt{0.001} \approx 0.0316\), so the bound is \(\approx 3.16\,\alpha\). When \((1-\beta_1) = \sqrt{1-\beta_2}\), \(|\widehat m_t/\sqrt{\widehat v_t}| < 1\) and \(|\Delta_t| < \alpha\). In common cases \(\widehat m_t/\sqrt{\widehat v_t} \approx \pm 1\) because \(|\mathbb{E}[g]/\sqrt{\mathbb{E}[g^2]}| \le 1\) (Chapter 7), so \(|\Delta_t| \lessapprox \alpha\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“An important property of Adam’s update rule is its careful choice of stepsizes” … “The effective magnitude of the steps taken in parameter space at each timestep are approximately bounded by the stepsize setting \(\alpha\), i.e., \(|\Delta_t| \lessapprox \alpha\)” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §2.1</a>. The paper states the two bounds without a derivation; the sparse-case computation above is the book’s.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"With β1 = 0.9 and β2 = 0.99, which bound applies?","o":["|Δ| ≤ 3.16α","|Δ| ≤ α (since 1 − β1 = 0.1 equals √(1 − β2) = 0.1)","No bound"],"a":1,"e":"√(1 − 0.99) = 0.1 = 1 − β1, the boundary case: |m̂/√v̂| < 1, so |Δ| < α.","h":"Compare 1 − β1 with √(1 − β2)."},
+    {"q":"Which gradient pattern makes Adam’s step largest?","o":["A constant gradient","A gradient that was zero for a long time and suddenly appears","A gradient that flips sign every step"],"a":1,"e":"After a long run of zeros, v has decayed to almost nothing, so the new gradient is divided by a small number: up to (1 − β1)/√(1 − β2) times α.","h":"Try the “sparse” pattern with a large k."},
+    {"q":"A gradient is suddenly 1,000× larger than usual for one step. Roughly how does Adam’s step change, compared with SGD’s?","o":["Both grow 1,000×","SGD’s grows 1,000×; Adam’s stays bounded (at most about 3α with defaults)","Neither changes"],"a":1,"e":"v̂ absorbs the large square at once, so the ratio m̂/√v̂ stays bounded; SGD’s step is proportional to the gradient.","h":"What bounds |Δ| in Adam?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-trust" data-title="Trust region, signal-to-noise and annealing" data-part="Part II · The Adam algorithm">
+  <header>
+    <div class="kicker">The Adam algorithm</div>
+    <h2 class="title">Trust region, signal-to-noise and annealing</h2>
+    <p class="lede">Because steps are about α long, α can be chosen from distances; and steps shrink by themselves where the gradient becomes unreliable.</p>
+  </header>
+  <p>The bound of Chapter 13 has a practical reading. Around the current parameters there is a region in which the current gradient can be trusted; farther away it says little. Adam’s steps stay inside a region of radius about \(\alpha\): a <strong>trust region</strong>. So if you know roughly how far the solution lies from the start (for instance, that weights end up between −1 and 1), you know how many steps of size \(\alpha\) it takes.</p>
+  <div class="widget" data-widget="alphaPlanner"></div>
+  <p>The second idea is the <strong>signal-to-noise ratio</strong> (<strong>SNR</strong>). The paper uses this name for \(\widehat m_t/\sqrt{\widehat v_t}\): the average gradient compared with its typical size. Far from the optimum the gradient points consistently and the SNR is near ±1. Near the optimum the true gradient vanishes, the noise does not, and the SNR falls towards 0. So do the steps: <strong>automatic annealing</strong>, without any learning-rate schedule.</p>
+  <div class="widget" data-widget="snrAnneal"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \mathrm{SNR}_t = \frac{\widehat m_t}{\sqrt{\widehat v_t}} \approx \frac{\mathbb{E}[g]}{\sqrt{\mathbb{E}[g^2]}} = \frac{\mu}{\sqrt{\mu^2 + \sigma^2}}, \qquad |\Delta_t| = \alpha\,|\mathrm{SNR}_t| \;(\epsilon = 0). \]
+    <p>\(\mu\) is the true mean gradient, \(\sigma\) its noise (standard deviation). Far away, \(|\mu| \gg \sigma\) gives \(|\mathrm{SNR}| \approx 1\). Near the optimum \(\mu \to 0\) gives \(\mathrm{SNR} \to 0\). Example: \(\mu = 0.1\), \(\sigma = 1\): \(\mathrm{SNR} \approx 0.1/\sqrt{1.01} \approx 0.0995\), so steps are about a tenth of \(\alpha\). (Statisticians define signal-to-noise differently; the paper says it uses the name “with a slight abuse of terminology”.)</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“This can be understood as establishing a <em>trust region</em> around the current parameter value, beyond which the current gradient estimate does not provide sufficient information. This typically makes it relatively easy to know the right scale of \(\alpha\) in advance.” For many models good optima lie with high probability in a known region, sometimes given by a prior distribution over the parameters, so “we can often deduce the right order of magnitude of \(\alpha\) such that optima can be reached from \(\theta_0\) within some number of iterations” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §2.1</a>. On the SNR: “the SNR value typically becomes closer to 0 towards an optimum, leading to smaller effective steps in parameter space: a form of automatic annealing” (same section).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"You expect the solution within distance 2 of the start and can afford 10,000 steps. Which α is about right for Adam?","o":["0.0002 or a bit more","2","0.2"],"a":0,"e":"Steps are at most about α long, so 2/10,000 = 0.0002 is the minimum; a few times more leaves slack.","h":"Distance ÷ number of steps."},
+    {"q":"Near the optimum, why do Adam’s steps get smaller with no schedule?","o":["Because α decays automatically","Because the mean gradient vanishes while its noise does not, so m̂/√v̂ falls","Because v̂ grows without bound"],"a":1,"e":"m̂ averages towards 0 while √v̂ keeps measuring the noise; their ratio, the SNR, shrinks.","h":"What happens to E[g] and E[g²] near the optimum?"},
+    {"q":"In the planner, changing the curvature k changes SGD’s step count a lot but Adam’s hardly at all. Why?","o":["Adam ignores gradients","Adam’s step length is set by α, not by the gradient’s scale","k does not change the gradient"],"a":1,"e":"k multiplies every gradient; Adam’s ratio m̂/√v̂ cancels it, SGD’s step lr·g does not.","h":"Which method’s step is proportional to the gradient?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-invariance" data-title="Rescaling the gradient changes nothing" data-part="Part II · The Adam algorithm">
+  <header>
+    <div class="kicker">The Adam algorithm</div>
+    <h2 class="title">Rescaling the gradient changes nothing</h2>
+    <p class="lede">Multiply every gradient by any positive constant and Adam takes exactly the same steps.</p>
+  </header>
+  <p>Suppose someone measures the loss in different units: multiplies it by 1,000, or by 0.001. Nothing about the problem changes, but every gradient is multiplied by the same constant \(c\). SGD’s steps change by \(c\) too, so a learning rate that worked becomes useless. Adam’s do not.</p>
+  <div class="widget" data-widget="scaleInvariance"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §2.1)</div>
+    \[ \frac{c\cdot \widehat m_t}{\sqrt{c^2 \cdot \widehat v_t}} = \frac{\widehat m_t}{\sqrt{\widehat v_t}} \qquad (c > 0). \]
+    <p>Scaling every gradient by \(c\) scales \(m_t\) (an average of gradients) by \(c\) and \(v_t\) (an average of squares) by \(c^2\); the square root brings \(c^2\) back to \(c\), which cancels. The same holds per weight with a different \(c_i\) for each weight: a “diagonal rescaling”. Only \(\epsilon\) spoils it, once \(c\sqrt{\widehat v_t}\) is no longer much larger than \(\epsilon = 10^{-8}\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“The effective stepsize \(\Delta_t\) is also invariant to the scale of the gradients; rescaling the gradients \(g\) with factor \(c\) will scale \(\widehat m_t\) with a factor \(c\) and \(\widehat v_t\) with a factor \(c^2\), which cancel out” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §2.1</a>. The abstract: Adam “is invariant to diagonal rescaling of the gradients”.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Every gradient is multiplied by 100. What happens to v̂_t?","o":["×100","×10,000","Unchanged"],"a":1,"e":"v averages squared gradients: (100g)² = 10,000g².","h":"v is built from g²."},
+    {"q":"Weight 1’s gradients are multiplied by 2 and weight 2’s by 50. Do Adam’s steps change?","o":["No, the invariance holds per weight (diagonal rescaling)","Yes, both change","Only weight 2’s changes"],"a":0,"e":"Each weight has its own m and v, so each factor cancels in its own ratio.","h":"Adam’s operations are elementwise."},
+    {"q":"At what point does the invariance break?","o":["Never","When the scaled gradients become about as small as ε","When c > 1"],"a":1,"e":"The denominator is √v̂ + ε; once √v̂ ≈ ε the constant ε no longer scales with c.","h":"Which part of the update does not scale with c?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-bias" data-title="Starting from zero: initialization bias" data-part="Part II · The Adam algorithm">
+  <header>
+    <div class="kicker">The Adam algorithm</div>
+    <h2 class="title">Starting from zero: initialization bias</h2>
+    <p class="lede">Averages that start at zero are too small at first; dividing by 1 − β^t fixes them exactly.</p>
+  </header>
+  <p>Chapter 6 showed that an EMA started at 0 lags behind. For Adam this lag is a <strong>bias</strong>: a systematic error, not noise. Both \(m_t\) and \(v_t\) are “biased towards zero, especially during the initial timesteps, and especially when the decay rates are small (i.e. the βs are close to 1)”. The repair is the <strong>bias correction</strong> of lines 5–6 of Algorithm 1.</p>
+  <div class="widget" data-widget="biasDemo"></div>
+  <p>Where does the factor \(1 - \beta^t\) come from? Write \(v_t\) as a sum over all past gradients, the paper’s Eq. 1:</p>
+  <div class="widget" data-widget="eq1Weights"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §3, Eq. 1)</div>
+    \[ v_t = (1-\beta_2) \sum_{i=1}^{t} \beta_2^{\,t-i} \cdot g_i^2 \qquad\text{(1)} \]
+    <p>Start from \(v_0 = 0\) and apply \(v_t = \beta_2 v_{t-1} + (1-\beta_2) g_t^2\) repeatedly: \(v_1 = (1-\beta_2) g_1^2\), \(v_2 = (1-\beta_2)(\beta_2 g_1^2 + g_2^2)\), and so on. Gradient \(g_i\) enters at step \(i\) and is multiplied by \(\beta_2\) once per later step, \(t - i\) times. The weights \((1-\beta_2)\beta_2^{t-i}\) add up to \(1 - \beta_2^{t}\) (Chapter 6). Example: \(\beta_2 = 0.999\), \(t = 10\): \(1 - 0.999^{10} \approx 0.00996\). Without correction \(v_{10}\) would be about 1 % of the true \(\mathbb{E}[g^2]\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“These moving averages are initialized as (vectors of) 0’s, leading to moment estimates that are biased towards zero … The good news is that this initialization bias can be easily counteracted, resulting in bias-corrected estimates \(\widehat m_t\) and \(\widehat v_t\)” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §2</a>. Section 3 derives the correction for \(v_t\) (“the derivation for the first moment estimate is completely analogous”) starting from Eq. 1 <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §3, Eq. 1</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"β2 = 0.999. After t = 1 step, by what factor is v₁ too small, on average?","o":["0.999","0.001","0.5"],"a":1,"e":"1 − β2¹ = 0.001: v₁ = 0.001·g₁². Dividing by 0.001 gives v̂₁ = g₁².","h":"Compute 1 − β2^t for t = 1."},
+    {"q":"In Eq. 1, how much weight does the gradient from 5 steps ago get (β2 = 0.9)?","o":["(1 − 0.9)·0.9⁵ ≈ 0.059","0.9⁵ ≈ 0.59","0.1"],"a":0,"e":"Weight (1 − β2)β2^(t−i) with t − i = 5: 0.1 × 0.59 = 0.059.","h":"Use (1 − β2)·β2^(t−i)."},
+    {"q":"Why is the bias worse when β is closer to 1?","o":["Because 1 − β^t stays far below 1 for more steps","Because the gradients are larger","It is not worse"],"a":0,"e":"β^t decays slowly when β ≈ 1, so 1 − β^t stays small for about 1/(1 − β) steps.","h":"How fast does 0.9999^t shrink?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-biasderive" data-title="Deriving the correction" data-part="Part II · The Adam algorithm">
+  <header>
+    <div class="kicker">The Adam algorithm</div>
+    <h2 class="title">Deriving the correction</h2>
+    <p class="lede">Take the expected value of Eq. 1: what remains is the true second moment times 1 − β2^t, plus a small leftover ζ.</p>
+  </header>
+  <p>We want \(\widehat v_t\) to estimate \(\mathbb{E}[g^2]\) correctly on average. So ask: what is the expected value of \(v_t\)? The paper’s three-line derivation answers it. First check it by brute force, averaging many runs:</p>
+  <div class="widget" data-widget="biasExpect"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §3, Eq. 2–4)</div>
+    \[ \mathbb{E}[v_t] = \mathbb{E}\Big[(1-\beta_2)\sum_{i=1}^{t}\beta_2^{\,t-i}\cdot g_i^2\Big] \qquad\text{(2)} \]
+    \[ = \mathbb{E}[g_t^2]\cdot(1-\beta_2)\sum_{i=1}^{t}\beta_2^{\,t-i} + \zeta \qquad\text{(3)} \]
+    \[ = \mathbb{E}[g_t^2]\cdot(1-\beta_2^{\,t}) + \zeta \qquad\text{(4)} \]
+    <p>(2) takes the expected value \(\mathbb{E}\) of both sides of Eq. 1. (3) pulls \(\mathbb{E}[g^2]\) out of the sum, which is exact if every \(g_i\) has the same second moment (the <strong>stationary</strong> case); any difference is collected in \(\zeta\) (“zeta”). (4) sums the geometric series: \((1-\beta_2)(1 + \beta_2 + \dots + \beta_2^{t-1}) = 1 - \beta_2^t\). Divide by \(1 - \beta_2^t\) and \(\widehat v_t\) has expected value \(\mathbb{E}[g^2]\) (plus \(\zeta/(1-\beta_2^t)\)). The same steps with \(g_i\) instead of \(g_i^2\) give the first-moment correction \(1 - \beta_1^t\).</p>
+  </div>
+  <p>When the gradient’s statistics drift during training, \(\zeta\) is not zero. It stays small if the memory is short enough that old gradients carry little weight:</p>
+  <div class="widget" data-widget="zetaDemo"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“\(\zeta = 0\) if the true second moment \(\mathbb{E}[g_i^2]\) is stationary; otherwise \(\zeta\) can be kept small since the exponential decay rate \(\beta_1\) can (and should) be chosen such that the exponential moving average assigns small weights to gradients too far in the past. What is left is the term \((1-\beta_2^t)\) which is caused by initializing the running average with zeros. In algorithm 1 we therefore divide by this term” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §3, Eq. 2–4</a>. (The derivation is about \(v_t\), so the decay rate meant here is presumably \(\beta_2\); the text says \(\beta_1\).)</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"In Eq. 3, what does ζ collect?","o":["The noise of a single gradient","The error from treating all E[g_i²] as equal when they actually drift","The bias from zero initialisation"],"a":1,"e":"Pulling E[g_t²] out of the sum is exact only for a stationary second moment; ζ is what is left otherwise.","h":"When is ζ = 0?"},
+    {"q":"Compute (1 − β2)(1 + β2 + β2²) for β2 = 0.5.","o":["0.875","1","0.5"],"a":0,"e":"0.5 × 1.75 = 0.875 = 1 − 0.5³. The geometric sum always gives 1 − β2^t.","h":"It should equal 1 − β2³."},
+    {"q":"The drift widget shows a bigger ζ for β2 = 0.999 than for β2 = 0.9. Why?","o":["Longer memory averages in older gradients, which differ more from today’s","Smaller β2 has more noise","β2 does not affect ζ"],"a":0,"e":"With memory ≈ 1,000 steps, v still reflects the gradients of long ago; when the moment drifts, that lag is ζ.","h":"Memory ≈ 1/(1 − β2)."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-biaswhy" data-title="What goes wrong without it" data-part="Part II · The Adam algorithm">
+  <header>
+    <div class="kicker">The Adam algorithm</div>
+    <h2 class="title">What goes wrong without it</h2>
+    <p class="lede">Without the correction, the first steps with β2 close to 1 are tens to hundreds of times longer than α.</p>
+  </header>
+  <p>Remove lines 5–6 and divide the raw \(m_t\) by the raw \(\sqrt{v_t}\). At the start, \(v_t\) is shrunk by \(1 - \beta_2^t\) and \(m_t\) by \(1 - \beta_1^t\). Because \(\beta_2\) is usually closer to 1, \(v\) is shrunk far more, and the update is inflated:</p>
+  <div class="widget" data-widget="firstSteps"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    <p>For a constant gradient \(g\): \(m_t = (1-\beta_1^t)\,g\) and \(v_t = (1-\beta_2^t)\,g^2\), so without correction</p>
+    \[ \frac{|\Delta_t|}{\alpha} = \frac{1-\beta_1^{\,t}}{\sqrt{1-\beta_2^{\,t}}}, \qquad t = 1:\;\; \frac{1-\beta_1}{\sqrt{1-\beta_2}}. \]
+    <p>With the correction the ratio is exactly 1. At \(t = 1\): \(\beta_1 = 0\), \(\beta_2 = 0.9999\) gives \(1/0.01 = 100\); \(\beta_1 = 0.9\), \(\beta_2 = 0.9999\) gives \(0.1/0.01 = 10\); \(\beta_1 = 0\), \(\beta_2 = 0.999\) gives \(1/\sqrt{0.001} \approx 31.6\).</p>
+  </div>
+  <p>Why would anyone choose \(\beta_2\) so close to 1? For sparse gradients. A weight whose gradient is nonzero only now and then needs a long memory to estimate its typical size from the few nonzero values. That is exactly the setting in which the uncorrected version takes the largest steps.</p>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“In case of sparse gradients, for a reliable estimate of the second moment one needs to average over many gradients by chosing a small value of \(\beta_2\); however it is exactly this case of small \(\beta_2\) where a lack of initialisation bias correction would lead to initial steps that are much larger” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §3</a>. (“Small value of β2” must mean a small \(1 - \beta_2\), i.e. β2 close to 1, as in §2 and §5.) RMSProp “lacks a bias-correction term; this matters most in case of a value of \(\beta_2\) close to 1 (required in case of sparse gradients), since in that case not correcting the bias leads to very large stepsizes and often divergence” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §5</a>. The experiment is in Chapter 31.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Without bias correction, β1 = 0.9, β2 = 0.999, constant gradient: how long is the first step?","o":["α","about 3.16α","100α"],"a":1,"e":"(1 − 0.9)/√(1 − 0.999) = 0.1/0.0316 ≈ 3.16.","h":"(1 − β1)/√(1 − β2)."},
+    {"q":"Why are sparse gradients the dangerous case for the uncorrected method?","o":["Sparse gradients need β2 close to 1, and that is when the uncorrected steps are most inflated","Sparse gradients are larger","Sparse gradients have no second moment"],"a":0,"e":"A long memory is needed to estimate the size of rarely nonzero gradients; long memory means a slow-starting v and inflated steps.","h":"Which β2 do sparse problems need?"},
+    {"q":"With correction and a constant gradient, what is |Δ_t|/α at every step?","o":["1","1 − β1^t","It grows"],"a":0,"e":"m̂_t = g and v̂_t = g² exactly, so the ratio is 1.","h":"Compute m̂ and v̂ for constant g."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART III · CONVERGENCE -->
+<section class="chapter" id="ch-online" data-title="Online learning and regret" data-part="Part III · Does Adam converge?">
+  <header>
+    <div class="kicker">Does Adam converge?</div>
+    <h2 class="title">Online learning and regret</h2>
+    <p class="lede">To prove anything about Adam, the paper plays a game against an unknown sequence of costs and counts how much worse it does than the best fixed choice.</p>
+  </header>
+  <p>The paper analyses Adam in the <strong>online learning</strong> framework of Zinkevich (2003). At each round \(t\) the learner must commit to parameters \(\theta_t\) before it sees that round’s cost function \(f_t\); then it pays \(f_t(\theta_t)\) and gets to see the gradient. The costs can be anything (the framework does not even assume they come from a fixed distribution) as long as each is convex (Chapter 20). Play it:</p>
+  <div class="widget" data-widget="regretGame"></div>
+  <p>Since the sequence is unknown, no learner can be perfect. The fair yardstick is the best <em>single</em> parameter vector \(\theta^*\) chosen with hindsight, knowing all the costs. The difference in total cost is the <strong>regret</strong>.</p>
+  <div class="callout math"><div class="ct">∑ The math (paper §4, Eq. 5)</div>
+    \[ R(T) = \sum_{t=1}^{T}\big[f_t(\theta_t) - f_t(\theta^*)\big], \qquad \theta^* = \arg\min_{\theta\in\mathcal{X}} \sum_{t=1}^{T} f_t(\theta). \qquad\text{(5)} \]
+    <p>\(R(T)\): regret after \(T\) rounds. \(f_t(\theta_t)\): what the learner paid at round \(t\). \(f_t(\theta^*)\): what the best fixed choice would have paid. \(\mathcal{X}\): the <strong>feasible set</strong> of allowed parameters (in the widget, the interval \([-1, 1]\)). If \(R(T)\) grows more slowly than \(T\), the <strong>average regret</strong> \(R(T)/T\) goes to 0: in the long run the learner does as well per round as the best fixed choice. The paper proves Adam’s regret grows like \(\sqrt{T}\), written \(O(\sqrt{T})\) (“big-O”: at most a constant times \(\sqrt{T}\) for large \(T\)).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Given an arbitrary, unknown sequence of convex cost functions \(f_1(\theta), f_2(\theta), \dots, f_T(\theta)\). At each time \(t\), our goal is to predict the parameter \(\theta_t\) and evaluate it on a previously unknown cost function \(f_t\).” The regret is “the sum of all the previous difference between the online prediction \(f_t(\theta_t)\) and the best fixed point parameter \(f_t(\theta^*)\) from a feasible set \(\mathcal{X}\)”. “We show Adam has \(O(\sqrt{T})\) regret bound … comparable to the best known bound for this general convex online learning problem” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §4, Eq. 5</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"In the online game, when does the learner see the cost function f_t?","o":["Before choosing θ_t","After committing to θ_t","Never"],"a":1,"e":"The learner predicts first, then f_t is revealed and paid. That is what makes the problem hard.","h":"Read the order of events in the widget."},
+    {"q":"A method has regret R(T) = 5√T. What is its average regret after T = 10,000 rounds?","o":["0.05","500","5"],"a":0,"e":"R/T = 5·100/10,000 = 0.05, and it keeps falling like 1/√T.","h":"Divide R(T) by T."},
+    {"q":"Why compare with the best fixed θ*, not with the best θ for each round?","o":["The best per-round choice would require knowing f_t in advance, which no learner can","Because θ* is always zero","It makes no difference"],"a":0,"e":"Choosing perfectly each round needs foresight; the best fixed choice in hindsight is a fair but demanding benchmark.","h":"What would you need to know to pick the best θ for round t?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-convex" data-title="Convex functions" data-part="Part III · Does Adam converge?">
+  <header>
+    <div class="kicker">Does Adam converge?</div>
+    <h2 class="title">Convex functions</h2>
+    <p class="lede">Bowl-shaped functions have no false bottoms, and their tangents never cut into them: that is all the proof needs.</p>
+  </header>
+  <p>A function is <strong>convex</strong> if it curves upwards everywhere, like a bowl: no bumps, no second valleys. Logistic regression (Chapter 28) has a convex loss; neural networks do not. Two equivalent pictures matter for the proof:</p>
+  <div class="widget" data-widget="convexChord"></div>
+  <div class="callout math"><div class="ct">∑ The math (Appendix 10.1)</div>
+    <p><b>Definition 10.1.</b> \(f: \mathbb{R}^d \to \mathbb{R}\) is convex if for all \(x, y \in \mathbb{R}^d\) and all \(\lambda \in [0, 1]\):</p>
+    \[ \lambda f(x) + (1-\lambda) f(y) \ge f(\lambda x + (1-\lambda) y). \]
+    <p><b>Lemma 10.2.</b> If \(f\) is convex, then for all \(x, y\):</p>
+    \[ f(y) \ge f(x) + \nabla f(x)^{T}(y - x). \]
+    <p>\(\mathbb{R}^d\): vectors of \(d\) real numbers. \(\lambda x + (1-\lambda)y\) is a point on the segment between \(x\) and \(y\) (\(\lambda = 1\) gives \(x\), \(\lambda = 0\) gives \(y\)); the left side is the matching point on the straight chord. \(\nabla f(x)^T(y-x)\) is the dot product of the gradient with the displacement; the right side of Lemma 10.2 is the tangent plane at \(x\). Used with \(x = \theta_t\) and \(y = \theta^*\), it gives the proof’s first step: \(f_t(\theta_t) - f_t(\theta^*) \le g_t^T(\theta_t - \theta^*)\). Example: \(f = x^2\), \(x = 1\): tangent \(1 + 2(y - 1)\); at \(y = -1\) the curve is 1, the tangent \(-3\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Both statements open the appendix <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper App. 10.1, Def. 10.1, Lemma 10.2</a>: “a convex function can be lower bounded by a hyperplane at its tangent”, and “our proof for the main theorem is constructed by substituting the hyperplane with the Adam update rules”. The analysis covers convex costs only; for networks “our convergence analysis does not apply to non-convex problems” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §6.2</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"f(x) = x², x = −1, y = 3, λ = 0.5. Check Definition 10.1: chord value vs f at the midpoint.","o":["chord 5 ≥ f(1) = 1 ✓","chord 1 ≥ f(1) = 5 ✗","They are equal"],"a":0,"e":"Chord: 0.5·1 + 0.5·9 = 5. Midpoint: 0.5·(−1) + 0.5·3 = 1, f(1) = 1. 5 ≥ 1.","h":"Compute λf(x) + (1 − λ)f(y) and f(λx + (1 − λ)y)."},
+    {"q":"Why does the regret proof need Lemma 10.2?","o":["It bounds the unknown cost difference f_t(θ_t) − f_t(θ*) by something involving only the gradient, which Adam knows","It proves the gradient is zero","It defines regret"],"a":0,"e":"f_t(θ_t) − f_t(θ*) ≤ g_tᵀ(θ_t − θ*): the regret becomes a sum of gradient terms that the update rule controls.","h":"Set x = θ_t and y = θ* in Lemma 10.2."},
+    {"q":"Does Theorem 4.1 guarantee anything for training a deep network?","o":["Yes, always","No: network losses are not convex, and the paper says the analysis does not apply","Only with dropout"],"a":1,"e":"The paper is explicit that the analysis does not cover non-convex problems; for those it relies on experiments.","h":"Is a network’s loss convex?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-theorem" data-title="Theorem 4.1, term by term" data-part="Part III · Does Adam converge?">
+  <header>
+    <div class="kicker">Does Adam converge?</div>
+    <h2 class="title">Theorem 4.1, term by term</h2>
+    <p class="lede">Under bounded gradients and bounded distances, with a decaying stepsize and a decaying β1, Adam’s regret is at most a sum of three terms that grow no faster than √T.</p>
+  </header>
+  <p>The theorem needs some notation. \(g_{t,i}\) is the \(i\)-th entry of the gradient at step \(t\). For each coordinate \(i\), stack its gradients over time into one vector, \(g_{1:t,i} = [g_{1,i}, g_{2,i}, \dots, g_{t,i}]\); its length \(\|g_{1:t,i}\|_2 = \sqrt{\sum_s g_{s,i}^2}\) measures how much gradient that coordinate has seen. A <strong>norm</strong> measures a vector’s size: \(\|x\|_2 = \sqrt{\sum x_i^2}\) (Euclidean length) and \(\|x\|_\infty = \max_i |x_i|\) (largest entry).</p>
+  <div class="widget" data-widget="theoremTerms"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §4, Theorem 4.1)</div>
+    <p><b>Assumptions.</b> Bounded gradients: \(\|\nabla f_t(\theta)\|_2 \le G\) and \(\|\nabla f_t(\theta)\|_\infty \le G_\infty\) for all \(\theta\). Bounded distances between iterates: \(\|\theta_n - \theta_m\|_2 \le D\) and \(\|\theta_m - \theta_n\|_\infty \le D_\infty\). Decay rates with \(\gamma := \beta_1^2/\sqrt{\beta_2} < 1\). A decaying stepsize \(\alpha_t = \alpha/\sqrt{t}\) and a decaying first-moment coefficient \(\beta_{1,t} = \beta_1\lambda^{t-1}\), \(\lambda \in (0, 1)\). Then for all \(T \ge 1\):</p>
+    \[ \begin{aligned} R(T) \le\;& \frac{D^2}{2\alpha(1-\beta_1)}\sum_{i=1}^{d}\sqrt{T\,\widehat v_{T,i}} \\ &+ \frac{\alpha(1+\beta_1)G_\infty}{(1-\beta_1)\sqrt{1-\beta_2}\,(1-\gamma)^2}\sum_{i=1}^{d}\|g_{1:T,i}\|_2 \\ &+ \sum_{i=1}^{d}\frac{D_\infty^2\, G_\infty\sqrt{1-\beta_2}}{2\alpha(1-\beta_1)(1-\lambda)^2}. \end{aligned} \]
+    <p><b>Term 1</b> pays for distance: \(D^2\) (how far apart iterates can be) times \(\sqrt{T\,\widehat v_{T,i}}\), which is at most about \(G_\infty\sqrt{T}\) per coordinate. <b>Term 2</b> pays for the gradients seen, \(\sum_i\|g_{1:T,i}\|_2\), at most \(d\,G_\infty\sqrt{T}\). <b>Term 3</b> pays for the decaying momentum; it does not grow with \(T\) at all. So \(R(T) = O(\sqrt{T})\). Example of the constants with the defaults: \(\gamma = 0.81/\sqrt{0.999} \approx 0.810 < 1\) ✓, so \((1-\gamma)^2 \approx 0.036\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The theorem “holds when the learning rate \(\alpha_t\) is decaying at a rate of \(t^{-1/2}\) and first moment running average coefficient \(\beta_{1,t}\) decay exponentially with \(\lambda\), that is typically close to 1, e.g. \(1 - 10^{-8}\)” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §4, Theorem 4.1</a>. The proof is Theorem 10.5 in the appendix (Chapter 23).</p></div>
+  <div class="callout warn"><div class="ct">⚠ Careful</div><p>Two differences from everyday Adam: the theorem decays \(\alpha\) and \(\beta_1\), which Algorithm 1 does not. And the bound is a worst case over all convex sequences, so on a friendly problem it is very loose: the widget shows actual regrets hundreds of times smaller. With the paper’s example \(\lambda = 1 - 10^{-8}\), \(1/(1-\lambda)^2 = 10^{16}\), so term 3 is astronomically large, though constant in \(T\). Later work found a gap in the proof (Chapters 23 and 32).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"β1 = 0.9, β2 = 0.5. Does Theorem 4.1 apply?","o":["Yes","No: γ = 0.81/√0.5 ≈ 1.15 ≥ 1","Only if λ < 0.5"],"a":1,"e":"The theorem requires γ = β1²/√β2 < 1. A small β2 with a large β1 violates it.","h":"Compute β1²/√β2."},
+    {"q":"Which term of the bound does not grow with T?","o":["Term 1","Term 2","Term 3 (the λ term)"],"a":2,"e":"Term 3 has no T in it: the decaying β1,t makes the momentum’s total extra cost a constant.","h":"Look for T in each term."},
+    {"q":"What is \\(\\|g_{1:T,i}\\|_2\\)?","o":["The gradient at step T","The length of the vector of all gradients coordinate i has received up to step T","The largest gradient ever"],"a":1,"e":"It stacks coordinate i’s gradients over time and takes the Euclidean length: √(Σ_t g_{t,i}²).","h":"The subscript 1:T means “from step 1 to step T”."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-sparse" data-title="Why sparse gradients help" data-part="Part III · Does Adam converge?">
+  <header>
+    <div class="kicker">Does Adam converge?</div>
+    <h2 class="title">Why sparse gradients help</h2>
+    <p class="lede">When most gradient entries are zero, the sums in the bound are far below their worst case, and the average regret still falls like 1/√T.</p>
+  </header>
+  <p>Terms 1 and 2 of Theorem 4.1 contain sums over coordinates whose worst case is \(d\,G_\infty\sqrt{T}\). For <strong>sparse</strong> problems, where each coordinate’s gradient is usually zero (a rare word, a rare pixel pattern), they are much smaller:</p>
+  <div class="widget" data-widget="sparseBound"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §4)</div>
+    <p>If coordinate \(i\) is active (gradient \(\pm 1\)) in a fraction \(p_i\) of the steps, then \(\|g_{1:T,i}\|_2 \approx \sqrt{p_i T}\), so</p>
+    \[ \sum_{i=1}^{d}\|g_{1:T,i}\|_2 \approx \sqrt{T}\sum_{i=1}^{d}\sqrt{p_i} \;\ll\; d\,G_\infty\sqrt{T}. \]
+    <p>With \(p_i = i^{-2}\) (a few frequent features, many rare ones, as in Duchi et al.’s example), \(\sum_i \sqrt{p_i} = \sum_i 1/i \approx \ln d\): the bound grows like \(\log d\cdot\sqrt{T}\) instead of \(d\sqrt{T}\). A non-adaptive method such as SGD has a bound of order \(\sqrt{dT}\).</p>
+  </div>
+  <p>Finally, dividing the bound by \(T\) gives the paper’s Corollary 4.2: the average regret falls like \(1/\sqrt{T}\).</p>
+  <div class="widget" data-widget="avgRegret"></div>
+  <div class="callout math"><div class="ct">∑ Corollary 4.2</div>
+    \[ \frac{R(T)}{T} = O\Big(\frac{1}{\sqrt{T}}\Big), \qquad \lim_{T\to\infty}\frac{R(T)}{T} = 0. \]
+    <p>Under the same assumptions, using \(\sum_i \|g_{1:T,i}\|_2 \le d\,G_\infty\sqrt{T}\), every term of the bound is at most a constant times \(\sqrt{T}\); divide by \(T\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“When the data features are sparse and bounded gradients, the summation term can be much smaller than its upper bound \(\sum_i\|g_{1:T,i}\|_2 \ll dG_\infty\sqrt{T}\) and \(\sum_i\sqrt{T\widehat v_{T,i}} \ll dG_\infty\sqrt{T}\) … the adaptive method, such as Adam and Adagrad, can achieve \(O(\log d\sqrt{T})\), an improvement over \(O(\sqrt{dT})\) for the non-adaptive method.” Also: “Decaying \(\beta_{1,t}\) towards zero is important in our theoretical analysis and also matches previous empirical findings” (Sutskever et al., 2013, on reducing momentum late in training) <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §4, Corollary 4.2</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A coordinate is active in 1 % of 10,000 steps with gradient ±1. About how big is \\(\\|g_{1:T,i}\\|_2\\)?","o":["10","100","1"],"a":0,"e":"It has about 100 nonzero entries of size 1, so the length is √100 = 10, against √10,000 = 100 if always active.","h":"√(number of nonzero ±1 entries)."},
+    {"q":"R(T)/T = O(1/√T) means that after 4× more rounds the average regret is about…","o":["4× smaller","2× smaller","the same"],"a":1,"e":"1/√(4T) = (1/2)·(1/√T).","h":"What is √4?"},
+    {"q":"Why does the paper decay β1 in the theory?","o":["It is needed by its analysis, and matches the empirical finding that reducing momentum late in training helps","Because β1 = 0.9 is too small","To save memory"],"a":0,"e":"The paper says both: decaying β1,t is important in its analysis and matches Sutskever et al. (2013).","h":"Read the paper callout."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-proof" data-title="Inside the proof" data-part="Part III · Does Adam converge?">
+  <header>
+    <div class="kicker">Does Adam converge?</div>
+    <h2 class="title">Inside the proof</h2>
+    <p class="lede">Convexity, a squared-distance identity, Young’s inequality, two lemmas and a telescoping sum: and one step that does not always hold.</p>
+  </header>
+  <p>The appendix proves Theorem 4.1 (restated as Theorem 10.5) with two helper lemmas. The first is a neat bound on a sum with decaying weights \(1/\sqrt{t}\):</p>
+  <div class="widget" data-widget="lemma103"></div>
+  <div class="callout math"><div class="ct">∑ Lemma 10.3 and Lemma 10.4</div>
+    \[ \sum_{t=1}^{T}\sqrt{\frac{g_{t,i}^2}{t}} \le 2G_\infty\|g_{1:T,i}\|_2, \qquad \sum_{t=1}^{T}\frac{\widehat m_{t,i}^2}{\sqrt{t\,\widehat v_{t,i}}} \le \frac{2}{1-\gamma}\,\frac{1}{\sqrt{1-\beta_2}}\,\|g_{1:T,i}\|_2. \]
+    <p>Lemma 10.3 is proved by <strong>induction</strong> on \(T\): true for \(T = 1\); if true for \(T-1\), add the last term and use \(\sqrt{a - b} \le \sqrt{a} - b/(2\sqrt{a})\). Lemma 10.4 expands \(\widehat m_{t,i}\) and \(\widehat v_{t,i}\) as weighted sums (Eq. 1), compares them term by term using \(\gamma = \beta_1^2/\sqrt{\beta_2} < 1\), and sums an <strong>arithmetic-geometric series</strong>: \(\sum_t t\gamma^t < 1/(1-\gamma)^2\). Its proof ends with the constant \(2G_\infty/((1-\gamma)^2\sqrt{1-\beta_2})\), not the one in its statement: a small inconsistency in the paper; the theorem uses the \((1-\gamma)^2\) form.</p>
+  </div>
+  <p>The main proof, stage by stage, evaluated on a real run:</p>
+  <div class="widget" data-widget="proofSteps"></div>
+  <div class="callout math"><div class="ct">∑ The skeleton of Theorem 10.5</div>
+    <p>(1) Lemma 10.2 gives \(f_t(\theta_t) - f_t(\theta^*) \le \sum_i g_{t,i}(\theta_{t,i} - \theta^*_{,i})\). (2) Write the update as \(\theta_{t+1} = \theta_t - \frac{\alpha_t}{1-\beta_1^t}\Big(\frac{\beta_{1,t}}{\sqrt{\widehat v_t}}m_{t-1} + \frac{1-\beta_{1,t}}{\sqrt{\widehat v_t}}g_t\Big)\). (3) Subtract \(\theta^*\) and square each coordinate. (4) Solve for \(g_{t,i}(\theta_{t,i} - \theta^*_{,i})\) and apply <strong>Young’s inequality</strong> \(ab \le a^2/2 + b^2/2\). (5) Sum over \(t\): the squared distances <strong>telescope</strong> (consecutive terms cancel), leaving terms bounded with \(D\), \(D_\infty\) and \(\sqrt{\widehat v_{t,i}} \le \|g_{1:t,i}\|_2\). (6) Lemma 10.4 bounds the momentum terms. (7) \(\sum_t \frac{\beta_{1,t}}{1-\beta_{1,t}}\sqrt{t} \le \frac{1}{(1-\beta_1)(1-\lambda)^2}\) bounds the last one.</p>
+  </div>
+  <div class="callout warn"><div class="ct">⚠ A gap found later</div><p>Stage 5 bounds \(\sum_t (\theta_{t,i}-\theta^*_{,i})^2\big(\sqrt{\widehat v_{t,i}}/\alpha_t - \sqrt{\widehat v_{t-1,i}}/\alpha_{t-1}\big)\) as if every bracket were non-negative. Nothing in Adam guarantees that: \(\widehat v\) can shrink faster than \(\alpha_t\) does. Reddi, Kale and Kumar (ICLR 2018, “On the Convergence of Adam and Beyond”) pointed this out and built convex problems on which Adam does not converge (Chapter 32). The widget counts how often the bracket is negative on its run. Two more small inconsistencies: Lemma 10.4’s constant (above), and the last term at the end of the proof has \(2\alpha\beta_1(1-\lambda)^2\) in its denominator, while Theorem 4.1 states \(2\alpha(1-\beta_1)(1-\lambda)^2\).</p></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The proof occupies pages 12–15 <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper App. 10.1, Lemmas 10.3–10.4, Theorem 10.5</a>. It uses \(\sqrt{\widehat v_{t,i}} = \sqrt{\sum_{j}(1-\beta_2)\beta_2^{t-j}g_{j,i}^2}/\sqrt{1-\beta_2^t} \le \|g_{1:t,i}\|_2\) and \(\beta_{1,t} \le \beta_1\).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Young’s inequality with a = 3, b = 1: is ab ≤ a²/2 + b²/2?","o":["Yes: 3 ≤ 5","No: 3 > 2","They are equal"],"a":0,"e":"a²/2 + b²/2 = 4.5 + 0.5 = 5 ≥ 3. It follows from (a − b)² ≥ 0.","h":"Compute both sides."},
+    {"q":"What does “telescoping” mean in stage 5?","o":["In a sum of differences (x_t − x_{t+1}), all middle terms cancel, leaving x_1 − x_{T+1}","The sum is multiplied by T","The terms are squared"],"a":0,"e":"(x₁ − x₂) + (x₂ − x₃) + … + (x_T − x_{T+1}) = x₁ − x_{T+1}.","h":"Write out three terms of the sum."},
+    {"q":"Which property would stage 5 need, but Adam does not guarantee?","o":["That √v̂_t/α_t never decreases from one step to the next","That the gradient is bounded","That the loss is convex"],"a":0,"e":"If √v̂_t/α_t can decrease, some brackets are negative and the bound by D∞² fails. This is the gap Reddi et al. (2018) identified.","h":"Read the warning callout."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART IV · RELATIVES AND EXTENSIONS -->
+<section class="chapter" id="ch-related" data-title="Adam’s family tree" data-part="Part IV · Relatives and extensions">
+  <header>
+    <div class="kicker">Relatives and extensions</div>
+    <h2 class="title">Adam’s family tree</h2>
+    <p class="lede">AdaGrad is Adam with special settings, RMSProp is Adam without the correction and with momentum in a different place, and Adam’s divisor is a cautious cousin of natural gradient.</p>
+  </header>
+  <p>Section 5 of the paper places Adam among its relatives. The cleanest relation is with AdaGrad: choose \(\beta_1 = 0\), let \(\beta_2\) approach 1, and decay the stepsize as \(\alpha/\sqrt{t}\). With bias correction, Adam becomes AdaGrad exactly. Without it, the steps explode:</p>
+  <div class="widget" data-widget="familyReduce"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §5)</div>
+    \[ \lim_{\beta_2\to 1}\widehat v_t = t^{-1}\sum_{i=1}^{t} g_i^2 \]
+    \[ \begin{aligned} \theta_t - \alpha\, t^{-1/2}\cdot\frac{\widehat m_t}{\sqrt{\lim_{\beta_2\to1}\widehat v_t}} &= \theta_t - \alpha\, t^{-1/2}\cdot\frac{g_t}{\sqrt{t^{-1}\sum_{i=1}^{t} g_i^2}} \\ &= \theta_t - \alpha\cdot\frac{g_t}{\sqrt{\sum_{i=1}^{t} g_i^2}}. \end{aligned} \]
+    <p>Why the limit: \(\widehat v_t = \frac{1-\beta_2}{1-\beta_2^t}\sum_i \beta_2^{t-i} g_i^2\). As \(\beta_2 \to 1\), each \(\beta_2^{t-i} \to 1\) and \(\frac{1-\beta_2}{1-\beta_2^t} = \frac{1}{1 + \beta_2 + \dots + \beta_2^{t-1}} \to \frac{1}{t}\). So \(\widehat v_t\) becomes the plain average of squared gradients. With \(\beta_1 = 0\), \(\widehat m_t = g_t\). The \(\sqrt{t}\) factors cancel, leaving AdaGrad’s update. Without correction, \(v_t = (1-\beta_2)\sum_i\beta_2^{t-i}g_i^2 \to 0\) and the update divides by almost nothing.</p>
+  </div>
+  <p>RMSProp with momentum looks similar to Adam but differs in two ways: it applies momentum to gradients that were <em>already</em> rescaled, and it has no bias correction:</p>
+  <div class="widget" data-widget="rmspropMomentum"></div>
+  <p>Finally, dividing by \(\sqrt{\widehat v}\) is a form of <strong>preconditioning</strong>: reshaping the gradient so that all directions are on a similar scale. Natural gradient descent (Amari, 1998) preconditions with the inverse of the <strong>Fisher information</strong> matrix, a measure of how sensitive the model’s predictions are to each parameter. The diagonal of the Fisher matrix can be estimated by the average squared gradient, which is \(\widehat v\). Adam divides by its <em>square root</em>, not by \(\widehat v\) itself:</p>
+  <div class="widget" data-widget="precondCompare"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Section 5 names vSGD (Schaul et al., 2012), AdaDelta (Zeiler, 2012) and the natural Newton method (Roux &amp; Fitzgibbon, 2010) as methods that set stepsizes “by estimating curvature from first-order information”; the Sum-of-Functions Optimizer (SFO, Sohl-Dickstein et al., 2014) as a minibatch quasi-Newton method whose memory is “linear in the number of minibatch partitions”; and natural gradient descent, noting that “\(\widehat v_t\) is an approximation to the diagonal of the Fisher information matrix” (Pascanu &amp; Bengio, 2013) and that Adam’s preconditioner “is more conservative in its adaption than vanilla NGD by preconditioning with the square root of the inverse of the diagonal Fisher information matrix approximation”. On RMSProp: it “generates its parameter updates using a momentum on the rescaled gradient, whereas Adam updates are directly estimated using a running average of first and second moment of the gradient”. On AdaGrad: the derivation above, and “this direct correspondence between Adam and Adagrad does not hold when removing the bias-correction terms; without bias correction, like in RMSProp, a \(\beta_2\) infinitesimally close to 1 would lead to infinitely large bias, and infinitely large parameter updates” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §5</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Which Adam settings turn it into AdaGrad?","o":["β1 = 0, β2 → 1, α_t = α/√t, with bias correction","β1 = 0.9, β2 = 0.999","β1 → 1, β2 = 0"],"a":0,"e":"β1 = 0 makes m̂ = g; β2 → 1 with correction makes v̂ the plain average of g²; α/√t cancels the 1/t inside the root.","h":"See the widget’s description."},
+    {"q":"What does (1 − β2)/(1 − β2^t) tend to as β2 → 1?","o":["0","1/t","1"],"a":1,"e":"(1 − β2)/(1 − β2^t) = 1/(1 + β2 + … + β2^(t−1)) → 1/t.","h":"Factor 1 − β2^t = (1 − β2)(1 + β2 + … + β2^(t−1))."},
+    {"q":"Gradients are multiplied by c. How does a diagonal natural-gradient step g/E[g²] change?","o":["×c","×1/c","unchanged"],"a":1,"e":"c·g / (c²·E[g²]) = (1/c)·g/E[g²]. Adam’s square root makes it unchanged instead.","h":"Count the powers of c."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-adamax" data-title="AdaMax: the infinity norm" data-part="Part IV · Relatives and extensions">
+  <header>
+    <div class="kicker">Relatives and extensions</div>
+    <h2 class="title">AdaMax: the infinity norm</h2>
+    <p class="lede">Replace the root-mean-square of past gradients by their discounted maximum: a simpler, stable variant that needs no second correction.</p>
+  </header>
+  <p>Adam divides by \(\sqrt{v}\), the square root of an average of squares: an \(L^2\) norm. Why 2? The paper generalises to an \(L^p\) norm, \(v^{1/p}\) with \(v\) an average of \(|g|^p\). Large \(p\) is numerically unstable, but the limit \(p \to \infty\) turns out to be simple: the <strong>\(L^\infty\) norm</strong>, the largest entry.</p>
+  <div class="widget" data-widget="lpNorm"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §7.1, Eq. 6–12)</div>
+    \[ v_t = \beta_2^p v_{t-1} + (1-\beta_2^p)|g_t|^p = (1-\beta_2^p)\sum_{i=1}^{t}\beta_2^{p(t-i)}\cdot|g_i|^p \qquad\text{(6, 7)} \]
+    \[ \begin{aligned} u_t = \lim_{p\to\infty}(v_t)^{1/p} &= \lim_{p\to\infty}\Big((1-\beta_2^p)\sum_{i=1}^{t}\beta_2^{p(t-i)}\cdot|g_i|^p\Big)^{1/p} && (8) \\ &= \lim_{p\to\infty}(1-\beta_2^p)^{1/p}\Big(\sum_{i=1}^{t}\beta_2^{p(t-i)}\cdot|g_i|^p\Big)^{1/p} && (9) \\ &= \lim_{p\to\infty}\Big(\sum_{i=1}^{t}\big(\beta_2^{(t-i)}\cdot|g_i|\big)^p\Big)^{1/p} && (10) \end{aligned} \]
+    \[ = \max\big(\beta_2^{t-1}|g_1|,\, \beta_2^{t-2}|g_2|,\, \dots,\, \beta_2|g_{t-1}|,\, |g_t|\big) \qquad\text{(11)} \]
+    \[ u_t = \max(\beta_2\cdot u_{t-1},\, |g_t|), \qquad u_0 = 0. \qquad\text{(12)} \]
+    <p>The decay is written \(\beta_2^p\) so the limit works. (9): \((1-\beta_2^p)^{1/p} \to 1\). (10)→(11): for large \(p\) the biggest term dominates a sum of \(p\)-th powers, so the \(p\)-th root of the sum tends to the biggest term. (12): the max of discounted values can be updated with one comparison per step. Example: \(\beta_2 = 0.9\), \(|g| = 2, 1, 1\): \(u_1 = 2\), \(u_2 = \max(1.8, 1) = 1.8\), \(u_3 = \max(1.62, 1) = 1.62\).</p>
+  </div>
+  <div class="algo">
+    <b>Algorithm 2: AdaMax.</b> Good default settings: \(\alpha = 0.002\), \(\beta_1 = 0.9\), \(\beta_2 = 0.999\).<br>
+    <b>Require:</b> \(\alpha\): stepsize; \(\beta_1, \beta_2 \in [0, 1)\): exponential decay rates; \(f(\theta)\): stochastic objective; \(\theta_0\): initial parameters<br>
+    \(m_0 \leftarrow 0\) (initialize 1st moment vector), \(u_0 \leftarrow 0\) (initialize the exponentially weighted infinity norm), \(t \leftarrow 0\)<br>
+    <b>while</b> \(\theta_t\) not converged <b>do</b><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;\(t \leftarrow t + 1\)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;\(g_t \leftarrow \nabla_\theta f_t(\theta_{t-1})\)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;\(m_t \leftarrow \beta_1 \cdot m_{t-1} + (1-\beta_1)\cdot g_t\) (update biased first moment estimate)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;\(u_t \leftarrow \max(\beta_2 \cdot u_{t-1}, |g_t|)\) (update the exponentially weighted infinity norm)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;\(\theta_t \leftarrow \theta_{t-1} - (\alpha/(1-\beta_1^t)) \cdot m_t/u_t\) (update parameters)<br>
+    <b>end while</b><br>
+    <b>return</b> \(\theta_t\)
+  </div>
+  <div class="widget" data-widget="adamaxStepper"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Such variants become numerically unstable for large \(p\). However, in the special case where we let \(p \to \infty\), a surprisingly simple and stable algorithm emerges” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §7.1, Eq. 6–12, Algorithm 2</a>. “Note that, conveniently enough, we don’t need to correct for initialization bias in this case. Also note that the magnitude of parameter updates has a simpler bound with AdaMax than Adam, namely: \(|\Delta_t| \le \alpha\).” The acknowledgments thank Kai Fan “for spotting an error in the original AdaMax derivation” (§9): the version above is the corrected one.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>PyTorch’s <code>Adamax</code> defaults to <code>lr=2e-3</code> (<a class="cite" href="https://github.com/pytorch/pytorch/blob/v2.5.0/torch/optim/adamax.py#L32-L33">adamax.py L32–33</a>). It keeps \(u\) as <code>exp_inf</code> and updates it as max(β2·u, |g| + ε) (L274–284): it adds ε inside the max to avoid dividing by zero, which the paper does not. The update divides by \(1 - \beta_1^t\) only (<code>clr = lr / bias_correction</code>, L294–297).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"β2 = 0.5, gradients 4, 0, 0. What is u₃?","o":["4","1","0"],"a":1,"e":"u₁ = 4, u₂ = max(2, 0) = 2, u₃ = max(1, 0) = 1.","h":"Apply u_t = max(β2·u_{t−1}, |g_t|)."},
+    {"q":"Why does u not need a bias correction?","o":["Because a max of discounted values is not pulled towards the zero start: u₁ = |g₁| exactly","Because β2 = 0","It does need one"],"a":0,"e":"The zero start only matters for averages; max(0, |g₁|) = |g₁|. In the limit, the factor (1 − β2^p)^(1/p) → 1.","h":"Compute u₁."},
+    {"q":"What does the L^p norm of a vector become as p → ∞?","o":["Its sum","Its largest absolute entry","Zero"],"a":1,"e":"The largest entry dominates the sum of p-th powers, and the p-th root recovers it.","h":"Try the p slider."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-averaging" data-title="Averaging the iterates" data-part="Part IV · Relatives and extensions">
+  <header>
+    <div class="kicker">Relatives and extensions</div>
+    <h2 class="title">Averaging the iterates</h2>
+    <p class="lede">The last parameters are noisy; an average of recent parameters is often better, and it can be bias-corrected like m and v.</p>
+  </header>
+  <p>With noisy gradients and a constant stepsize, the parameters never settle: they jitter around the optimum. The jitter averages out if we report an average of the iterates instead of the last one. <strong>Polyak–Ruppert averaging</strong> uses the plain average of all iterates; the paper suggests an exponential moving average instead, which forgets the early, far-away iterates.</p>
+  <div class="widget" data-widget="polyakDemo"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §7.2)</div>
+    \[ \bar\theta_t = \frac{1}{t}\sum_{k=1}^{t}\theta_k \quad\text{(Polyak–Ruppert)}, \qquad \bar\theta_t \leftarrow \beta_2\cdot\bar\theta_{t-1} + (1-\beta_2)\,\theta_t,\;\; \bar\theta_0 = 0,\;\; \widehat\theta_t = \frac{\bar\theta_t}{1-\beta_2^{\,t}}. \]
+    <p>\(\bar\theta_t\) (“theta bar”) is the averaged parameter vector; the EMA is the same machinery as \(m_t\), so it has the same zero-start bias and the same cure, \(\widehat\theta_t\). (The paper writes the Polyak average with an upper limit \(n\) in the sum; \(n = t\) is meant.) Example with \(\beta_2 = 0.9\) and iterates \(1, 1\): \(\bar\theta_2 = 0.19\), \(\widehat\theta_2 = 0.19/0.19 = 1\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Since the last iterate is noisy due to stochastic approximation, better generalization performance is often achieved by averaging”, citing Moulines &amp; Bach (2011), Polyak &amp; Juditsky (1992) and Ruppert (1988). The EMA “can be trivially implemented by adding one line to the inner loop of algorithms 1 and 2”, and “initalization bias can again be corrected” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §7.2</a>. The paper reports no experiment with it.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Iterates 2, 4, 6. What is the Polyak average after 3 steps?","o":["6","4","12"],"a":1,"e":"(2 + 4 + 6)/3 = 4.","h":"Plain average."},
+    {"q":"Why might the exponential average beat the Polyak average early in training?","o":["The Polyak average still remembers the early iterates far from the optimum","The EMA uses more memory","They are always equal"],"a":0,"e":"A plain average gives the starting point as much weight as the latest iterate; the EMA forgets it after about 1/(1 − β2) steps.","h":"Look at the red path in the widget."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART V · EXPERIMENTS -->
+<section class="chapter" id="ch-setup" data-title="How the experiments are set up" data-part="Part V · The experiments">
+  <header>
+    <div class="kicker">The experiments</div>
+    <h2 class="title">How the experiments are set up</h2>
+    <p class="lede">Four kinds of model, the same starting weights for every optimizer, and each optimizer judged at its own best settings.</p>
+  </header>
+  <p>Comparing optimizers fairly is harder than it looks: every method has a learning rate, and a method run at a bad rate loses to any method run at a good one. The paper’s answer is a <strong>grid search</strong>: try many settings for each optimizer and report each one’s best. Try it on the toy:</p>
+  <div class="widget" data-widget="gridSearch"></div>
+  <p>The curves in the paper’s figures show the <strong>training cost</strong>: the loss on the training data, plotted against <strong>epochs</strong> (one epoch is one full pass over the training set; the paper’s axes say “iterations over entire dataset”). This measures optimization speed, the thing an optimizer is responsible for, rather than accuracy on new data. The models:</p>
+  <div class="widget" data-widget="modelZoo"></div>
+  <div class="callout intuition"><div class="ct">💡 The four models in one line each</div><p><strong>Logistic regression</strong>: a single layer that turns inputs into class probabilities with a softmax (or a sigmoid for two classes); its loss is convex. <strong>Multilayer network</strong>: several layers of ReLU units; non-convex. <strong>Convolutional network</strong> (CNN): layers of small filters slid across an image, with <strong>max pooling</strong> that keeps the largest value in each small window; the same filter weights are shared across positions. <strong>Variational auto-encoder</strong> (VAE): a network that compresses an input into a few random “latent” numbers and reconstructs it, trained with a noisy (stochastic) objective (Kingma &amp; Welling, 2013, by the first author of the Adam paper).</p></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“We use the same parameter initialization when comparing different optimization algorithms. The hyper-parameters, such as learning rate and momentum, are searched over a dense grid and the results are reported using the best hyper-parameter setting” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §6</a>. Minibatches have 128 examples in §6.1–6.3. The paper does not list the grids themselves, the final chosen rates, or numbers of runs.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Why does the paper tune each optimizer’s hyper-parameters separately?","o":["So that each method is compared at its best rather than at an arbitrary, possibly bad setting","To make Adam win","Because the defaults are wrong"],"a":0,"e":"A single shared learning rate would favour whichever method happens to like it.","h":"What could go wrong if all methods used the same rate?"},
+    {"q":"What does the y-axis “training cost” in the paper’s figures measure?","o":["Accuracy on new data","The loss on the training data","Wall-clock time"],"a":1,"e":"It is the objective being optimized, evaluated on the training set: a direct measure of optimization progress.","h":"Training vs test."},
+    {"q":"The MLP of §6.2 has 784 inputs, two hidden layers of 1000 units, 10 outputs. About how many parameters?","o":["About 18 thousand","About 1.8 million","About 180 million"],"a":1,"e":"784·1000 + 1000 + 1000·1000 + 1000 + 1000·10 + 10 = 1,796,010.","h":"Weights plus biases, layer by layer."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-logreg" data-title="Logistic regression: MNIST and IMDB" data-part="Part V · The experiments">
+  <header>
+    <div class="kicker">The experiments</div>
+    <h2 class="title">Logistic regression: MNIST and IMDB</h2>
+    <p class="lede">On dense pixels Adam matches SGD with momentum; on sparse word counts it matches AdaGrad, and both leave SGD far behind.</p>
+  </header>
+  <p>The first experiment uses the simplest model, logistic regression, because its loss is convex: no local minima can confuse the comparison, and the setting is close to the theory of Part III. Two data sets probe the two strengths Adam claims. <strong>MNIST</strong> is 70,000 images of handwritten digits, 28×28 = 784 pixels: dense inputs. <strong>IMDB</strong> is a set of movie reviews labelled positive or negative (Maas et al., 2011), turned into a <strong>bag of words</strong>: one count per vocabulary word, most of them zero for any given review. That makes the gradients sparse.</p>
+  <div class="widget" data-widget="logregRace"></div>
+  <div class="widget" data-widget="fig1Redraw"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“L2-regularized multi-class logistic regression using the MNIST dataset”, classifying “directly on the 784 dimension image vectors”, comparing Adam with “accelerated SGD with Nesterov momentum and Adagrad using minibatch size of 128”; the stepsize “is adjusted by \(1/\sqrt{t}\) decay, namely \(\alpha_t = \alpha/\sqrt{t}\) that matches with our theoratical prediction from section 4”. Result: “Adam yields similar convergence as SGD with momentum and both converge faster than Adagrad”. For IMDB: bag-of-words vectors of “the first 10,000 most frequent words”, “highly sparse”, with “50% dropout noise … applied to the BoW features during training to prevent over-fitting” (Wang &amp; Manning, 2013). “Adagrad outperforms SGD with Nesterov momentum by a large margin both with and without dropout noise. Adam converges as fast as Adagrad” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §6.1, Fig. 1</a>. (Figure 1 shows only runs with dropout for IMDB.)</p></div>
+  <div class="callout warn"><div class="ct">⚠ About this toy</div><p>The toy reviews are synthetic: 3,000 “words”, half of them common and neutral, half rarer and tied to one sentiment, 150 word slots per review and 10 % flipped labels. Features are word counts, so common words have large values; that is what holds SGD’s learning rate down. In the toy, \(t\) in \(\alpha/\sqrt{t}\) counts steps; the paper does not say whether it counts steps or epochs. The toy reproduces the qualitative pattern of the sparse panel; on the dense toy the three methods end closer together than in the paper’s left panel.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Why does the paper start with logistic regression?","o":["Its loss is convex, so optimizers can be compared without worrying about local minima","It is the most accurate model","It has no parameters"],"a":0,"e":"The paper: logistic regression has “a well-studied convex objective, making it suitable for comparison of different optimizers without worrying about local minimum issues”.","h":"Recall Chapter 20."},
+    {"q":"On the IMDB bag-of-words, which methods were fast?","o":["SGD Nesterov only","AdaGrad, RMSProp and Adam","None"],"a":1,"e":"The adaptive methods end near 0.25 (≈, read off Fig. 1), SGD Nesterov near 0.35.","h":"Look at the IMDB panel numbers."},
+    {"q":"What makes the IMDB features sparse?","o":["Each review uses only a small fraction of the 10,000-word vocabulary, so most counts are 0","The images are small","Dropout"],"a":0,"e":"A review mentions a few hundred distinct words at most; all other entries of its 10,000-dimensional vector are zero, and so are their gradients.","h":"How many of 10,000 words appear in one review?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-mlp" data-title="Multilayer networks" data-part="Part V · The experiments">
+  <header>
+    <div class="kicker">The experiments</div>
+    <h2 class="title">Multilayer networks</h2>
+    <p class="lede">On non-convex networks with dropout noise, Adam ends lowest; against the quasi-Newton SFO it wins in iterations and in time.</p>
+  </header>
+  <p>Neural networks have non-convex losses, so Part III’s guarantee no longer applies: only experiments can tell. The paper trains networks with two hidden layers of 1000 ReLU units on MNIST, first with <a href="../dropout/">dropout</a> (a noisy objective, Chapter 3) against five first-order optimizers:</p>
+  <div class="widget" data-widget="mlpRace"></div>
+  <p>Then, without dropout (a deterministic objective plus an L2 <strong>weight decay</strong> penalty), against the <strong>Sum-of-Functions Optimizer</strong> (SFO), a quasi-Newton method: it builds curvature estimates from minibatch gradients, which costs extra time and memory per step.</p>
+  <div class="widget" data-widget="sfoCost"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Although our convergence analysis does not apply to non-convex problems, we empirically found that Adam often outperforms other methods in such cases.” The network: “two fully connected hidden layers with 1000 hidden units each and ReLU activation … minibatch size of 128”. Against SFO, with “cross-entropy objective function with L2 weight decay”: “Adam makes faster progress in terms of both the number of iterations and wall-clock time. Due to the cost of updating curvature information, SFO is 5-10x slower per iteration compared to Adam, and has a memory requirement that is linear in the number minibatches.” With dropout, “SFO assumes deterministic subfunctions, and indeed failed to converge”; among first-order methods “Adam shows better convergence than other methods” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §6.2, Fig. 2</a>. Read off Fig. 2a (log axis, approximate): after 200 epochs Adam ≈ 0.007; SGD Nesterov ≈ 0.011; AdaDelta and RMSProp ≈ 0.013–0.014; AdaGrad ≈ 0.018.</p></div>
+  <div class="callout warn"><div class="ct">⚠ About this toy</div><p>The toy network is 64-64-64-10, trained for 40 epochs on 600 toy glyphs. In this toy RMSProp and Adam end close together, both ahead of SGD Nesterov and AdaGrad; the paper’s larger network separates Adam more clearly. SFO is not implemented here; its numbers come from the paper.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Why could SFO not be used with dropout?","o":["SFO assumes deterministic subfunctions, and dropout makes each evaluation random","SFO cannot handle ReLUs","SFO needs smaller minibatches"],"a":0,"e":"The paper: “SFO assumes deterministic subfunctions, and indeed failed to converge on cost functions with stochastic regularization.”","h":"What does dropout do to the objective?"},
+    {"q":"Adam needs about 10 epochs and SFO about 22 to reach a given cost, and SFO is 8× slower per iteration. Roughly how much faster is Adam in time?","o":["2.2×","8×","About 18×"],"a":2,"e":"(22/10) × 8 ≈ 17.6.","h":"Multiply the iteration ratio by the per-iteration slowdown."},
+    {"q":"How much extra memory does Adam need, compared with the parameters themselves?","o":["Two more numbers per parameter (m and v)","One number per minibatch","Nothing"],"a":0,"e":"m and v have one entry per parameter: memory grows with the model, not with the data set.","h":"Look at Algorithm 1’s state."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-cnn" data-title="Convolutional networks" data-part="Part V · The experiments">
+  <header>
+    <div class="kicker">The experiments</div>
+    <h2 class="title">Convolutional networks</h2>
+    <p class="lede">Adam adapts the step size per layer automatically; late in training its second moment fades below ε and the first moment does the work.</p>
+  </header>
+  <p>The third experiment trains a deep convolutional network on <strong>CIFAR-10</strong>, 60,000 colour images of 32×32 pixels in 10 classes. In a convolutional layer, one small filter is reused at every position of the image, so its gradient sums contributions from every position. Gradients in different layers can therefore differ enormously in size, and with SGD people often hand-pick smaller learning rates for some layers. Adam’s per-weight scaling does this automatically:</p>
+  <div class="widget" data-widget="layerScales"></div>
+  <p>The paper also noticed something unexpected: after a few epochs \(\widehat v_t\) became so small that \(\epsilon\) dominated the denominator. Then Adam behaves like SGD with momentum and learning rate \(\alpha/\epsilon\):</p>
+  <div class="widget" data-widget="epsFloor"></div>
+  <div class="widget" data-widget="fig3Redraw"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Our CNN architecture has three alternating stages of 5x5 convolution filters and 3x3 max pooling with stride of 2 that are followed by a fully connected layer of 1000 rectified linear hidden units”; inputs are “pre-processed by whitening”; dropout “is applied to the input layer and fully connected layer”; minibatch size 128 (the caption calls it c64-c64-c128-1000). “Although both Adam and Adagrad make rapid progress lowering the cost in the initial stage of the training, … Adam and SGD eventually converge considerably faster than Adagrad for CNNs.” “We notice the second moment estimate \(\widehat v_t\) vanishes to zeros after a few epochs and is dominated by the \(\epsilon\) in algorithm 1. The second moment estimate is therefore a poor approximation to the geometry of the cost function in CNNs comparing to fully connected network from Section 6.2. Whereas, reducing the minibatch variance through the first moment is more important in CNNs and contributes to the speed-up.” “Though Adam shows marginal improvement over SGD with momentum, it adapts learning rate scale for different layers instead of hand picking manually as in SGD” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §6.3, Fig. 3</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"If √v̂ ≪ ε, what does Adam’s update approximately become?","o":["α·m̂/ε: SGD with momentum and learning rate α/ε","α·sign(m̂)","Zero"],"a":0,"e":"m̂/(√v̂ + ε) ≈ m̂/ε, so the step is (α/ε)·m̂: a momentum-averaged gradient times a fixed rate.","h":"Drop √v̂ from the denominator."},
+    {"q":"According to the paper, what contributed most to Adam’s speed on CNNs?","o":["The second moment","Reducing minibatch variance through the first moment","Bias correction"],"a":1,"e":"The paper says v̂ became a poor approximation of geometry there, while averaging gradients (m) reduced noise.","h":"Read the paper callout."},
+    {"q":"How did AdaGrad do on the CNN after 45 epochs?","o":["Best","Far worse than Adam and SGD (≈ 0.6 vs ≈ 0.0004–0.0006, read off Fig. 3)","Diverged"],"a":1,"e":"AdaGrad started fast but its ever-shrinking steps left it about three orders of magnitude behind.","h":"Look at the 45-epoch panel."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-vae" data-title="The bias-correction experiment" data-part="Part V · The experiments">
+  <header>
+    <div class="kicker">The experiments</div>
+    <h2 class="title">The bias-correction experiment</h2>
+    <p class="lede">Across a grid of α, β1 and β2, removing the correction makes training unstable exactly where β2 is close to 1.</p>
+  </header>
+  <p>Chapter 18 predicted that without bias correction, \(\beta_2\) close to 1 gives huge first steps. Removing the correction from Adam gives (essentially) RMSProp with momentum, so this experiment is also Adam vs RMSProp. The paper tests it on a variational auto-encoder over a grid of settings; the book repeats the grid on a small toy:</p>
+  <div class="widget" data-widget="fig4Grid"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Removal of the bias correction terms results in a version of RMSProp with momentum.” The model is a VAE “with the same architecture as in (Kingma &amp; Welling, 2013) with a single hidden layer with 500 hidden units with softplus nonlinearities and a 50-dimensional spherical Gaussian latent variable”. The grid: “\(\beta_1 \in [0, 0.9]\) and \(\beta_2 \in [0.99, 0.999, 0.9999]\), and \(\log_{10}(\alpha) \in [-5, \dots, -1]\)”. “Values \(\beta_2\) close to 1 indeed lead to instabilities in training when no bias correction term was present, especially at first few epochs of the training. The best results were achieved with small values of \((1-\beta_2)\) and bias correction; this was more apparent towards the end of optimization when gradients tends to become sparser as hidden units specialize to specific patterns. In summary, Adam performed equal or better than RMSProp, regardless of hyper-parameter setting” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §6.4, Fig. 4</a>. In Fig. 4 (red: with correction, green: without; y-axis: loss from 100 to 140; points every half decade of \(\alpha\), read off the plot), the best losses after 100 epochs are near 100, at \(\log_{10}\alpha \approx -3\); without correction and with \(\beta_2 = 0.999\) or \(0.9999\), the loss leaves the top of the plot already at \(\alpha\) values where the corrected version still works well.</p></div>
+  <div class="callout warn"><div class="ct">⚠ About this toy</div><p>The toy model is a softmax regression on a 4×4-pixel, 4-class version of the glyphs, not a VAE, and its loss is convex, so damage heals faster than in the paper. It reproduces the main effect (instability without correction at large α with β2 = 0.9999) but not its full size.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What does Adam without bias correction reduce to, according to the paper?","o":["SGD","A version of RMSProp with momentum","AdaGrad"],"a":1,"e":"Running averages of g and g² without correction, with momentum on the gradient: RMSProp with momentum (up to where the momentum is applied).","h":"Read the first sentence of the paper callout."},
+    {"q":"In Fig. 4, for which β2 is the uncorrected version most unstable?","o":["0.99","0.9999","It is equally stable for all"],"a":1,"e":"β2 closest to 1 means 1 − β2^t stays tiny for longest, so the uncorrected first steps are most inflated (up to 100× α with β1 = 0).","h":"Recall Chapter 18."},
+    {"q":"Why are β2 values close to 1 worth having at all?","o":["They are needed for robustness to sparse gradients","They make training faster at the start","They remove the need for α"],"a":0,"e":"The paper: “Values β2 close to 1, required for robustness to sparse gradients, results in larger initialization bias”.","h":"Which kind of gradients needs a long memory?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-next" data-title="Limits and where this leads" data-part="Part V · The experiments">
+  <header>
+    <div class="kicker">The experiments</div>
+    <h2 class="title">Limits and where this leads</h2>
+    <p class="lede">The guarantee covers only convex problems and its proof has a gap; the fixes and refinements became part of how every modern model is trained.</p>
+  </header>
+  <p>The paper is candid about some limits. Its convergence analysis is for convex costs only, and in §6.2 it relies purely on experiments for networks. In §6.3 it observes that \(\widehat v\) can collapse below \(\epsilon\) and stop describing the geometry of the loss. And it bets on practical defaults rather than proven ones: everyday Adam does not decay \(\alpha\) or \(\beta_1\) as Theorem 4.1 requires.</p>
+  <p>Later work found more. In 2018 Reddi, Kale and Kumar showed that the proof’s stage 5 (Chapter 23) can fail, and gave simple convex problems on which Adam does not converge at all:</p>
+  <div class="widget" data-widget="reddiCounter"></div>
+  <p>Their fix, <strong>AMSGrad</strong>, uses the running maximum of \(\widehat v\) (or \(v\)), so the denominator never shrinks; PyTorch offers it as <code>amsgrad=True</code> (<a class="cite" href="https://github.com/pytorch/pytorch/blob/v2.5.0/torch/optim/adam.py#L423-L428">adam.py L423–428</a>). Another refinement concerns <strong>weight decay</strong>: adding an L2 penalty to the loss, as PyTorch’s <code>Adam(weight_decay=…)</code> does (<code>grad = grad.add(param, alpha=weight_decay)</code>, <a class="cite" href="https://github.com/pytorch/pytorch/blob/v2.5.0/torch/optim/adam.py#L366-L367">L366–367</a>), means the penalty’s gradient is also divided by \(\sqrt{\widehat v}\). Loshchilov and Hutter (2019) proposed <strong>AdamW</strong>, which shrinks the weights directly instead; AdamW is the usual choice for training Transformers and large language models today.</p>
+  <div class="widget" data-widget="optimizerRace"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The conclusion: “The method combines the advantages of two recently popular optimization methods: the ability of AdaGrad to deal with sparse gradients, and the ability of RMSProp to deal with non-stationary objectives. The method is straightforward to implement and requires little memory. … Overall, we found Adam to be robust and well-suited to a wide range of non-convex optimization problems in the field machine learning” <a class="cite" href="https://arxiv.org/abs/1412.6980">Paper §8</a>. Reddi et al.’s results and AdamW are later work, not part of the paper.</p></div>
+  <h3>Where this leads in the collection</h3>
+  <p>Adam (or AdamW) trains almost every model in the rest of this collection. <a href="../batchnorm/">Batch Normalization (lesson 4)</a> attacks the same ill-conditioning from the other side, by reshaping the network so that a single learning rate works better. <a href="../resnet/">ResNet (lesson 5)</a> makes very deep networks trainable. <a href="../transformer/">The Transformer (lesson 8)</a> was trained with Adam (β2 = 0.98) and a warm-up schedule, a practical answer to unreliable early steps. <a href="../gpt3/">GPT-3 (lesson 10)</a> and <a href="../scaling_laws/">Scaling Laws (lesson 31)</a> show what happens when Adam-trained models grow by orders of magnitude, <a href="../lora/">LoRA (lesson 37)</a> and <a href="../qlora/">QLoRA (lesson 39)</a> shrink the memory Adam’s m and v need when fine-tuning, and <a href="../ppo/">PPO (lesson 43)</a> uses Adam inside reinforcement learning.</p>
+  <div class="quiz"><script type="application/json">[
+    {"q":"In Reddi et al.’s example, why does Adam drift towards the worst point?","o":["The rare large gradient C is quickly forgotten by a short-memory v̂, so the frequent small gradients in the wrong direction get large normalised steps","Because the loss is not convex","Because α is too small"],"a":0,"e":"With β2 = 1/(1 + C²), v̂ forgets C within a couple of steps; each −1 gradient then produces a step comparable to C’s, and two of them outweigh one.","h":"How long does v̂ remember C?"},
+    {"q":"What does AMSGrad change?","o":["It divides by the running maximum of v̂, so the effective step size can only shrink","It removes momentum","It adds weight decay"],"a":0,"e":"Keeping the maximum makes √v̂_t/α_t non-decreasing, which is exactly what the proof’s stage 5 needed.","h":"Look at PyTorch’s amsgrad branch."},
+    {"q":"With PyTorch’s Adam(weight_decay=λ), what happens to the decay term?","o":["It is added to the gradient, so it too is divided by √v̂","It is applied directly to the weights","It is ignored"],"a":0,"e":"grad = grad + λ·θ, then the normal Adam update: the L2 term is rescaled per weight. AdamW decouples it.","h":"Read adam.py L366–367."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ BACK MATTER -->
+<section class="chapter" id="ch-cheatsheet" data-title="Cheat sheet: every equation" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Cheat sheet: every equation of the paper</h2>
+  </header>
+  <p>Numbered equations keep the paper’s numbers; the others are named by where they appear.</p>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Eq.</th><th>Formula</th><th>In words</th><th>Chapter</th></tr>
+    <tr><td>Alg. 1</td><td>\(m_t = \beta_1 m_{t-1} + (1-\beta_1) g_t\)</td><td>running average of gradients (1st moment)</td><td><a href="#ch-alg1">10</a></td></tr>
+    <tr><td>Alg. 1</td><td>\(v_t = \beta_2 v_{t-1} + (1-\beta_2) g_t^2\)</td><td>running average of squared gradients (2nd raw moment)</td><td><a href="#ch-alg1">10</a></td></tr>
+    <tr><td>Alg. 1</td><td>\(\widehat m_t = m_t/(1-\beta_1^t),\; \widehat v_t = v_t/(1-\beta_2^t)\)</td><td>bias-corrected averages</td><td><a href="#ch-bias">16</a></td></tr>
+    <tr><td>Alg. 1</td><td>\(\theta_t = \theta_{t-1} - \alpha\,\widehat m_t/(\sqrt{\widehat v_t}+\epsilon)\)</td><td>the update; defaults α = 0.001, β1 = 0.9, β2 = 0.999, ε = 10⁻⁸</td><td><a href="#ch-alg1">10</a>, <a href="#ch-hyper">11</a></td></tr>
+    <tr><td>§2</td><td>\(\alpha_t = \alpha\sqrt{1-\beta_2^t}/(1-\beta_1^t),\; \theta_t = \theta_{t-1} - \alpha_t m_t/(\sqrt{v_t}+\hat\epsilon)\)</td><td>the faster order of computation</td><td><a href="#ch-efficient">12</a></td></tr>
+    <tr><td>§2.1</td><td>\(\Delta_t = \alpha\,\widehat m_t/\sqrt{\widehat v_t}\)</td><td>effective step (ε = 0)</td><td><a href="#ch-bound">13</a></td></tr>
+    <tr><td>§2.1</td><td>\(|\Delta_t| \le \alpha(1-\beta_1)/\sqrt{1-\beta_2}\) if \((1-\beta_1) > \sqrt{1-\beta_2}\), else \(|\Delta_t| \le \alpha\)</td><td>the step-size bounds; usually \(|\Delta_t| \lessapprox \alpha\)</td><td><a href="#ch-bound">13</a></td></tr>
+    <tr><td>§2.1</td><td>\(\mathrm{SNR} = \widehat m_t/\sqrt{\widehat v_t}\)</td><td>signal-to-noise ratio; → 0 near an optimum (annealing)</td><td><a href="#ch-trust">14</a></td></tr>
+    <tr><td>§2.1</td><td>\((c\,\widehat m_t)/\sqrt{c^2\,\widehat v_t} = \widehat m_t/\sqrt{\widehat v_t}\)</td><td>invariance to gradient scale</td><td><a href="#ch-invariance">15</a></td></tr>
+    <tr><td>(1)</td><td>\(v_t = (1-\beta_2)\sum_{i=1}^t \beta_2^{t-i} g_i^2\)</td><td>v as a weighted sum of all past squared gradients</td><td><a href="#ch-bias">16</a></td></tr>
+    <tr><td>(2)–(4)</td><td>\(\mathbb{E}[v_t] = \mathbb{E}[g_t^2](1-\beta_2^t) + \zeta\)</td><td>why we divide by 1 − β2^t; ζ = 0 if stationary</td><td><a href="#ch-biasderive">17</a></td></tr>
+    <tr><td>(5)</td><td>\(R(T) = \sum_{t=1}^T [f_t(\theta_t) - f_t(\theta^*)]\)</td><td>regret against the best fixed choice</td><td><a href="#ch-online">19</a></td></tr>
+    <tr><td>Def. 10.1</td><td>\(\lambda f(x) + (1-\lambda) f(y) \ge f(\lambda x + (1-\lambda) y)\)</td><td>convexity: chord above the curve</td><td><a href="#ch-convex">20</a></td></tr>
+    <tr><td>Lem. 10.2</td><td>\(f(y) \ge f(x) + \nabla f(x)^T(y-x)\)</td><td>tangent below the curve</td><td><a href="#ch-convex">20</a></td></tr>
+    <tr><td>Thm. 4.1</td><td>\(R(T) \le \frac{D^2}{2\alpha(1-\beta_1)}\sum_i\sqrt{T\widehat v_{T,i}} + \frac{\alpha(1+\beta_1)G_\infty}{(1-\beta_1)\sqrt{1-\beta_2}(1-\gamma)^2}\sum_i\|g_{1:T,i}\|_2 + \sum_i\frac{D_\infty^2 G_\infty\sqrt{1-\beta_2}}{2\alpha(1-\beta_1)(1-\lambda)^2}\)</td><td>regret bound; needs γ = β1²/√β2 &lt; 1, α_t = α/√t, β1,t = β1λ^{t−1}</td><td><a href="#ch-theorem">21</a></td></tr>
+    <tr><td>Cor. 4.2</td><td>\(R(T)/T = O(1/\sqrt{T})\)</td><td>average regret goes to 0</td><td><a href="#ch-sparse">22</a></td></tr>
+    <tr><td>Lem. 10.3</td><td>\(\sum_{t=1}^T\sqrt{g_{t,i}^2/t} \le 2G_\infty\|g_{1:T,i}\|_2\)</td><td>helper bound, proved by induction</td><td><a href="#ch-proof">23</a></td></tr>
+    <tr><td>Lem. 10.4</td><td>\(\sum_{t=1}^T \widehat m_{t,i}^2/\sqrt{t\,\widehat v_{t,i}} \le \frac{2}{1-\gamma}\frac{1}{\sqrt{1-\beta_2}}\|g_{1:T,i}\|_2\)</td><td>bounds the momentum terms (proof ends with \((1-\gamma)^2\) and \(G_\infty\))</td><td><a href="#ch-proof">23</a></td></tr>
+    <tr><td>§5</td><td>\(\theta_{t+1} = \theta_t - \alpha\, g_t/\sqrt{\sum_{i=1}^t g_i^2}\)</td><td>AdaGrad</td><td><a href="#ch-adaptive">8</a>, <a href="#ch-related">24</a></td></tr>
+    <tr><td>§5</td><td>\(\lim_{\beta_2\to1}\widehat v_t = t^{-1}\sum_{i=1}^t g_i^2\)</td><td>Adam with β1 = 0, β2 → 1, α/√t is AdaGrad</td><td><a href="#ch-related">24</a></td></tr>
+    <tr><td>(6)–(7)</td><td>\(v_t = \beta_2^p v_{t-1} + (1-\beta_2^p)|g_t|^p = (1-\beta_2^p)\sum_i \beta_2^{p(t-i)}|g_i|^p\)</td><td>the L^p generalisation</td><td><a href="#ch-adamax">25</a></td></tr>
+    <tr><td>(8)–(11)</td><td>\(u_t = \lim_{p\to\infty} v_t^{1/p} = \max(\beta_2^{t-1}|g_1|, \dots, \beta_2|g_{t-1}|, |g_t|)\)</td><td>the L^∞ limit</td><td><a href="#ch-adamax">25</a></td></tr>
+    <tr><td>(12)</td><td>\(u_t = \max(\beta_2 u_{t-1}, |g_t|)\)</td><td>AdaMax’s recursion; no correction needed</td><td><a href="#ch-adamax">25</a></td></tr>
+    <tr><td>Alg. 2</td><td>\(\theta_t = \theta_{t-1} - (\alpha/(1-\beta_1^t))\, m_t/u_t\)</td><td>AdaMax update; |Δ_t| ≤ α; default α = 0.002</td><td><a href="#ch-adamax">25</a></td></tr>
+    <tr><td>§7.2</td><td>\(\bar\theta_t = \beta_2\bar\theta_{t-1} + (1-\beta_2)\theta_t,\; \widehat\theta_t = \bar\theta_t/(1-\beta_2^t)\)</td><td>averaged parameters, bias-corrected</td><td><a href="#ch-averaging">26</a></td></tr>
+  </table></div>
+</section>
+
+<section class="chapter" id="ch-glossary" data-title="Glossary" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Glossary</h2>
+  </header>
+  <dl class="glossary" data-terms="Activation function; Adam; Backpropagation; Batch; Bias; Classification; Cross-entropy; Dataset; Dimension; Epoch; Gradient; Gradient descent; Hidden layer; Hyperparameter; Learning rate; Logit; Loss; Neural network; Neuron; Optimizer; Overfitting; Parameter; ReLU; Sigmoid; Softmax; Stochastic gradient descent (SGD); Training; Vector; Weight">
+    <dt>AdaDelta</dt><dd>An adaptive optimizer (Zeiler, 2012) that scales each step by a ratio of running averages of past updates and past squared gradients.</dd>
+    <dt>AdaGrad</dt><dd>An optimizer (Duchi et al., 2011) that divides each weight’s gradient by the root of the sum of all its past squared gradients; good for sparse gradients.</dd>
+    <dt>AdaMax</dt><dd>Adam’s variant based on the infinity norm: it divides by u = max(β2·u, |g|) instead of √v̂ (Algorithm 2).</dd>
+    <dt>AdamW</dt><dd>A later variant (Loshchilov &amp; Hutter, 2019) that applies weight decay directly to the weights instead of adding it to the gradient.</dd>
+    <dt>AMSGrad</dt><dd>A later variant (Reddi et al., 2018) that divides by the running maximum of v̂, fixing the convergence gap of Adam’s proof.</dd>
+    <dt>Annealing</dt><dd>Making steps smaller as training goes on. Adam does some of it automatically through the signal-to-noise ratio.</dd>
+    <dt>Bag of words</dt><dd>A text representation with one count per vocabulary word; most entries are zero for any one document.</dd>
+    <dt>Bias correction</dt><dd>Dividing m_t by 1 − β1^t and v_t by 1 − β2^t to undo the pull towards their zero starting values.</dd>
+    <dt>Big-O</dt><dd>O(h(T)) means “at most a constant times h(T) for large T”.</dd>
+    <dt>CIFAR-10</dt><dd>A data set of 60,000 colour images of 32×32 pixels in 10 classes.</dd>
+    <dt>Condition number</dt><dd>The ratio between the steepest and the flattest curvature of a loss; large values make one learning rate a poor fit.</dd>
+    <dt>Convex function</dt><dd>A bowl-shaped function: every chord lies above it and every tangent below it (Definition 10.1, Lemma 10.2).</dd>
+    <dt>Convolutional network (CNN)</dt><dd>A network whose layers slide small shared filters across an image, often followed by max pooling.</dd>
+    <dt>Decay rate</dt><dd>The fraction β of an exponential moving average kept at each step; memory ≈ 1/(1 − β) steps.</dd>
+    <dt>Dropout</dt><dd>Switching off random units during training to prevent overfitting; it makes the objective noisy.</dd>
+    <dt>Effective step</dt><dd>Δ_t = α·m̂_t/√v̂_t, the actual move Adam makes in one step (ε = 0).</dd>
+    <dt>Elementwise</dt><dd>Applied to each entry of a vector separately, as all of Adam’s operations are.</dd>
+    <dt>Expected value</dt><dd>The long-run average of a random quantity, written E[·].</dd>
+    <dt>Exponential moving average (EMA)</dt><dd>m ← β·m + (1 − β)·x: a running average in which older values count exponentially less.</dd>
+    <dt>Feasible set</dt><dd>The set 𝒳 of allowed parameter values in the online-learning analysis.</dd>
+    <dt>First moment</dt><dd>The mean of a random quantity, E[g]; Adam estimates it with m_t.</dd>
+    <dt>First-order method</dt><dd>An optimizer that uses only gradients (first derivatives), not curvature.</dd>
+    <dt>Fisher information</dt><dd>A matrix measuring how sensitive a model’s predictions are to its parameters; its diagonal can be estimated by average squared gradients.</dd>
+    <dt>Grid search</dt><dd>Trying every combination from a list of hyper-parameter values and keeping the best.</dd>
+    <dt>IMDB</dt><dd>A data set of movie reviews labelled positive or negative (Maas et al., 2011).</dd>
+    <dt>Induction</dt><dd>Proving a statement for T = 1 and then showing that truth for T − 1 implies truth for T.</dd>
+    <dt>Logistic regression</dt><dd>A one-layer model that turns inputs into class probabilities; its loss is convex.</dd>
+    <dt>Max pooling</dt><dd>Keeping the largest value in each small window of a feature map.</dd>
+    <dt>Minibatch</dt><dd>A small random subset of the training examples used to estimate the gradient for one step.</dd>
+    <dt>MNIST</dt><dd>A data set of 70,000 handwritten digits, 28×28 pixels.</dd>
+    <dt>Momentum</dt><dd>Adding a running sum of past gradients to the update, so consistent directions build up speed.</dd>
+    <dt>Natural gradient descent (NGD)</dt><dd>Preconditioning the gradient with the inverse Fisher information (Amari, 1998).</dd>
+    <dt>Nesterov momentum</dt><dd>Momentum that evaluates the gradient after a look-ahead step; the paper’s SGDNesterov baseline.</dd>
+    <dt>Non-stationary</dt><dd>An objective whose statistics change during training.</dd>
+    <dt>Norm</dt><dd>A measure of a vector’s size: ‖x‖₂ is its length, ‖x‖∞ its largest absolute entry, ‖x‖_p = (Σ|x_i|^p)^(1/p).</dd>
+    <dt>Objective function</dt><dd>The function f(θ) that training minimizes; here the loss.</dd>
+    <dt>Online learning</dt><dd>A setting in which a learner predicts, then sees the cost, round after round.</dd>
+    <dt>Partial derivative</dt><dd>How fast a function changes when one input moves and the others are held fixed.</dd>
+    <dt>Polyak–Ruppert averaging</dt><dd>Reporting the average of all iterates instead of the last one.</dd>
+    <dt>Preconditioning</dt><dd>Rescaling or reshaping the gradient before stepping, so that all directions are on similar scales.</dd>
+    <dt>Regret</dt><dd>R(T): the learner’s total cost minus that of the best fixed parameters in hindsight (Eq. 5).</dd>
+    <dt>RMSProp</dt><dd>An optimizer (Tieleman &amp; Hinton, 2012) that divides each gradient by the root of a running average of squared gradients.</dd>
+    <dt>Second raw moment</dt><dd>E[g²], the mean of the square (the “uncentered variance”); Adam estimates it with v_t.</dd>
+    <dt>SFO</dt><dd>The Sum-of-Functions Optimizer (Sohl-Dickstein et al., 2014), a minibatch quasi-Newton method.</dd>
+    <dt>Signal-to-noise ratio (SNR)</dt><dd>The paper’s name for m̂_t/√v̂_t: near ±1 for consistent gradients, near 0 for noise.</dd>
+    <dt>Sparse gradient</dt><dd>A gradient whose entries are mostly zero, as for rare features or rare words.</dd>
+    <dt>Stationary</dt><dd>Having statistics that do not change over time.</dd>
+    <dt>Stepsize</dt><dd>The paper’s name for Adam’s α; the typical length of a step.</dd>
+    <dt>Stochastic objective</dt><dd>A loss whose value is random from step to step, for example because of minibatches or dropout.</dd>
+    <dt>Telescoping sum</dt><dd>A sum of differences in which all middle terms cancel.</dd>
+    <dt>Timestep</dt><dd>The step counter t of the algorithm.</dd>
+    <dt>Training cost</dt><dd>The loss on the training data, the y-axis of the paper’s figures.</dd>
+    <dt>Trust region</dt><dd>The region around the current parameters in which the gradient is informative; Adam keeps steps within about α.</dd>
+    <dt>Variance</dt><dd>E[g²] − E[g]²: how much a random quantity scatters around its mean.</dd>
+    <dt>Variational auto-encoder (VAE)</dt><dd>A network that encodes inputs into random latent variables and decodes them, trained with a stochastic objective.</dd>
+    <dt>Weight decay</dt><dd>Shrinking weights towards zero, usually by an L2 penalty added to the loss.</dd>
+    <dt>Young’s inequality</dt><dd>ab ≤ a²/2 + b²/2 for real a, b; used in the proof.</dd>
+  </dl>
+</section>
+
+<section class="chapter" id="ch-refs" data-title="Sources and further reading" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Sources and further reading</h2>
+  </header>
+  <ul>
+    <li><b>The paper:</b> Diederik P. Kingma and Jimmy Lei Ba. <a href="https://arxiv.org/abs/1412.6980">Adam: A Method for Stochastic Optimization</a>. International Conference on Learning Representations (ICLR), 2015. arXiv:1412.6980. Numbers in this book are quoted from arXiv version 9 (30 January 2017), which carries the “Published as a conference paper at ICLR 2015” header and includes the corrected AdaMax derivation and the appendix proof.</li>
+    <li><b>Code:</b> the authors released no code. The book follows Algorithm 1 and 2 of the paper and cites PyTorch v2.5.0 (BSD-3-Clause licence): <a href="https://github.com/pytorch/pytorch/blob/v2.5.0/torch/optim/adam.py">torch/optim/adam.py</a> (defaults L36–40, update L364–432, AMSGrad L423–428, weight decay L366–367) and <a href="https://github.com/pytorch/pytorch/blob/v2.5.0/torch/optim/adamax.py">torch/optim/adamax.py</a> (defaults L32–33, update L271–297). In this collection: <a href="../shared/lib/nn.js">shared/lib/nn.js</a> (<code>NN.Adam</code>, <code>NN.SGD</code>) and this book’s <a href="opt.js">opt.js</a> (all other optimizers, toy data and the online games).</li>
+    <li><b>Background cited by the paper:</b> Duchi, Hazan &amp; Singer (2011), AdaGrad, JMLR 12; Tieleman &amp; Hinton (2012), RMSProp, Coursera lecture 6.5; Graves (2013), arXiv:1308.0850 (RMSProp with momentum); Zeiler (2012), AdaDelta, arXiv:1212.5701; Zinkevich (2003), online convex programming; Sutskever, Martens, Dahl &amp; Hinton (2013), momentum, ICML; Amari (1998), natural gradient; Pascanu &amp; Bengio (2013), arXiv:1301.3584; Sohl-Dickstein, Poole &amp; Ganguli (2014), SFO, ICML; Schaul, Zhang &amp; LeCun (2012), vSGD; Roux &amp; Fitzgibbon (2010), natural Newton; Kingma &amp; Welling (2013), VAE; Maas et al. (2011), IMDB; Wang &amp; Manning (2013), fast dropout; Polyak &amp; Juditsky (1992); Ruppert (1988); Moulines &amp; Bach (2011).</li>
+    <li><b>Later work discussed:</b> Sashank J. Reddi, Satyen Kale, Sanjiv Kumar. <a href="https://openreview.net/forum?id=ryQu7f-RZ">On the Convergence of Adam and Beyond</a>. ICLR 2018 (AMSGrad). Ilya Loshchilov, Frank Hutter. <a href="https://arxiv.org/abs/1711.05101">Decoupled Weight Decay Regularization</a>. ICLR 2019 (AdamW).</li>
+    <li><b>In this collection:</b> earlier, <a href="../word2vec/">Word2Vec (lesson 1)</a> and <a href="../dropout/">Dropout (lesson 2)</a>; next, <a href="../batchnorm/">Batch Normalization (lesson 4)</a>, and every later lesson whose models Adam trains.</li>
+  </ul>
+  <p class="small">Figures: the paper’s figures are not reproduced (arXiv’s default licence does not allow it). Values marked ≈ were read by eye off Paper Fig. 1–4 and are approximate. All diagrams and charts are original and computed in the page. Toy numbers (marked “toy”) come from small models trained in your browser with seeded randomness; they show mechanisms, not the paper’s results.</p>
+</section>
+
+<nav class="lesson-pager" id="lessonPager" aria-label="Previous and next lessons"></nav>
+
+<footer class="book-foot">Adam Interactive Web Book, lesson 3 of <a href="../">Modern AI in 49 Papers</a>. An independent educational companion to Kingma &amp; Ba (ICLR 2015), not an official publication of the authors; all interactive models run locally in your browser.</footer>
+
+</main>
+</div>
+
+<!-- Order matters: catalogue + glossary + lesson-nav (fill the page) → core (engine) → shared libraries → refreshers → this book's toy and widgets. -->
+<script src="../collection.js"></script>
+<script src="../shared/glossary.js"></script>
+<script src="../shared/lesson-nav.js"></script>
+<script src="../shared/core.js"></script>
+<script src="../shared/lib/math.js"></script>
+<script src="../shared/lib/nn.js"></script>
+<script src="../shared/widgets/refreshers.js"></script>
+<script src="opt.js"></script>
+<script src="widgets-found.js"></script>
+<script src="widgets-method.js"></script>
+<script src="widgets-theory.js"></script>
+<script src="widgets-evidence.js"></script>
+</body>
+</html>
