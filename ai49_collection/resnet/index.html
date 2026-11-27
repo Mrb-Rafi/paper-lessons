@@ -1,0 +1,997 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ResNet · Interactive Web Book · Modern AI in 49 Papers</title>
+<meta name="description" content="An interactive web book that teaches Deep Residual Learning for Image Recognition (He, Zhang, Ren and Sun, 2015/CVPR 2016) from absolute zero, with live widgets for every idea and every equation. Lesson 5 of Modern AI in 49 Papers.">
+<link rel="icon" href="../cover.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="../shared/book.css">
+<style>
+  :root { --accent: #b4532a; --accent-soft: #f8e6dc; --accent-ink: #7a3519; }
+  :root[data-theme="dark"] { --accent: #f0956a; --accent-soft: #3a2219; --accent-ink: #f7c3a8; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --accent: #f0956a; --accent-soft: #3a2219; --accent-ink: #f7c3a8; } }
+  .katex-display { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+  .widget svg { max-width: 100%; height: auto; }
+  .widget canvas { max-width: 100%; }
+  table.data th { text-transform: none; letter-spacing: 0; }
+  .ok { color: #2f855a; font-weight: 700; } .bad { color: #c0392b; font-weight: 700; }
+  :root[data-theme="dark"] .ok { color: #68d391; } :root[data-theme="dark"] .bad { color: #fc8181; }
+  .widget code { font-size: 12px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</head>
+<body data-store="ai49:resnet:" data-lesson="resnet" data-theme-key="ai49:theme">
+
+<div class="topbar">
+  <button class="icon-btn" id="menuBtn" aria-label="Open contents">☰</button>
+  <a class="brand" href="#top"><span class="mark">RN</span><span>Interactive Web Book</span></a>
+  <a class="icon-btn home-link" href="../" title="Modern AI in 49 Papers">← 49 Papers</a>
+  <div class="spacer"></div>
+  <div class="progress-wrap" title="Chapters marked as read"><div class="progress-bar" id="progressBar"></div></div>
+  <span class="progress-label" id="progressLabel"></span>
+  <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode" title="Light / dark">◐</button>
+</div>
+
+<div class="layout">
+<nav class="sidebar" id="toc" aria-label="Contents"></nav>
+<main>
+
+<!-- ============================================================ COVER -->
+<div class="hero" id="top">
+  <div class="eyebrow">Modern AI in 49 Papers · Lesson 5</div>
+  <div class="lesson-strip" id="lessonStrip"></div>
+  <h1>ResNet,<br><em>from zero.</em></h1>
+  <p class="sub">In 2015 four researchers at Microsoft Research noticed something strange: stacking more layers onto a good image network made it <em>worse</em>, even at fitting its own training images. Their fix was one line of arithmetic: let every pair of layers compute a correction to its input, and add the input back, \(y = F(x) + x\). With these “shortcut connections” they trained networks of 152 layers on ImageNet (and over 1,000 on CIFAR-10), won five competition tracks, and gave almost every later architecture, Transformers included, its backbone. This book starts from “what is a neuron?” and “what is a convolution?”, and ends with every equation, every architecture in Table 1, every experiment and every table of the paper and its appendix. You need no background: every idea comes with something to play with.</p>
+  <p class="meta">Based on <a href="https://arxiv.org/abs/1512.03385">Kaiming He, Xiangyu Zhang, Shaoqing Ren and Jian Sun, “Deep Residual Learning for Image Recognition”, CVPR 2016 (arXiv:1512.03385)</a>. Official models: <a href="https://github.com/KaimingHe/deep-residual-networks">KaimingHe/deep-residual-networks</a> (Caffe, MIT licence); training-faithful reference code: <a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py">torchvision v0.20.0, models/resnet.py</a>. This book is an independent educational companion, not an official publication of the authors.</p>
+  <div class="hero-demo"><div class="widget" data-widget="heroDemo"></div></div>
+  <div class="btn-row">
+    <a class="btn primary" href="#ch-network">Start reading →</a>
+    <a class="btn" id="resumeBtn" href="#">Resume where you left off</a>
+    <a class="btn" href="https://arxiv.org/abs/1512.03385">The paper</a>
+    <a class="btn" href="https://github.com/KaimingHe/deep-residual-networks">Official models</a>
+  </div>
+</div>
+
+<!-- ============================================================ HOW TO READ -->
+<section class="chapter" id="ch-howto" data-title="How to read this book" data-part="Front matter" data-nonum>
+  <header>
+    <div class="kicker">Front matter</div>
+    <h2 class="title">How to read this book</h2>
+    <p class="lede">38 short chapters, 6 parts, and about 50 things you can poke.</p>
+  </header>
+  <p>This book assumes you know <strong>nothing</strong> about machine learning or images. Every new idea arrives with a picture or a widget, and every equation is unpacked symbol by symbol. It is lesson 5 of <a href="../">Modern AI in 49 Papers</a>, the last lesson of Part A, and it stands on its own. (Lesson 4, <a href="../batchnorm/">Batch Normalization</a>, is the layer ResNet puts after every convolution; Chapter 6 recaps it, so you do not need it.)</p>
+  <div class="roadmap">
+    <div class="card"><b>Part I · Foundations</b><span>Chapters 1–6. Neurons, layers and depth; loss and SGD with momentum and weight decay; backpropagation as a product; training versus test error; initialization; batch normalization.</span></div>
+    <div class="card"><b>Part II · Seeing with convolutions</b><span>Chapters 7–14. Pixels and channels, the convolution, stride and padding, filter banks, 1×1 convolutions, pooling, receptive fields, and a whole CNN with its FLOPs.</span></div>
+    <div class="card"><b>Part III · The degradation problem</b><span>Chapters 15–17. Deeper plain networks train worse (Fig. 1), why it is not overfitting or vanishing gradients, and the constructed solution that should exist (§1).</span></div>
+    <div class="card"><b>Part IV · Residual learning</b><span>Chapters 18–24. \(F(x) = H(x) - x\) (§3.1), why zero is easier than identity, the building block and Eq. (1), gradients through shortcuts, projections and Eq. (2) (§3.2), the unrolled view, and relatives such as highway networks (§2).</span></div>
+    <div class="card"><b>Part V · The ResNet architectures</b><span>Chapters 25–29. VGG-19, plain-34 and ResNet-34 (Fig. 3), the bottleneck block (Fig. 5), Table 1 from 18 to 152 layers, the training recipe (§3.4), and the official model files.</span></div>
+    <div class="card"><b>Part VI · The evidence</b><span>Chapters 30–38. ImageNet metrics, plain vs residual (Table 2, Fig. 4), options A/B/C (Table 3), the state of the art (Tables 4–5), the CIFAR-10 study (Table 6, Fig. 6), 110 and 1202 layers, layer responses (Fig. 7), object detection (Tables 7–14), and what came next.</span></div>
+  </div>
+  <h3>Signposts</h3>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>Plain-language pictures of what is going on. Read these even if you skip everything else.</p></div>
+  <div class="callout math"><div class="ct">∑ The math</div><p>The precise statement, exactly as it appears in the paper, with every symbol explained.</p></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Where this idea appears in the paper, with numbers taken directly from it. Tags like <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.2</a> link to the paper. Main-text numbers are quoted from the CVPR 2016 version (pages 770–778); its Tables 1–8 are identical to arXiv v1. The appendix (detection and localization details, Tables 9–14) exists only in the arXiv version, and is quoted from there.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>The authors released their trained ImageNet models as Caffe model descriptions (<a href="https://github.com/KaimingHe/deep-residual-networks/tree/a7026cb6d478e131b765b898c312e25f9f6dc031/prototxt">prototxt files</a> for ResNet-50, 101 and 152, MIT licence), but no training code. For the building blocks and the training-time details the book cites <a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py">torchvision’s resnet.py at v0.20.0</a> (BSD licence), the most widely used faithful re-implementation, with line numbers, and says where it differs from the paper. Every convolution in this page is this book’s own <a href="rn.js">rn.js</a>, built on the collection’s autograd in <a href="../shared/lib/nn.js">shared/lib/nn.js</a>.</p></div>
+  <p>Widgets have a title, a one-line instruction, then controls. Your progress (chapters you mark as read, light/dark choice) is remembered in your own browser only.</p>
+  <div class="callout warn"><div class="ct">⚠ About the toy models</div><p>What is <b>exact</b>: every convolution, pooling, batch-normalization and shortcut operation (checked against finite differences); the parameter and FLOP counts of every network in Table 1 and Table 6 (the parameter totals agree to the last digit with torchvision’s published counts); all formulas. What is a <b>toy</b>: the data and the trained networks. In place of 1.28 million ImageNet photos and 50,000 CIFAR-10 photos we use 2,000 noisy 8×8 pictures of digits, and fully-connected networks on a 5-arm spiral. In place of CIFAR’s 20–110-layer networks with 16–64 filters on 32×32 maps, our convolutional toys have 8–32 layers with 6–24 filters on 8×8 maps, trained for 800 steps instead of 64,000. They reproduce the paper’s phenomena (degradation, and its removal by shortcuts), not its numbers. ImageNet, CIFAR and detection results appear only as the paper’s own numbers. Toy numbers are labelled “toy”; numbers read off the paper’s plots are marked ≈.</p></div>
+</section>
+
+<!-- ============================================================ PART I · FOUNDATIONS -->
+<section class="chapter" id="ch-network" data-title="Neurons, layers and depth" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Neurons, layers and depth</h2>
+    <p class="lede">A deep network is a long chain of simple layers, and depth lets it describe complicated things cheaply.</p>
+  </header>
+  <p>A <strong>neuron</strong> takes a few numbers, multiplies each by a <strong>weight</strong>, adds them up with a <strong>bias</strong>, and bends the total with an <strong>activation function</strong>. ResNet uses the simplest bend there is, the <strong>ReLU</strong> (rectified linear unit): \(\sigma(z) = \max(z, 0)\), “keep positives, zero out negatives”. Try it:</p>
+  <div class="widget" data-widget="r_neuron"></div>
+  <p>Many neurons reading the same inputs form a <strong>layer</strong>. Stack layers, each reading the outputs of the one below, and you have a <strong>neural network</strong>; the layers in between are <strong>hidden layers</strong>, and a network with many of them is <strong>deep</strong>. The number of layers that have weights is the network’s <strong>depth</strong>: when the paper says “a 152-layer network”, it counts exactly those.</p>
+  <p>Why stack instead of making one very wide layer? Each layer can reuse what the layer below computed. Here each layer is just two ReLU neurons that fold a line in half; stacking them doubles the number of straight pieces every time:</p>
+  <div class="widget" data-widget="depthStack"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ h_{l+1} = \sigma(W_l\, h_l + b_l), \qquad l = 0, 1, \dots, L-1, \qquad h_0 = x. \]
+    <p>\(h_l\) is the list of numbers (a <strong>vector</strong>) coming out of layer \(l\); \(h_0 = x\) is the network’s input. \(W_l\) is the layer’s table of weights (a <strong>matrix</strong>, one row per neuron), \(b_l\) its biases, \(W_l h_l\) means “each neuron takes its weighted sum”, and \(\sigma\) applies ReLU to every entry. \(L\) is the depth. Tiny example: \(h = (1, 2)\), one neuron with weights \((0.5, -1)\), bias 0.5: \(0.5 - 2 + 0.5 = -1\), and \(\sigma(-1) = 0\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The paper opens with depth: deep networks “integrate low/mid/high-level features and classifiers in an end-to-end multi-layer fashion, and the ‘levels’ of features can be enriched by the number of stacked layers (depth)”. In 2015 the best ImageNet networks had “a depth of sixteen to thirty” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §1</a>. A footnote adds that whether stacked nonlinear layers can approximate any complicated function is “still an open question”, citing work on the number of linear pieces of deep networks (Montúfar et al., 2014) <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.1, footnote 2</a>. The folding widget above is in the spirit of that work.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A neuron has weights (2, −1), bias 0 and inputs (1, 3). What does it output with ReLU?","o":["0","−1","5"],"a":0,"e":"2·1 − 1·3 + 0 = −1, and ReLU(−1) = max(−1, 0) = 0.","h":"Weighted sum first, then keep it only if it is positive."},
+    {"q":"In the folding widget, how many straight pieces do 5 layers of 2 neurons make?","o":["10","11","32"],"a":2,"e":"Each layer doubles the pieces: 2⁵ = 32. Ten neurons in a single layer could make at most 11.","h":"Doubling, five times."},
+    {"q":"How does the paper count the depth of a 152-layer network?","o":["All operations, including ReLUs and additions","Layers with weights (convolutions and the final fully-connected layer)","Only the convolutions with stride 2"],"a":1,"e":"Depth counts weighted layers. ReLUs, pooling, BN and additions are not counted.","h":"Which layers carry learned weights?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-sgd" data-title="Loss, SGD, momentum and weight decay" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Loss, SGD, momentum and weight decay</h2>
+    <p class="lede">Training walks downhill on the loss, with a little momentum and a gentle pull towards small weights.</p>
+  </header>
+  <p>To classify an image into one of \(K\) classes, the last layer outputs \(K\) scores, and the <strong>softmax</strong> turns them into probabilities (exponentiate each score, divide by the total). The <strong>loss</strong> is the <strong>cross-entropy</strong>: minus the log of the probability given to the right class. All weights and biases together are the <strong>parameters</strong>.</p>
+  <p>The <strong>gradient</strong> says, for every parameter, how much the loss would rise if that parameter grew a little. <strong>Gradient descent</strong> steps every parameter against its gradient; the step size is the <strong>learning rate</strong> \(\eta\). Here it is on a one-parameter loss:</p>
+  <div class="widget" data-widget="r_descent"></div>
+  <p>With a million training images, the exact gradient is too expensive for every step. <strong>Stochastic gradient descent</strong> (<strong>SGD</strong>) estimates it from a random <strong>minibatch</strong> of a few hundred images. The paper adds two standard refinements. <strong>Momentum</strong> keeps a running “velocity”, so steps that agree build up speed and steps that zig-zag cancel. <strong>Weight decay</strong> adds a small pull of every weight towards zero, which discourages needlessly large weights:</p>
+  <div class="widget" data-widget="momentumWd"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ v \leftarrow \mu\, v + \big(g + \lambda w\big), \qquad w \leftarrow w - \eta\, v. \]
+    <p>\(w\) is one parameter, \(g\) its minibatch gradient, \(v\) its velocity (starting at 0), \(\mu\) the momentum, \(\lambda\) the weight decay and \(\eta\) the learning rate. The \(\lambda w\) term is the gradient of an extra loss \(\tfrac{\lambda}{2}w^2\). Worked step with the paper’s \(\mu = 0.9\), \(\lambda = 0.0001\), \(\eta = 0.1\): \(w = 2\), \(g = 0.5\), \(v = 1\): new \(v = 0.9 + 0.5 + 0.0002 = 1.4002\); new \(w = 2 - 0.14002 = 1.85998\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>ImageNet: “SGD with a mini-batch size of 256. The learning rate starts from 0.1 and is divided by 10 when the error plateaus … We use a weight decay of 0.0001 and a momentum of 0.9” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.4</a>. CIFAR-10: the same weight decay and momentum, mini-batch 128 <a class="cite" href="https://arxiv.org/abs/1512.03385">§4.2</a>.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>The authors’ <a href="https://github.com/KaimingHe/deep-residual-networks#disclaimer-and-known-issues">README</a> warns that their Caffe SGD uses exactly the form above, \(v := \mu v + \eta g\) (the learning rate inside the velocity; equivalent while \(\eta\) is constant), and that libraries using \(v := \mu v + (1-\mu)\eta g\) change the effective learning rate. This book’s toys use the collection’s <code>NN.SGD</code> (<a href="../shared/lib/nn.js">nn.js</a>), the form shown above, with weight decay added to the gradient in <a href="rn.js">rn.js</a> (<code>trainer</code>).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"With μ = 0.9 and a constant gradient g (no weight decay), what does the velocity approach?","o":["g","10 g","0.9 g"],"a":1,"e":"At equilibrium v = 0.9v + g, so v = g/(1 − 0.9) = 10g: momentum 0.9 makes consistent steps up to 10× longer.","h":"Solve v = μv + g."},
+    {"q":"What does weight decay λ = 0.0001 add to each weight’s gradient?","o":["0.0001","0.0001 × the weight","0.0001 × the gradient"],"a":1,"e":"The extra term λw pulls each weight towards zero in proportion to its size.","h":"It is the gradient of (λ/2)w²."},
+    {"q":"In the valley widget, why does plain SGD (μ = 0) zig-zag?","o":["The learning rate is too small","The valley is much steeper across than along, so each step overshoots across it","Weight decay is on"],"a":1,"e":"In the steep direction each step overshoots; momentum averages the alternating cross steps away and accumulates the consistent along-valley steps.","h":"Compare the curvature in the two directions."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-backprop" data-title="Backpropagation through a deep stack" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Backpropagation through a deep stack</h2>
+    <p class="lede">The gradient reaching a low layer is a product of one factor per layer above it, so it can shrink or blow up with depth.</p>
+  </header>
+  <p>The loss is computed in many small steps. The <strong>chain rule</strong> says how a small change at the bottom affects the loss at the top: multiply the local slopes of every step in between. Doing this from the loss downwards through every layer is <strong>backpropagation</strong>. When a value is used in several places, the gradients arriving from each place are <strong>added</strong>; this sum rule will matter for shortcuts.</p>
+  <p>Multiplying many numbers is risky. If the typical factor is a bit below 1, the product shrinks towards zero: a <strong>vanishing gradient</strong>, and the lowest layers barely learn. A bit above 1, it explodes: an <strong>exploding gradient</strong>.</p>
+  <div class="widget" data-widget="chainProduct"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \frac{\partial \ell}{\partial h_l} = \frac{\partial \ell}{\partial h_L}\;\frac{\partial h_L}{\partial h_{L-1}}\cdots\frac{\partial h_{l+1}}{\partial h_l} = \frac{\partial \ell}{\partial h_L}\prod_{i=l}^{L-1}\frac{\partial h_{i+1}}{\partial h_i}. \]
+    <p>\(\ell\) is the loss, \(h_i\) the output of layer \(i\), and \(\partial h_{i+1}/\partial h_i\) the local slope of layer \(i+1\) (for vectors, a matrix of slopes, the <strong>Jacobian</strong>). \(\prod\) means “multiply together”. With scalar factors all equal to 0.9 and 50 layers, the product is \(0.9^{50} \approx 0.005\); with 1.1, it is \(1.1^{50} \approx 117\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“An obstacle to answering this question was the notorious problem of vanishing/exploding gradients, which hamper convergence from the beginning. This problem, however, has been largely addressed by normalized initialization and intermediate normalization layers” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §1</a>, citing Hochreiter (1991), Bengio et al. (1994) and Glorot &amp; Bengio (2010). Chapters 5 and 6 cover the two fixes; Chapter 16 shows that the paper’s problem is a different one.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Three layers have local slopes 2, 0.5 and 3. The gradient at the top is 1. What reaches the bottom?","o":["5.5","3","1"],"a":1,"e":"2 × 0.5 × 3 = 3: the factors multiply.","h":"Multiply the three slopes."},
+    {"q":"A value is used in two places that send back gradients 0.4 and 0.6. What is its gradient?","o":["0.24","1.0","0.6"],"a":1,"e":"Gradients from several uses add up: 0.4 + 0.6 = 1.0.","h":"The sum rule."},
+    {"q":"Why are deep networks more prone to vanishing gradients than shallow ones?","o":["They use more data","The gradient is a product with one factor per layer, so small deviations from 1 compound","Deep networks have no biases"],"a":1,"e":"0.9 per layer is harmless for 3 layers (0.73) but crushing for 50 (0.005).","h":"How does a product of many slightly-small numbers behave?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-training" data-title="Training error, test error and overfitting" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Training error, test error and overfitting</h2>
+    <p class="lede">A network is judged on images it has never seen; comparing its errors on training and test images tells you what went wrong.</p>
+  </header>
+  <p>Here is a whole small network learning, with backpropagation and gradient steps doing the work:</p>
+  <div class="widget" data-widget="r_trainNet"></div>
+  <p>Data come in separate sets. The network learns from the <strong>training set</strong>; we measure it on a <strong>test set</strong> (or a <strong>validation set</strong>) of examples it never trained on. The fraction misclassified is the <strong>error</strong>. Two failure modes look different in these two numbers. <strong>Underfitting</strong>: the model cannot even fit the training data; both errors are high. <strong>Overfitting</strong>: the model fits the training data, noise included, and does worse on new data; training error is low, test error high.</p>
+  <div class="widget" data-widget="fitCurves"></div>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>More flexibility can only lower the <em>training</em> error when the optimizer does its job: a more flexible model can always imitate a less flexible one. Keep this in mind. The surprise of the ResNet paper is a case where adding layers <em>raised</em> the training error.</p></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>ImageNet models are trained on 1.28 million images and evaluated on 50,000 validation images, plus 100,000 test images scored by the competition server; CIFAR-10 has 50,000 training and 10,000 test images <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §4.1, §4.2</a>. The paper’s key distinction: degradation “is not caused by overfitting, and adding more layers to a suitably deep model leads to higher training error” <a class="cite" href="https://arxiv.org/abs/1512.03385">§1</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Training error 2%, test error 25%. What is most likely happening?","o":["Underfitting","Overfitting","The optimizer failed"],"a":1,"e":"It fits the training data very well but does not generalize: the signature of overfitting.","h":"Low training error, high test error."},
+    {"q":"Model B can represent everything model A can, plus more. After training, B has higher training error than A. What does that suggest?","o":["B overfits","The optimizer did not find B’s best solution","B has too few parameters"],"a":1,"e":"B could at least match A’s training error; failing to do so points at the optimization, not at capacity or overfitting. This is exactly the paper’s argument.","h":"Could B, in principle, copy A?"},
+    {"q":"In the polynomial widget, what happens to the training error as the degree grows?","o":["It always falls (or stays)","It rises after degree 3","It is constant"],"a":0,"e":"Least squares finds the best fit, and a higher degree contains all lower-degree curves, so the training error can only fall.","h":"A degree-5 curve can imitate any degree-3 curve."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-init" data-title="Initialization: keeping signals alive" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Initialization: keeping signals alive</h2>
+    <p class="lede">Random starting weights must have just the right spread, or the signal dies or explodes before it reaches the top.</p>
+  </header>
+  <p>Before training, weights are set to small random numbers. Their spread matters enormously in a deep network: each layer multiplies the size of the signal by roughly the same factor, so 50 layers multiply it by that factor to the 50th power, just like gradients in Chapter 3. <strong>He initialization</strong> (He, Zhang, Ren &amp; Sun, 2015, the same authors) picks the spread so that, with ReLU, the factor is exactly 1 on average:</p>
+  <div class="widget" data-widget="initDepth"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ w \sim \mathcal{N}\!\left(0,\ \frac{2}{n}\right), \qquad n = k^2\, C_{\text{in}} \ \text{for a } k\times k \text{ convolution}. \]
+    <p>\(\mathcal{N}(0, s^2)\) means “random, bell-shaped, centred at 0 with spread (standard deviation) \(s\)”. \(n\) is the number of inputs each neuron sums (its <strong>fan-in</strong>). Why 2? A weighted sum of \(n\) inputs with weights of variance \(2/n\) has variance about \(2\times\) the average squared input, and ReLU zeroes half of it, giving back a factor of 1. The older Xavier/Glorot rule uses \(1/n\), which halves the variance at every ReLU layer: after 50 layers, the size shrinks by \(2^{-25} \approx 3\times10^{-8}\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“We initialize the weights as in [12] and train all plain/residual nets from scratch” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.4</a>; [12] is He et al., “Delving deep into rectifiers” (ICCV 2015), the source of the \(2/n\) rule. The CIFAR-10 nets use the same <a class="cite" href="https://arxiv.org/abs/1512.03385">§4.2</a>.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>torchvision: <code>nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")</code> for every convolution (<a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py#L208-L213">resnet.py L208–213</a>). It uses the fan-<em>out</em> \(k^2 C_{\text{out}}\), which keeps the backward gradients’ size constant instead of the forward signal’s; inside a stage, where \(C_{\text{in}} = C_{\text{out}}\), the two are the same. This book’s <code>heParam</code> in <a href="rn.js">rn.js</a> uses the fan-in.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A 3×3 convolution reads 64 channels. What weight variance does He initialization use?","o":["2/64","2/576","1/9"],"a":1,"e":"The fan-in is k²·C_in = 9 · 64 = 576, so the variance is 2/576 ≈ 0.0035 (spread ≈ 0.059).","h":"Each output sums over 3·3·64 inputs."},
+    {"q":"With Xavier initialization (variance 1/n) and ReLU, by roughly what factor does the signal’s variance change per layer?","o":["×1","×0.5","×2"],"a":1,"e":"The weighted sum keeps the variance, then ReLU zeroes half the values, halving it.","h":"He uses 2/n precisely to undo this."},
+    {"q":"Why does initialization matter more for deep networks?","o":["Deep networks have more data","The per-layer factor is raised to the power of the depth","Shallow networks do not use ReLU"],"a":1,"e":"A factor of 0.9 per layer is fine for 3 layers and fatal for 50.","h":"Compound growth."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-bn" data-title="Batch normalization in one chapter" data-part="Part I · Foundations">
+  <header>
+    <div class="kicker">Foundations</div>
+    <h2 class="title">Batch normalization in one chapter</h2>
+    <p class="lede">Re-centre and rescale every channel using the current minibatch, then let the network re-stretch it as it likes.</p>
+  </header>
+  <p><strong>Batch normalization</strong> (<strong>BN</strong>; Ioffe &amp; Szegedy, 2015, <a href="../batchnorm/">lesson 4</a>) is a layer that takes each channel’s values across the minibatch, subtracts their mean and divides by their standard deviation, so they have mean 0 and spread 1, and then multiplies by a learned scale \(\gamma\) and adds a learned shift \(\beta\). Whatever the layer below does to the scale of its outputs, the next layer sees a well-behaved range:</p>
+  <div class="widget" data-widget="bnRecap"></div>
+  <div class="callout math"><div class="ct">∑ The math (BN paper, Algorithm 1)</div>
+    \[ \mu = \frac{1}{m}\sum_{i=1}^m x_i,\quad \sigma^2 = \frac1m\sum_{i=1}^m (x_i-\mu)^2,\quad \widehat{x}_i = \frac{x_i-\mu}{\sqrt{\sigma^2+\epsilon}},\quad y_i = \gamma\,\widehat{x}_i + \beta. \]
+    <p>\(x_1 \dots x_m\) are one channel’s values over the minibatch (for a convolution, over all images <em>and</em> all positions), \(\mu\) and \(\sigma^2\) their mean and variance, \(\epsilon\) a tiny constant (\(10^{-5}\)) to avoid dividing by zero. Worked example: values \(1, 3\): \(\mu = 2\), \(\sigma^2 = 1\), \(\widehat x = (-1, 1)\); with \(\gamma = 2, \beta = 0.5\): \(y = (-1.5, 2.5)\). At test time, \(\mu\) and \(\sigma^2\) are replaced by fixed averages computed on training data.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“We adopt batch normalization (BN) right after each convolution and before activation” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.4</a>, and “we do not use dropout, following the practice in [16]” (the BN paper). The paper credits BN for removing the vanishing-gradient obstacle: its plain networks “are trained with BN, which ensures forward propagated signals to have non-zero variances” <a class="cite" href="https://arxiv.org/abs/1512.03385">§4.1</a>.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>In the official Caffe models each convolution is followed by a <code>BatchNorm</code> layer (with <code>use_global_stats: true</code>, the stored statistics) and a <code>Scale</code> layer holding \(\gamma\) and \(\beta\) (<a href="https://github.com/KaimingHe/deep-residual-networks/blob/a7026cb6d478e131b765b898c312e25f9f6dc031/prototxt/ResNet-50-deploy.prototxt#L20-L37">ResNet-50-deploy.prototxt L20–37</a>). The README notes the stored mean and variance were computed “using average (not moving average) on a sufficiently large training batch after the training procedure”. Our toy CNNs do the same (<code>CNN.freeze</code> in <a href="rn.js">rn.js</a>); our fully-connected toys use the shared <code>NN.batchNorm</code>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A channel has values 2, 4, 6, 8 in the minibatch. With γ = 1, β = 0 (ε ignored), what does BN output for the value 8?","o":["1","≈ 1.34","8"],"a":1,"e":"μ = 5, σ² = (9+1+1+9)/4 = 5, σ ≈ 2.236, so (8 − 5)/2.236 ≈ 1.34.","h":"Subtract the mean, divide by the standard deviation."},
+    {"q":"Where does ResNet put BN?","o":["After each ReLU","Right after each convolution, before the activation","Only at the end of the network"],"a":1,"e":"§3.4: “right after each convolution and before activation”, following the BN paper.","h":"Between the weights and the bend."},
+    {"q":"For a convolutional layer, over which values are a channel’s mean and variance computed?","o":["Over the minibatch only, at one position","Over all images of the minibatch and all positions of the map","Over all channels of one image"],"a":1,"e":"Convolutional BN shares one mean, variance, γ and β per channel across every position, so it uses m × (height × width) values.","h":"A channel applies the same filter everywhere."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART II · CONVOLUTIONS -->
+<section class="chapter" id="ch-pixels" data-title="Images are grids of numbers" data-part="Part II · Seeing with convolutions">
+  <header>
+    <div class="kicker">Seeing with convolutions</div>
+    <h2 class="title">Images are grids of numbers</h2>
+    <p class="lede">A picture is a height × width grid of brightness values, one grid per colour channel.</p>
+  </header>
+  <p>A computer stores a grey picture as a grid of <strong>pixels</strong>, each a number for its brightness. A colour picture stores three grids, one per <strong>channel</strong> (red, green, blue). So a picture is a block of numbers of size height × width × channels. Inside a network, layers produce more such blocks, each with many channels; a single channel’s grid is called a <strong>feature map</strong>.</p>
+  <div class="widget" data-widget="pixelGrid"></div>
+  <p>The paper’s two datasets: <strong>ImageNet</strong> (the 2012 classification challenge, ILSVRC): 1.28 million training photos in 1,000 classes, fed to the network as 224 × 224 × 3 crops. <strong>CIFAR-10</strong>: 60,000 tiny 32 × 32 × 3 photos in 10 classes (airplane, car, bird, cat, …). Our toy uses 8 × 8 × 1 pictures of digits.</p>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    <p>An image is a 3-way table \(x[c, i, j]\): channel \(c\), row \(i\), column \(j\). Sizes: ImageNet crop \(3 \times 224 \times 224 = 150{,}528\) numbers; CIFAR-10 \(3 \times 32 \times 32 = 3{,}072\); our toy \(1 \times 8 \times 8 = 64\). Before training, the paper subtracts the <strong>per-pixel mean</strong>: the average image over the training set, so that inputs are centred around zero.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>ImageNet: “A 224×224 crop is randomly sampled from an image or its horizontal flip, with the per-pixel mean subtracted” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.4</a>. CIFAR-10: “The network inputs are 32×32 images, with the per-pixel mean subtracted” <a class="cite" href="https://arxiv.org/abs/1512.03385">§4.2</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"How many numbers describe one 32 × 32 colour CIFAR-10 image?","o":["1,024","3,072","32"],"a":1,"e":"32 × 32 pixels × 3 channels = 3,072.","h":"Height × width × channels."},
+    {"q":"What is a feature map?","o":["The whole network","One channel’s grid of values inside the network","The list of class probabilities"],"a":1,"e":"Each channel of a layer’s output is a 2-D map telling where its feature responded.","h":"One grid per channel."},
+    {"q":"Why subtract the average image from every input?","o":["To make images smaller","To centre the inputs around zero, which helps optimization","To remove colour"],"a":1,"e":"Centred inputs keep the first layer’s sums balanced, the same reason BN centres activations.","h":"Compare with what BN does inside."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-conv" data-title="The convolution: a sliding kernel" data-part="Part II · Seeing with convolutions">
+  <header>
+    <div class="kicker">Seeing with convolutions</div>
+    <h2 class="title">The convolution: a sliding kernel</h2>
+    <p class="lede">A convolution slides one small table of weights over the whole picture, computing the same weighted sum at every position.</p>
+  </header>
+  <p>A fully-connected layer would give every pixel its own weight for every neuron: for a 224 × 224 × 3 input and just 64 neurons, almost 10 million weights, and no idea that an edge is an edge wherever it appears. A <strong>convolutional layer</strong> instead uses a small <strong>kernel</strong> (or <strong>filter</strong>), say 3 × 3, and slides it across the picture. At each position it multiplies the 9 pixels under the window by the 9 weights and adds them up. The same 9 weights are reused everywhere (<strong>weight sharing</strong>), so the layer finds the same pattern at every location.</p>
+  <div class="widget" data-widget="convSlide"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ y[i, j] = b + \sum_{a=0}^{k-1}\sum_{b'=0}^{k-1} w[a, b']\; x[i + a,\ j + b']. \]
+    <p>\(x\) is the input grid, \(w\) the \(k \times k\) kernel, \(b\) a bias, and \(y[i, j]\) the output at row \(i\), column \(j\). (Deep-learning libraries call this “convolution” although mathematicians would call it cross-correlation; the kernel is not flipped.) Worked example: kernel \(\begin{smallmatrix}-1&0&1\end{smallmatrix}\) on the three pixels \(0, 1, 1\): \(-0 + 0 + 1 = 1\): the left-to-right brightness increase. With a 3 × 3 kernel and no padding, an \(8 \times 8\) input gives a \(6 \times 6\) output.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“The convolutional layers mostly have 3×3 filters” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.3</a>, the philosophy of VGG nets (Simonyan &amp; Zisserman, 2015). Only the very first layer of the ImageNet networks uses a larger 7 × 7 kernel (Table 1). ResNet’s convolutions have no bias (<code>bias_term: false</code> in the Caffe files), because the BN that follows has its own shift \(\beta\).</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>torchvision builds every 3×3 layer with <code>conv3x3</code>: <code>nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=dilation, …, bias=False)</code> (<a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py#L40-L51">resnet.py L40–51</a>). This book’s convolution is <code>RNT.conv</code> in <a href="rn.js">rn.js</a>, with its own backward pass, checked against finite differences.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A 3×3 kernel of all 1/9 is placed on pixels that are all 0 except one 1. What is the output?","o":["1","1/9","9"],"a":1,"e":"Only one product is non-zero: 1/9 × 1. This kernel blurs (averages).","h":"Nine products, one non-zero."},
+    {"q":"Why reuse the same kernel at every position?","o":["It saves memory only","A pattern (an edge, a stroke) means the same thing wherever it appears, and it needs far fewer weights","Because images are square"],"a":1,"e":"Weight sharing gives the same detector everywhere with only k² weights per input channel.","h":"Is a vertical edge different on the left of a picture?"},
+    {"q":"How big is the output of a 3×3 kernel on a 10×10 input, without padding?","o":["10×10","8×8","7×7"],"a":1,"e":"The window fits in 10 − 3 + 1 = 8 positions per direction.","h":"Count where the window fits."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-stride" data-title="Stride, padding and output size" data-part="Part II · Seeing with convolutions">
+  <header>
+    <div class="kicker">Seeing with convolutions</div>
+    <h2 class="title">Stride, padding and output size</h2>
+    <p class="lede">Padding keeps the map size; a stride of 2 halves it.</p>
+  </header>
+  <p>Two knobs control the output size. <strong>Padding</strong> \(p\) adds a border of zeros around the input so the kernel can sit on edge pixels too; with a 3×3 kernel, padding 1 keeps the size unchanged. <strong>Stride</strong> \(s\) moves the kernel \(s\) pixels at a time instead of 1; stride 2 skips every other position and halves the map. ResNet <strong>downsamples</strong> (shrinks maps) with stride-2 convolutions:</p>
+  <div class="widget" data-widget="strideCalc"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ n_{\text{out}} = \left\lfloor \frac{n + 2p - k}{s} \right\rfloor + 1. \]
+    <p>\(n\) is the input size (height or width), \(k\) the kernel size, \(p\) the padding, \(s\) the stride, and \(\lfloor\cdot\rfloor\) rounds down. ResNet’s first layer: \(n = 224, k = 7, p = 3, s = 2\): \(\lfloor 223/2 \rfloor + 1 = 112\). A 3×3, stride 2, padding 1 on 56: \(\lfloor 55/2\rfloor + 1 = 28\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“We perform downsampling directly by convolutional layers that have a stride of 2” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.3</a>. In Table 1: conv1 is “7×7, 64, stride 2” (output 112×112), followed by a “3×3 max pool, stride 2” (56×56); “Downsampling is performed by conv3_1, conv4_1, and conv5_1 with a stride of 2” (28, 14, 7).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A 3×3 convolution with stride 1 and padding 1 is applied to a 28×28 map. Output size?","o":["26×26","28×28","14×14"],"a":1,"e":"(28 + 2 − 3)/1 + 1 = 28: padding 1 exactly compensates the kernel’s border.","h":"Use the formula with p = 1."},
+    {"q":"A 1×1 convolution with stride 2 on a 56×56 map gives?","o":["56×56","28×28","27×27"],"a":1,"e":"⌊(56 − 1)/2⌋ + 1 = 27 + 1 = 28.","h":"⌊55/2⌋ = 27."},
+    {"q":"What do the zeros added by padding do?","o":["Add new information","Let the kernel be centred on edge pixels so the output keeps its size","Remove the borders"],"a":1,"e":"They are placeholders outside the image so border positions also get an output.","h":"Where can a 3×3 window be centred without padding?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-channels" data-title="Channels, filter banks and cost" data-part="Part II · Seeing with convolutions">
+  <header>
+    <div class="kicker">Seeing with convolutions</div>
+    <h2 class="title">Channels, filter banks and cost</h2>
+    <p class="lede">Each filter looks through all input channels at once, and a layer has many filters; that fixes its weights and its work.</p>
+  </header>
+  <p>Real layers read many channels and write many channels. Each of the \(C_{\text{out}}\) filters is a little block of \(k \times k \times C_{\text{in}}\) weights: it looks at the same window in every input channel and sums everything into one output number. So the output has \(C_{\text{out}}\) channels. Cost is counted in <strong>FLOPs</strong>, which in this paper means <strong>multiply-adds</strong> (one multiplication plus one addition).</p>
+  <div class="widget" data-widget="channelStack"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \text{weights} = k^2\, C_{\text{in}}\, C_{\text{out}}, \qquad \text{multiply-adds} = H_{\text{out}}\, W_{\text{out}}\; k^2\, C_{\text{in}}\, C_{\text{out}}. \]
+    <p>\(H_{\text{out}}, W_{\text{out}}\) are the output map’s height and width. Example (conv2_x of ResNet-34): \(k = 3\), 64 → 64 channels, 56×56 output: \(9 \cdot 64 \cdot 64 = 36{,}864\) weights and \(56^2 \cdot 36{,}864 \approx 115.6\) million multiply-adds. Halve the map to 28 and double both channel counts to 128: weights ×4, positions ÷4: the work is the same 115.6 million.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The two VGG-style design rules: “(i) for the same output feature map size, the layers have the same number of filters; and (ii) if the feature map size is halved, the number of filters is doubled so as to preserve the time complexity per layer” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.3</a>. FLOPs are “multiply-adds” <a class="cite" href="https://arxiv.org/abs/1512.03385">§3.3</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"How many weights has a 3×3 convolution from 128 to 256 channels (no bias)?","o":["294,912","1,152","32,768"],"a":0,"e":"9 × 128 × 256 = 294,912.","h":"k² · C_in · C_out."},
+    {"q":"Rule (ii) halves the map and doubles the filters. What happens to the multiply-adds of a 3×3 layer inside the stage?","o":["They double","They stay the same","They halve"],"a":1,"e":"Positions ÷4, C_in·C_out ×4: the product is unchanged, which is the point of the rule.","h":"Count both factors."},
+    {"q":"Each filter of a layer with C_in = 64 and k = 3 contains how many weights?","o":["9","64","576"],"a":2,"e":"3 × 3 × 64 = 576: it looks at a 3×3 window in all 64 input channels.","h":"A filter spans every input channel."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-1x1" data-title="1×1 convolutions" data-part="Part II · Seeing with convolutions">
+  <header>
+    <div class="kicker">Seeing with convolutions</div>
+    <h2 class="title">1×1 convolutions</h2>
+    <p class="lede">A 1×1 convolution looks at one pixel at a time and only mixes channels: a cheap way to change their number.</p>
+  </header>
+  <p>With \(k = 1\) a convolution sees no neighbours. At each pixel it takes the \(C_{\text{in}}\) channel values and computes \(C_{\text{out}}\) weighted sums of them: a small fully-connected layer applied at every pixel. That makes it the cheapest way to change the number of channels, either down (“reduce”) or up (“restore”). ResNet uses it twice: in the <strong>bottleneck block</strong> (Chapter 26) and in <strong>projection shortcuts</strong> (Chapter 22).</p>
+  <div class="widget" data-widget="oneByOne"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ y[o, i, j] = \sum_{c=1}^{C_{\text{in}}} W[o, c]\; x[c, i, j], \qquad \text{weights} = C_{\text{in}}\, C_{\text{out}}. \]
+    <p>\(o\) indexes output channels, \(c\) input channels. Reducing 256 channels to 64: \(256 \times 64 = 16{,}384\) weights, against \(9 \times 256 \times 64 = 147{,}456\) for a 3×3.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Projection shortcuts are “done by 1×1 convolutions” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.3</a>; in the bottleneck, “the 1×1 layers are responsible for reducing and then increasing (restoring) dimensions” <a class="cite" href="https://arxiv.org/abs/1512.03385">§4.1</a>.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>torchvision’s <code>conv1x1</code>: <code>nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)</code> (<a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py#L54-L56">resnet.py L54–56</a>).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"How many weights does a 1×1 convolution from 64 to 256 channels have?","o":["16,384","147,456","320"],"a":0,"e":"64 × 256 = 16,384.","h":"C_in · C_out."},
+    {"q":"What can a 1×1 convolution NOT do?","o":["Change the number of channels","Combine information from neighbouring pixels","Be followed by BN"],"a":1,"e":"Its window is a single pixel: it mixes channels, never positions.","h":"How big is its window?"},
+    {"q":"A 1×1 convolution at one pixel with inputs (1, 2, 0) and output weights (0.5, −1, 3) gives?","o":["−1.5","1.5","2.5"],"a":0,"e":"0.5·1 − 1·2 + 3·0 = −1.5.","h":"A dot product of channel values and weights."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-pool" data-title="Pooling" data-part="Part II · Seeing with convolutions">
+  <header>
+    <div class="kicker">Seeing with convolutions</div>
+    <h2 class="title">Pooling</h2>
+    <p class="lede">Pooling summarizes each neighbourhood by its maximum or average; global average pooling summarizes a whole map in one number.</p>
+  </header>
+  <p><strong>Max pooling</strong> slides a window like a convolution but outputs the largest value in it; <strong>average pooling</strong> outputs the mean. Neither has weights. <strong>Global average pooling</strong> averages an entire feature map, so a block of \(C \times H \times W\) becomes just \(C\) numbers, one per channel, ready for a final fully-connected layer.</p>
+  <div class="widget" data-widget="poolDemo"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \text{max pool: } y[i,j] = \max_{(a,b)\in \text{window}(i,j)} x[a,b], \qquad \text{global average: } g_c = \frac{1}{HW}\sum_{i,j} x[c, i, j]. \]
+    <p>The output size follows the same formula as a convolution. ResNet’s max pool: \(k = 3, s = 2, p = 1\) on 112: \(\lfloor 111/2 \rfloor + 1 = 56\). Global average pool on ResNet-50’s last block: \(2048 \times 7 \times 7 \to 2048\) numbers.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“The network ends with a global average pooling layer and a 1000-way fully-connected layer with softmax” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.3</a>; Table 1 lists a “3×3 max pool, stride 2” after conv1. VGG-19 instead uses five 2×2 max pools and three huge fully-connected layers (Fig. 3, left).</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>torchvision: <code>nn.MaxPool2d(kernel_size=3, stride=2, padding=1)</code> and <code>nn.AdaptiveAvgPool2d((1, 1))</code> (<a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py#L200-L206">resnet.py L200–206</a>); the Caffe file’s <code>pool5</code> is a 7×7 average pool (<a href="https://github.com/KaimingHe/deep-residual-networks/blob/a7026cb6d478e131b765b898c312e25f9f6dc031/prototxt/ResNet-50-deploy.prototxt#L2293-L2302">ResNet-50-deploy.prototxt L2293–2302</a>).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"2×2 max pool with stride 2 on the window [[1, 5], [3, 2]]?","o":["2.75","5","11"],"a":1,"e":"Max pooling keeps the largest value: 5.","h":"The largest of the four."},
+    {"q":"What does global average pooling turn a 512 × 7 × 7 block into?","o":["512 numbers","49 numbers","7 × 7 numbers"],"a":0,"e":"Each of the 512 maps is averaged to one number.","h":"One number per channel."},
+    {"q":"How many weights does a pooling layer have?","o":["k² per channel","None","One per output"],"a":1,"e":"Pooling is a fixed rule (max or mean), with nothing learned.","h":"Is anything learned?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-rf" data-title="Receptive field" data-part="Part II · Seeing with convolutions">
+  <header>
+    <div class="kicker">Seeing with convolutions</div>
+    <h2 class="title">Receptive field</h2>
+    <p class="lede">Each layer sees a slightly bigger patch of the picture than the one below it; depth and stride make it grow.</p>
+  </header>
+  <p>One 3×3 layer sees a 3×3 patch. A second 3×3 layer on top sees 3×3 outputs of the first, which together cover 5×5 input pixels. The patch of input that can influence one output is its <strong>receptive field</strong>. Stacking small kernels grows it slowly; a stride of 2 makes every later layer grow it twice as fast.</p>
+  <div class="widget" data-widget="rfGrow"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ r_L = 1 + \sum_{l=1}^{L} (k_l - 1)\prod_{i&lt;l} s_i. \]
+    <p>\(r_L\) is the receptive-field width after \(L\) layers, \(k_l\) and \(s_l\) the kernel size and stride of layer \(l\). Two 3×3 stride-1 layers: \(1 + 2 + 2 = 5\). Three: 7, the same as one 7×7 layer, with \(3 \cdot 9 = 27\) instead of 49 weights per channel pair, and three ReLUs instead of one: the VGG argument for 3×3 kernels.</p>
+  </div>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>To recognize a dog, some unit must see the whole dog. Very deep networks of small kernels get there gradually, building strokes into parts and parts into objects. That is one reason depth matters for vision, and why the paper wants to go deeper without paying the price it is about to discover.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Receptive field of four stacked 3×3 stride-1 layers?","o":["9","12","4"],"a":0,"e":"1 + 4 × 2 = 9.","h":"Each layer adds k − 1 = 2."},
+    {"q":"A 3×3 stride-2 layer followed by a 3×3 stride-1 layer: receptive field?","o":["5","7","9"],"a":1,"e":"1 + 2·1 + 2·2 = 7: the second layer’s growth is doubled by the first layer’s stride.","h":"Multiply the second term by the earlier stride."},
+    {"q":"Why do three 3×3 layers beat one 7×7 layer, VGG-style?","o":["Bigger receptive field","Same receptive field with fewer weights and more nonlinearity","They are faster to read"],"a":1,"e":"Both see 7×7; the stack uses 27 vs 49 weights per channel pair and has three ReLUs.","h":"Compare weights and bends."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-cnn" data-title="A whole convolutional network" data-part="Part II · Seeing with convolutions">
+  <header>
+    <div class="kicker">Seeing with convolutions</div>
+    <h2 class="title">A whole convolutional network</h2>
+    <p class="lede">Stages of 3×3 convolutions shrink the maps and widen the channels, then global pooling and one layer give the class.</p>
+  </header>
+  <p>A <strong>convolutional neural network</strong> (CNN) for classification chains everything so far: convolutions (each followed by BN and ReLU), downsampling, global average pooling and a final fully-connected layer with softmax. Groups of layers working on the same map size are <strong>stages</strong>. Here is a small one from this book’s toy, trained right now on noisy 8×8 digits; look inside:</p>
+  <div class="widget" data-widget="featureMaps"></div>
+  <p>The bigger question for the paper is cost. In 2014 the best “very deep” networks were the <strong>VGG</strong> nets, 16 and 19 layers of 3×3 convolutions. The paper’s 34-layer network follows VGG’s design rules but starts shrinking the maps right away and drops VGG’s giant fully-connected layers:</p>
+  <div class="widget" data-widget="flopCount"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \text{FLOPs} = \sum_{\text{layers}} H_{\text{out}} W_{\text{out}}\, k^2\, C_{\text{in}}\, C_{\text{out}} \;+\; \sum_{\text{fc}} d_{\text{in}}\, d_{\text{out}}. \]
+    <p>This book’s count over the layers of Fig. 3 gives 19.63 G for VGG-19 and 3.64 G for the 34-layer plain net; the paper reports 19.6 and 3.6 billion. Parameters: VGG-19 has about 144 million, mostly in its first fully-connected layer (\(7 \cdot 7 \cdot 512 \times 4096 \approx 103\) million); the 34-layer net about 21.6 million.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Our model has fewer filters and lower complexity than VGG nets. Our 34-layer baseline has 3.6 billion FLOPs (multiply-adds), which is only 18% of VGG-19 (19.6 billion FLOPs)” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.3</a>. The 152-layer ResNet (11.3 G) is still cheaper than VGG-16 and VGG-19 (15.3 / 19.6 G) <a class="cite" href="https://arxiv.org/abs/1512.03385">§4.1</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Where are most of VGG-19’s parameters?","o":["In its 3×3 convolutions","In its fully-connected layers","In its pooling layers"],"a":1,"e":"fc6 alone has 25,088 × 4,096 ≈ 103 M weights; the convolutions have about 20 M.","h":"Look at the 7·7·512 → 4096 layer."},
+    {"q":"How does the 34-layer net avoid VGG’s fully-connected layers?","o":["It uses dropout","Global average pooling followed by a single 1000-way layer","It has no classifier"],"a":1,"e":"Averaging each 7×7 map to one number leaves 512 values, so the last layer needs only 512 × 1000 weights.","h":"Chapter 12."},
+    {"q":"Roughly what fraction of VGG-19’s FLOPs does the 34-layer plain net need?","o":["18%","50%","180%"],"a":0,"e":"3.6 G / 19.6 G ≈ 18% (paper §3.3), despite being almost twice as deep.","h":"3.6 ÷ 19.6."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART III · DEGRADATION -->
+<section class="chapter" id="ch-deeper" data-title="Is deeper always better?" data-part="Part III · The degradation problem">
+  <header>
+    <div class="kicker">The degradation problem</div>
+    <h2 class="title">Is deeper always better?</h2>
+    <p class="lede">Past a certain depth, adding layers to a plain network makes it worse, even on its own training data.</p>
+  </header>
+  <p>The paper asks a simple question: “Is learning better networks as easy as stacking more layers?” With He initialization and batch normalization, networks of tens of layers now start learning at all. So stack more and see. On CIFAR-10, a 56-layer plain network ends up worse than a 20-layer one:</p>
+  <div class="widget" data-widget="fig1"></div>
+  <p>The paper calls this the <strong>degradation problem</strong>: as depth increases, accuracy saturates and then degrades rapidly. The crucial detail is the left panel: the deeper network’s <em>training</em> error is higher. You can reproduce it in a few seconds with this book’s toy (fully-connected networks with BN on a 5-arm spiral):</p>
+  <div class="widget" data-widget="degradeRace"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“When deeper networks are able to start converging, a degradation problem has been exposed: with the network depth increasing, accuracy gets saturated (which might be unsurprising) and then degrades rapidly. Unexpectedly, such degradation is not caused by overfitting, and adding more layers to a suitably deep model leads to higher training error” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §1, Fig. 1</a>. The same is seen on ImageNet (Fig. 4, Chapter 31) and, as the paper notes, on MNIST in the highway-networks paper <a class="cite" href="https://arxiv.org/abs/1512.03385">§4.2</a>.</p></div>
+  <div class="callout warn"><div class="ct">⚠ Toy versus paper</div><p>In the paper the effect appears between 20 and 56 convolutional layers on CIFAR-10. In our tiny spiral toy (16 units wide, 1,500 steps) it appears between about 20 and 30 layers, and grows sharply by 50. The depth at which it bites depends on the task, the width and the training budget; the <em>shape</em> of the phenomenon is what carries over.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What is surprising about Fig. 1’s left panel?","o":["The 56-layer net has higher test error","The 56-layer net has higher training error","Both nets reach 0% error"],"a":1,"e":"Higher test error alone could be overfitting; higher training error means the deeper net fits its own data worse.","h":"Left panel = training images."},
+    {"q":"In the toy race without shortcuts, which depth ends with the highest training error?","o":["6 layers","14 layers","50 layers"],"a":2,"e":"The deepest plain network degrades most: it fails to fit the spirals in the same budget (toy).","h":"Look at the final bars."},
+    {"q":"Before degradation could even be observed, which older problem had to be solved?","o":["Overfitting","Vanishing/exploding gradients at the start of training","Too few images"],"a":1,"e":"Normalized initialization and BN let deep nets start converging; only then did degradation show up.","h":"Chapters 3, 5 and 6."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-notover" data-title="Not overfitting, not vanishing gradients" data-part="Part III · The degradation problem">
+  <header>
+    <div class="kicker">The degradation problem</div>
+    <h2 class="title">Not overfitting, not vanishing gradients</h2>
+    <p class="lede">The deep plain network fits its training data worse and its gradients are healthy: something else makes it hard to optimize.</p>
+  </header>
+  <p>Two familiar culprits come to mind, and the paper rules out both. <strong>Overfitting</strong> would show low training error and high test error; here training error is higher. <strong>Vanishing gradients</strong> would show tiny gradients in the lower layers; but with BN, the paper checked, both the forward signals and the backward gradients have healthy sizes. Check both in the toy:</p>
+  <div class="widget" data-widget="diagnose"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“We argue that this optimization difficulty is unlikely to be caused by vanishing gradients. These plain networks are trained with BN, which ensures forward propagated signals to have non-zero variances. We also verify that the backward propagated gradients exhibit healthy norms with BN. So neither forward nor backward signals vanish.” The 34-layer plain net still reaches competitive accuracy, “suggesting that the solver works to some extent”. The authors “conjecture that the deep plain nets may have exponentially low convergence rates”, and leave the reason “to be studied in the future” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §4.1</a>. Footnote 3: with 3× more training iterations the degradation is still there, “suggesting that this problem cannot be feasibly addressed by simply using more iterations”.</p></div>
+  <div class="callout warn"><div class="ct">⚠ An open question</div><p>The paper does not explain <em>why</em> plain networks degrade; it offers a conjecture (very slow convergence) and a remedy. Later work has proposed explanations (for example, that gradients in deep plain networks become increasingly noise-like and uncorrelated across inputs, the “shattered gradients” of Balduzzi et al., 2017), but this book will not pretend the paper settled the question.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Which observation rules out overfitting as the cause of degradation?","o":["The deeper net has higher test error","The deeper net has higher training error","The deeper net has more parameters"],"a":1,"e":"Overfitting means fitting the training data too well; here the deeper net fits it worse.","h":"Which error goes up?"},
+    {"q":"Why does the paper believe gradients do not vanish in its plain nets?","o":["It uses dropout","It uses BN, and measured backward gradient norms were healthy","It uses residual connections"],"a":1,"e":"§4.1: BN keeps forward variances non-zero, and the authors verified healthy gradient norms.","h":"What normalizes every layer?"},
+    {"q":"What does footnote 3 report?","o":["3× more iterations fix degradation","3× more iterations still show degradation","Degradation disappears with dropout"],"a":1,"e":"So the problem is not just “train longer”.","h":"More iterations did not help."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-construct" data-title="The constructed solution" data-part="Part III · The degradation problem">
+  <header>
+    <div class="kicker">The degradation problem</div>
+    <h2 class="title">The constructed solution</h2>
+    <p class="lede">A deeper network can always copy a shallower one and do nothing in its extra layers, so it should never be worse.</p>
+  </header>
+  <p>Here is the paper’s thought experiment. Take a trained shallow network. Build a deeper one by copying its layers and inserting extra layers that compute the <strong>identity mapping</strong>: output = input, “do nothing”. The deeper network makes exactly the same predictions. So a deep solution at least as good as the shallow one <em>exists</em>. If training finds something worse, the fault lies with the optimizer, not with the network’s abilities.</p>
+  <div class="widget" data-widget="constructDemo"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ h \ge 0 \;\Rightarrow\; \sigma(I\,h + 0) = \max(h, 0) = h. \]
+    <p>\(I\) is the identity matrix (1s on the diagonal, 0 elsewhere), so \(Ih = h\). Outputs of a ReLU layer are never negative, so a following layer with weights \(I\), zero bias and ReLU passes them through unchanged. That is how the widget inserts 24 “do-nothing” layers exactly; their batch normalization, at test time a fixed multiply-and-add, is set to multiply by 1 and add 0.</p>
+  </div>
+  <div class="callout intuition"><div class="ct">💡 Intuition</div><p>The identity is a very particular setting of the weights: exact 1s on the diagonal and exact 0s everywhere else. Starting from small random weights, nothing pulls a plain layer towards it. Gradient descent would have to discover the identity, layer after layer, by itself. The next part asks: what if “do nothing” were the easy default instead?</p></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“There exists a solution by construction to the deeper model: the added layers are identity mapping, and the other layers are copied from the learned shallower model. The existence of this constructed solution indicates that a deeper model should produce no higher training error than its shallower counterpart. But experiments show that our current solvers on hand are unable to find solutions that are comparably good or better than the constructed solution (or unable to do so in feasible time)” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §1</a>. In §4.1: “the solution space of the 18-layer plain network is a subspace of that of the 34-layer one”.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Why is the constructed deep network exactly as good as the shallow one?","o":["It has more parameters","Its extra layers compute the identity, so its outputs are identical","It is trained longer"],"a":1,"e":"Copied layers + do-nothing layers = the same function as the shallow net.","h":"What do the inserted layers do?"},
+    {"q":"What does the construction prove about degradation?","o":["Deep networks cannot represent good solutions","Good deep solutions exist; the optimizer fails to find them","Shallow networks overfit"],"a":1,"e":"Existence is guaranteed; the problem is finding it.","h":"Exists vs. found."},
+    {"q":"A ReLU layer outputs h = (0, 2, 5). A next layer has weights I, bias 0 and ReLU. Its output?","o":["(0, 2, 5)","(0, 0, 0)","(1, 3, 6)"],"a":0,"e":"I·h = h, and ReLU leaves non-negative values unchanged.","h":"ReLU of a non-negative value."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART IV · RESIDUAL LEARNING -->
+<section class="chapter" id="ch-bigidea" data-title="The big idea: learn the residual" data-part="Part IV · Residual learning">
+  <header>
+    <div class="kicker">Residual learning</div>
+    <h2 class="title">The big idea: learn the residual</h2>
+    <p class="lede">Instead of asking a few layers to compute H(x), ask them to compute the change H(x) − x, and add x back.</p>
+  </header>
+  <p>Call \(H(x)\) the function some stack of layers ought to compute: the <strong>underlying mapping</strong>. The paper rewrites it as the input plus a correction. Let the layers learn the <strong>residual function</strong> \(F(x) = H(x) - x\), and recover the full answer by adding the input back: \(F(x) + x\). Nothing about what the network can represent changes; what changes is the default. With all weights at zero, a plain stack outputs zero, while a residual stack outputs its input.</p>
+  <div class="widget" data-widget="residualSplit"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper §1, §3.1)</div>
+    \[ F(x) := H(x) - x \quad\Longleftrightarrow\quad H(x) = F(x) + x. \]
+    <p>\(x\) is the input to the stack (a vector, or a block of feature maps), \(H(x)\) the desired output, \(F(x)\) what the stacked layers actually learn, and \(:=\) means “is defined as”. This needs input and output of the same size (Chapter 22 handles the other case). Example: if \(H(x) = 1.1x\), then \(F(x) = 0.1x\): the layers only have to learn a 10% adjustment.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Instead of hoping each few stacked layers directly fit a desired underlying mapping, we explicitly let these layers fit a residual mapping … We hypothesize that it is easier to optimize the residual mapping than to optimize the original, unreferenced mapping. To the extreme, if an identity mapping were optimal, it would be easier to push the residual to zero than to fit an identity mapping by a stack of nonlinear layers” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §1</a>. §3.1 adds: “Although both forms should be able to asymptotically approximate the desired functions (as hypothesized), the ease of learning might be different.”</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"If the desired mapping is H(x) = x, what must the residual layers learn?","o":["F(x) = x","F(x) = 0","F(x) = −x"],"a":1,"e":"F = H − x = 0: just drive the weights towards zero.","h":"Subtract x from H."},
+    {"q":"Does residual learning let a network represent functions a plain network cannot?","o":["Yes, many more","No: F(x) + x and H(x) can express the same functions; what changes is how easy they are to learn","Only linear functions"],"a":1,"e":"The paper: both forms should approximate the desired functions; “the ease of learning might be different”.","h":"Is anything gained in expressiveness, or in optimization?"},
+    {"q":"With all its weights at zero, what does a residual stack output?","o":["Zero","Its input x (up to the final ReLU)","Random values"],"a":1,"e":"F(x) = 0, so the output is 0 + x.","h":"F + x with F = 0."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-identity" data-title="Zero is easier than identity" data-part="Part IV · Residual learning">
+  <header>
+    <div class="kicker">Residual learning</div>
+    <h2 class="title">Zero is easier than identity</h2>
+    <p class="lede">If the best layer is close to doing nothing, a residual layer only has to learn a small correction.</p>
+  </header>
+  <p>Chapter 17 suggested that solvers struggle to make a stack of nonlinear layers compute the identity. The residual reformulation makes the identity free: weights near zero. Watch the same stacks of layers learn a mapping that is the identity plus a small change:</p>
+  <div class="widget" data-widget="identityFit"></div>
+  <p>The paper is careful about what it claims. Identity mappings are unlikely to be exactly optimal in real networks. But if the best function is closer to the identity than to the zero function, then finding a small perturbation of the identity should be easier than learning the function from scratch. The paper calls this <strong>preconditioning</strong>: reshaping a problem so the solver starts closer to the answer.</p>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“The degradation problem suggests that the solvers might have difficulties in approximating identity mappings by multiple nonlinear layers. With the residual learning reformulation, if identity mappings are optimal, the solvers may simply drive the weights of the multiple nonlinear layers toward zero to approach identity mappings. In real cases, it is unlikely that identity mappings are optimal, but our reformulation may help to precondition the problem. If the optimal function is closer to an identity mapping than to a zero mapping, it should be easier for the solver to find the perturbations with reference to an identity mapping” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.1</a>. The evidence for “closer to identity”: the small responses of Fig. 7 (Chapter 36).</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>torchvision takes the idea to its limit with an option the paper does not use: <code>zero_init_residual=True</code> sets the last BN’s \(\gamma\) in every residual branch to 0, so each block starts as an exact identity (<a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py#L215-L224">resnet.py L215–224</a>; its comment credits Goyal et al., 2017, with a 0.2–0.3% gain).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"In the widget, why does the residual stack start with a much lower error?","o":["It has more layers","At the start it is already close to the identity, which is close to the target","It uses a larger learning rate"],"a":1,"e":"With small random weights F ≈ 0, so the stack outputs ≈ x, already near H(x) = x + small change.","h":"What does each block output when its weights are small?"},
+    {"q":"What does “preconditioning” mean here?","o":["Training on easier data first","Reformulating so that the solver’s natural starting point is close to the solution","Normalizing the inputs"],"a":1,"e":"Referencing the identity puts the default near the answer when the answer is near the identity.","h":"Where does the solver start?"},
+    {"q":"Does the paper claim identity mappings are optimal?","o":["Yes, always","No; it says this is unlikely, but that optimal functions may be closer to identity than to zero","Only for the first layer"],"a":1,"e":"§3.1: “In real cases, it is unlikely that identity mappings are optimal”.","h":"Read the hedge carefully."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-block" data-title="The building block, Eq. (1)" data-part="Part IV · Residual learning">
+  <header>
+    <div class="kicker">Residual learning</div>
+    <h2 class="title">The building block, Eq. (1)</h2>
+    <p class="lede">Two weight layers with a ReLU between them, plus a shortcut that adds the input to their output, then a ReLU.</p>
+  </header>
+  <p>The paper turns the idea into a <strong>building block</strong> (Fig. 2): weight layer → ReLU → weight layer, and a <strong>shortcut connection</strong> that skips both and carries \(x\) to the end, where it is added <strong>element-wise</strong> (entry by entry) to the layers’ output. The second ReLU comes after the addition. Step a number through it:</p>
+  <div class="widget" data-widget="blockStep"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper Eq. 1, §3.2)</div>
+    \[ y = \mathcal{F}(x, \{W_i\}) + x, \qquad \mathcal{F} = W_2\,\sigma(W_1 x), \qquad \text{block output } \sigma(y). \qquad\text{(1)} \]
+    <p>\(x\) and \(y\) are the block’s input and the sum before the last ReLU, \(\{W_i\}\) the block’s weights (here \(W_1, W_2\)), \(\sigma\) the ReLU; biases are left out “for simplifying notations” (and with BN there are none). In ResNet each “weight layer” is a 3×3 convolution followed by BN, and the addition is done “on two feature maps, channel by channel”. The shortcut has no weights and costs one addition per number.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“The operation \(\mathcal{F} + x\) is performed by a shortcut connection and element-wise addition. We adopt the second nonlinearity after the addition.” And: “The shortcut connections in Eqn.(1) introduce neither extra parameter nor computation complexity”, so plain and residual nets can be compared fairly “with the same number of parameters, depth, width, and computational cost (except for the negligible element-wise addition)” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.2, Fig. 2</a>. “If \(\mathcal{F}\) has only a single layer, Eqn.(1) is similar to a linear layer: \(y = W_1x + x\), for which we have not observed advantages.” Experiments use \(\mathcal{F}\) with two or three layers.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>torchvision’s <code>BasicBlock.forward</code> (<a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py#L89-L105">resnet.py L89–105</a>): <code>identity = x</code>; conv1 → bn1 → relu; conv2 → bn2; <code>out += identity</code>; relu. In the Caffe files, the addition is an <code>Eltwise</code> layer (default operation: sum), e.g. <code>res2a</code> (<a href="https://github.com/KaimingHe/deep-residual-networks/blob/a7026cb6d478e131b765b898c312e25f9f6dc031/prototxt/ResNet-50-deploy.prototxt#L210-L224">ResNet-50-deploy.prototxt L210–224</a>), followed by <code>res2a_relu</code>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"x = (1, −2), F(x) = (0.5, 1). What does the block output after its final ReLU?","o":["(1.5, −1)","(1.5, 0)","(0.5, 1)"],"a":1,"e":"y = F + x = (1.5, −1), and ReLU gives (1.5, 0).","h":"Add, then ReLU."},
+    {"q":"How many parameters does an identity shortcut add?","o":["k² · C²","C","None"],"a":2,"e":"It just adds x: no weights, one addition per number.","h":"Eq. (1) has no new W."},
+    {"q":"Why does the paper not use a one-layer residual function?","o":["It is too slow","y = W₁x + x = (W₁ + I)x is just another linear layer, and no advantage was observed","It cannot be implemented"],"a":1,"e":"Without a nonlinearity inside F, the shortcut is absorbed into the weight matrix.","h":"Rewrite W₁x + x."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-gradflow" data-title="Gradients through shortcuts" data-part="Part IV · Residual learning">
+  <header>
+    <div class="kicker">Residual learning</div>
+    <h2 class="title">Gradients through shortcuts</h2>
+    <p class="lede">A shortcut adds an identity term to every block’s slope, giving the gradient a road that never narrows.</p>
+  </header>
+  <p>By the sum rule of Chapter 3, a block that outputs \(x + F(x)\) passes back the gradient through two routes: straight through the shortcut, and through \(F\). So each block’s local slope is “identity plus something”, instead of just “something”. Measure it on real networks, freshly initialized and without batch normalization:</p>
+  <div class="widget" data-widget="gradFlow"></div>
+  <div class="callout math"><div class="ct">∑ The math (this book’s derivation)</div>
+    \[ \frac{\partial y}{\partial x} = I + \frac{\partial F}{\partial x}, \qquad \text{plain: } \prod_{l}\frac{\partial F_l}{\partial x_l}, \qquad \text{residual: } \prod_{l}\Big(I + \frac{\partial F_l}{\partial x_l}\Big). \]
+    <p>\(I\) is the identity matrix (the slope of “do nothing”). For scalars with small branch slopes \(f_l = 0.01\) over 50 blocks: plain \(0.01^{50} = 10^{-100}\), residual \(1.01^{50} \approx 1.64\). Ignoring the ReLU after each addition, expanding the product also shows the gradient at the top reaches every block directly, through the “1” terms. This derivation is not in the paper; the same authors made it the centrepiece of their follow-up, “Identity Mappings in Deep Residual Networks” (He et al., 2016), which moved the ReLU off the shortcut path so the identity is exact.</p>
+  </div>
+  <div class="callout warn"><div class="ct">⚠ Careful: this is not the paper’s argument</div><p>The paper’s networks have batch normalization, and it states that its <em>plain</em> networks do not suffer from vanishing gradients (Chapter 16). So “shortcuts fix vanishing gradients” is not why ResNets beat plain nets in the paper; the paper’s own explanation is that residual learning makes optimization easier (preconditioning, Chapter 19). The widget shows a real but separate benefit, visible when normalization is absent.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A block computes y = x + F(x) with ∂F/∂x = −0.2 (scalars). What is ∂y/∂x?","o":["−0.2","0.8","1.2"],"a":1,"e":"1 + (−0.2) = 0.8.","h":"Identity plus the branch slope."},
+    {"q":"Ten blocks each with branch slope 0 (scalars). Gradient ratio bottom/top, plain vs residual?","o":["0 vs 1","1 vs 0","1 vs 1"],"a":0,"e":"Plain: 0¹⁰ = 0; residual: (1 + 0)¹⁰ = 1.","h":"Compute both products."},
+    {"q":"According to the paper, are its BN-equipped plain nets limited by vanishing gradients?","o":["Yes","No; it verified healthy gradient norms","It does not discuss this"],"a":1,"e":"§4.1 rules vanishing gradients out; the gradient-highway view is a complementary, later explanation.","h":"Chapter 16."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-proj" data-title="When shapes change: Eq. (2) and options A, B, C" data-part="Part IV · Residual learning">
+  <header>
+    <div class="kicker">Residual learning</div>
+    <h2 class="title">When shapes change: Eq. (2) and options A, B, C</h2>
+    <p class="lede">Where a block halves the map and doubles the channels, the shortcut must be zero-padded or projected to match.</p>
+  </header>
+  <p>Eq. (1) adds \(x\) to \(F(x)\), so they must have the same shape. At the first block of each new stage, \(F\) starts with a stride-2 convolution and doubles the channels (e.g. 64 × 56 × 56 → 128 × 28 × 28). The paper gives two ways to make the shortcut fit. <strong>Option A</strong>: keep the identity, take every second position (stride 2), and pad the extra channels with zeros; no parameters. <strong>Option B</strong>: use a <strong>projection shortcut</strong>, a 1×1 convolution with stride 2, only where shapes change. A third variant, <strong>option C</strong>, uses projections on every shortcut.</p>
+  <div class="widget" data-widget="shortcutOptions"></div>
+  <div class="callout math"><div class="ct">∑ The math (paper Eq. 2, §3.2)</div>
+    \[ y = \mathcal{F}(x, \{W_i\}) + W_s\, x. \qquad\text{(2)} \]
+    <p>\(W_s\) is a linear projection: for convolutional maps, a 1×1 convolution (followed by BN in the official models) from \(C_{\text{in}}\) to \(C_{\text{out}}\) channels with stride 2, so \(C_{\text{in}} C_{\text{out}}\) weights. For conv3_1 of ResNet-34: \(64 \times 128 = 8{,}192\) weights. A square \(W_s\) could be used on every block too, but “identity mapping is sufficient for addressing the degradation problem and is economical, and thus \(W_s\) is only used when matching dimensions”.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“(A) The shortcut still performs identity mapping, with extra zero entries padded for increasing dimensions. This option introduces no extra parameter; (B) The projection shortcut in Eqn.(2) is used to match dimensions (done by 1×1 convolutions). For both options, when the shortcuts go across feature maps of two sizes, they are performed with a stride of 2” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.3</a>. Option C (“all shortcuts are projections”) is introduced with the Table 3 comparison <a class="cite" href="https://arxiv.org/abs/1512.03385">§4.1</a>; in Fig. 3 the dimension-increasing shortcuts are drawn dotted.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>The official ResNet-50/101/152 use option B: a <code>branch1</code> projection (1×1, stride 2 from stage 3 on) only in the first block of each stage (<a href="https://github.com/KaimingHe/deep-residual-networks/blob/a7026cb6d478e131b765b898c312e25f9f6dc031/prototxt/ResNet-50-deploy.prototxt#L488-L500">res3a_branch1, L488–500</a>). torchvision adds <code>downsample = conv1x1(…, stride) + BN</code> whenever the stride or the channel count changes (<a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py#L239-L243">resnet.py L239–243</a>), i.e. option B for every depth, including ResNet-18/34 (the paper’s Table 2 used option A for those). This book’s <code>RNT.padShortcut</code> implements option A.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A block maps 128 × 28 × 28 to 256 × 14 × 14. How many weights does a projection shortcut need (no BN)?","o":["32,768","294,912","256"],"a":0,"e":"A 1×1 convolution: 128 × 256 = 32,768.","h":"C_in · C_out for a 1×1."},
+    {"q":"With option A, what do the extra 64 channels of a 64 → 128 shortcut contain?","o":["Copies of the first 64","Zeros","Learned values"],"a":1,"e":"They are zero-padded; no parameters, but no residual learning in those channels.","h":"“extra zero entries padded”."},
+    {"q":"ResNet-34 has 16 blocks, 3 of which change shape. How many projection shortcuts does option C add beyond option B?","o":["3","13","16"],"a":1,"e":"C projects all 16; B already projects the 3 shape-changing ones: 13 more, the paper’s “thirteen”.","h":"16 − 3."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-paths" data-title="The unrolled view: many paths" data-part="Part IV · Residual learning">
+  <header>
+    <div class="kicker">Residual learning</div>
+    <h2 class="title">The unrolled view: many paths</h2>
+    <p class="lede">Expand the additions and a residual network looks like a collection of many shorter networks sharing weights.</p>
+  </header>
+  <p>Each block offers two routes: through \(F\) or around it. Follow a signal from input to output and choose a route at every block: with \(n\) blocks there are \(2^n\) different paths, most of them of medium length. This picture, from later work, helps explain why removing a single block from a trained ResNet hurts it much less than removing a layer from a plain network:</p>
+  <div class="widget" data-widget="pathEnsemble"></div>
+  <div class="callout math"><div class="ct">∑ The math (later work, ignoring the ReLU after each addition)</div>
+    \[ x_2 = x_0 + F_1(x_0) + F_2\big(x_0 + F_1(x_0)\big), \] \[ \#\{\text{paths through } k \text{ of } n \text{ blocks}\} = \binom{n}{k}, \qquad \sum_{k=0}^{n} \binom{n}{k} = 2^n. \]
+    <p>\(x_l\) is the signal after block \(l\). Already two blocks give 4 routes: skip both (\(x_0\)), only \(F_1\), only \(F_2\), or both. \(\binom{n}{k}\) (“n choose k”) counts the ways to pick which \(k\) blocks a path goes through; it peaks at \(k = n/2\).</p>
+  </div>
+  <div class="callout warn"><div class="ct">⚠ Not in the paper</div><p>This view is from Veit, Wilber &amp; Belongie, “Residual Networks Behave Like Ensembles of Relatively Shallow Networks” (NeurIPS 2016). The paper itself only says that with identity shortcuts “all information is always passed through, with additional residual functions to be learned” (§2). Because ResNet’s ReLU sits after each addition, the expansion is exact only where the sums are positive.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"How many paths does a residual network with 3 blocks have?","o":["3","6","8"],"a":2,"e":"Each block: through or around. 2³ = 8.","h":"Two choices per block."},
+    {"q":"Of the 2ⁿ paths, how long are most?","o":["Length n","About n/2 blocks","Length 1"],"a":1,"e":"The binomial count C(n, k) peaks at k = n/2.","h":"Look at the histogram’s peak."},
+    {"q":"In the toy, why does deleting a block hurt the plain network much more?","o":["It has more parameters","Its only path goes through every block, so removing one breaks it","Plain networks have no BN"],"a":1,"e":"The residual network keeps all paths that avoid the deleted block, half of all paths.","h":"How many paths does a plain network have?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-related" data-title="Relatives: residual representations and highway networks" data-part="Part IV · Residual learning">
+  <header>
+    <div class="kicker">Residual learning</div>
+    <h2 class="title">Relatives: residual representations and highway networks</h2>
+    <p class="lede">Residuals were known to make problems easier elsewhere; gated shortcuts appeared at the same time, but can close.</p>
+  </header>
+  <p>The paper places its idea among older ones. <strong>Residual representations</strong> in image retrieval (VLAD, Fisher vectors) encode an image by its differences from a dictionary, and encoding residual vectors works better than encoding the vectors themselves in vector quantization. In numerical methods, <strong>multigrid</strong> solvers and <strong>hierarchical basis preconditioning</strong> work with residuals between coarse and fine scales, and converge much faster than solvers unaware of this. Lesson: a good reformulation can make optimization easier.</p>
+  <p><strong>Shortcut connections</strong> are older still: early multi-layer perceptrons added a linear layer straight from input to output; GoogLeNet attached extra classifiers to middle layers. The closest relative, published concurrently, is the <strong>highway network</strong> (Srivastava, Greff &amp; Schmidhuber, 2015), whose shortcuts are controlled by learned <strong>gates</strong>:</p>
+  <div class="widget" data-widget="highwayGate"></div>
+  <div class="callout math"><div class="ct">∑ The math (highway networks, as described in §2)</div>
+    \[ \text{highway: } y = H(x)\cdot T(x) + x\cdot\big(1 - T(x)\big), \qquad T(x) = \sigma_{\text{sig}}(W_T x + b_T); \] \[ \text{residual: } y = F(x) + x. \]
+    <p>\(T(x)\) is the transform gate, a sigmoid (between 0 and 1) with its own weights \(W_T\) and bias \(b_T\); \(\cdot\) multiplies entry by entry. When \(T \to 1\) the shortcut is “closed” and the layer computes a non-residual function \(H(x)\); when \(T \to 0\) it passes \(x\). The residual block is the gate-free special case where the identity is always fully open.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“These gates are data-dependent and have parameters, in contrast to our identity shortcuts that are parameter-free. When a gated shortcut is ‘closed’ (approaching zero), the layers in highway networks represent non-residual functions. On the contrary, our formulation always learns residual functions; our identity shortcuts are never closed … In addition, highway networks have not demonstrated accuracy gains with extremely increased depth (e.g., over 100 layers)” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §2</a>. Highway nets appear in Table 6: 19 layers, 7.54%; 32 layers, 8.80% (Chapter 34).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A highway gate outputs T = 1. What does the layer output?","o":["x","H(x)","H(x) + x"],"a":1,"e":"y = H·1 + x·0 = H(x): the carry path is closed.","h":"Plug T = 1 into the formula."},
+    {"q":"What is the key difference the paper stresses between its shortcuts and highway gates?","o":["Highway gates are parameter-free","Identity shortcuts have no parameters and are never closed","Residual blocks use sigmoids"],"a":1,"e":"§2: gates are data-dependent with parameters; identity shortcuts always pass all information.","h":"Which one can shut?"},
+    {"q":"What do multigrid methods have in common with residual learning, according to §2?","o":["Both use convolutions","Both reformulate a problem in terms of residuals, which makes solvers converge faster","Both are neural networks"],"a":1,"e":"The paper cites them as evidence that “a good reformulation or preconditioning can simplify the optimization”.","h":"Reformulation."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART V · ARCHITECTURES -->
+<section class="chapter" id="ch-arch34" data-title="Plain-34 and ResNet-34 (Fig. 3)" data-part="Part V · The ResNet architectures">
+  <header>
+    <div class="kicker">The ResNet architectures</div>
+    <h2 class="title">Plain-34 and ResNet-34 (Fig. 3)</h2>
+    <p class="lede">The residual network is the plain network plus a shortcut around every pair of 3×3 layers, at almost no extra cost.</p>
+  </header>
+  <p>To test residual learning fairly, the paper builds a <strong>plain network</strong> and its <strong>residual counterpart</strong> that differ <em>only</em> in the shortcuts. The plain 34-layer net follows VGG’s philosophy: a 7×7 stride-2 convolution with 64 filters, a 3×3 max pool, then four stages of 3×3 convolutions with 64, 128, 256 and 512 filters on 56, 28, 14 and 7-pixel maps (3, 4, 6 and 3 pairs of layers), global average pooling and a 1000-way fully-connected layer. The residual version adds a shortcut around each pair: 16 shortcuts, 3 of them dimension-increasing.</p>
+  <div class="widget" data-widget="fig3Explorer"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \text{depth} = 1\ (\text{conv1}) + 2\,(3 + 4 + 6 + 3)\ (\text{3×3 layers}) + 1\ (\text{fc}) = 34. \]
+    <p>The FLOPs are the sum of Chapter 14’s formula over these layers. The 16 additions of ResNet-34 cost \(\sum H W C\) additions in total (about 1.4 million), negligible next to 3.6 billion multiply-adds.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Based on the above plain network, we insert shortcut connections (Fig. 3, right) which turn the network into its counterpart residual version” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.3, Fig. 3</a>. VGG-19: 19.6 billion FLOPs; the 34-layer plain and residual networks: 3.6 billion each.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>torchvision: <code>resnet34</code> = <code>_resnet(BasicBlock, [3, 4, 6, 3], …)</code> (<a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py#L710-L731">resnet.py L710–731</a>), with the stem <code>conv1</code>, <code>bn1</code>, <code>relu</code>, <code>maxpool</code> and stages <code>layer1</code>…<code>layer4</code> (<a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py#L197-L206">L197–206</a>).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"How many 3×3 convolutional layers does the 34-layer network have?","o":["32","34","16"],"a":0,"e":"16 pairs = 32 layers; plus conv1 and the fc layer gives 34.","h":"2 × (3 + 4 + 6 + 3)."},
+    {"q":"What is the only difference between plain-34 and ResNet-34 (option A)?","o":["ResNet-34 is wider","The shortcuts and their additions","ResNet-34 has no BN"],"a":1,"e":"Same layers, widths, depth and (almost) the same FLOPs; only the shortcuts differ, which makes the comparison fair.","h":"§3.2: fair comparison."},
+    {"q":"Why are three of the 16 shortcuts drawn dotted in Fig. 3?","o":["They are projections or zero-padded because dimensions increase","They are removed during testing","They skip three layers"],"a":0,"e":"At conv3_1, conv4_1 and conv5_1 the channels double and the map halves.","h":"Where do the stages begin?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-bottle" data-title="The bottleneck block (Fig. 5)" data-part="Part V · The ResNet architectures">
+  <header>
+    <div class="kicker">The ResNet architectures</div>
+    <h2 class="title">The bottleneck block (Fig. 5)</h2>
+    <p class="lede">For deeper nets, each block squeezes the channels with a 1×1, does the 3×3 work on the thin version, and widens again.</p>
+  </header>
+  <p>Going beyond 34 layers with basic blocks gets expensive. The <strong>bottleneck block</strong> uses three layers instead of two: a 1×1 convolution that reduces, say, 256 channels to 64; a 3×3 convolution on those 64; and a 1×1 that restores 256. The narrow middle is the “bottleneck”. A bottleneck block on 256-d maps costs about the same as a basic block on 64-d maps, but has three layers and works with 4× wider maps between blocks:</p>
+  <div class="widget" data-widget="blockBuilder"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \text{basic (64-d): } 2\cdot 3^2\cdot 64\cdot 64 = 73{,}728, \qquad \text{bottleneck (256-d): } 256\cdot 64 + 3^2\cdot 64\cdot 64 + 64\cdot 256 = 69{,}632. \]
+    <p>Weights per block (without BN); multiply by \(56^2\) for multiply-adds. A projection shortcut on the bottleneck would add \(256 \times 256 = 65{,}536\) weights: almost doubling the block, because it connects the two wide ends. Hence identity shortcuts everywhere except the first block of each stage.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Because of concerns on the training time that we can afford, we modify the building block as a bottleneck design. For each residual function \(\mathcal{F}\), we use a stack of 3 layers instead of 2 … the 1×1 layers are responsible for reducing and then increasing (restoring) dimensions, leaving the 3×3 layer a bottleneck with smaller input/output dimensions” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §4.1, Fig. 5</a>. “If the identity shortcut in Fig. 5 (right) is replaced with projection, one can show that the time complexity and model size are doubled.” Footnote 4: deeper non-bottleneck ResNets also gain from depth (on CIFAR-10) but are less economical, and “the degradation problem of plain nets is also witnessed for the bottleneck designs”.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>torchvision’s <code>Bottleneck</code> (<a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py#L108-L163">resnet.py L108–163</a>): <code>expansion = 4</code>; conv1 (1×1) → conv2 (3×3) → conv3 (1×1 to 4 × planes), each with BN, ReLU after the first two and after the addition. Its comment (L109–113) notes one deliberate change: it puts the stride-2 on the 3×3 (“ResNet V1.5”), while the paper’s models put it on the first 1×1 (Chapter 29).</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A conv4_x bottleneck block works on 1024-d maps. What are its three layers?","o":["1×1, 256 · 3×3, 256 · 1×1, 1024","3×3, 1024 · 3×3, 1024","1×1, 1024 · 3×3, 1024 · 1×1, 256"],"a":0,"e":"Reduce to 256, 3×3 at 256, restore to 1024 (Table 1).","h":"The middle is 4× narrower than the ends."},
+    {"q":"Why are identity shortcuts “particularly important” for bottlenecks?","o":["Projections would connect the two wide ends and roughly double the block’s cost","Bottlenecks cannot be projected","Identity shortcuts are faster to code"],"a":0,"e":"A 1×1 projection from 256 to 256 has 65,536 weights, about as many as the whole block’s 69,632.","h":"Compare the projection’s size with the block’s."},
+    {"q":"The basic block on 64-d maps and the bottleneck on 256-d maps have similar…","o":["depth","time complexity","width between blocks"],"a":1,"e":"73,728 vs 69,632 weights per position: similar cost (Fig. 5 caption), different depth and width.","h":"Count multiply-adds."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-table1" data-title="Table 1: from 18 to 152 layers" data-part="Part V · The ResNet architectures">
+  <header>
+    <div class="kicker">The ResNet architectures</div>
+    <h2 class="title">Table 1: from 18 to 152 layers</h2>
+    <p class="lede">Five networks share one skeleton; only the block type and the number of blocks per stage change.</p>
+  </header>
+  <p>Table 1 lists the whole family. All share the stem (7×7 conv, max pool) and the head (average pool, 1000-way fc). ResNet-18 and 34 use basic blocks; ResNet-50 replaces every basic block of ResNet-34 with a bottleneck (option B); ResNet-101 and 152 add more bottleneck blocks, mostly in conv4_x. Explore it, with every number computed layer by layer:</p>
+  <div class="widget" data-widget="table1Explorer"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \text{depth} = 2 + b\sum_{s=2}^{5} n_s, \quad b = 2 \text{ (basic) or } 3 \text{ (bottleneck)}. \]
+    <p>\(n_s\) is the number of blocks in stage \(s\): [2, 2, 2, 2] → 18; [3, 4, 6, 3] → 34 (basic) or 50 (bottleneck); [3, 4, 23, 3] → 101; [3, 8, 36, 3] → 152. Projection shortcuts are not counted in the depth. Computed totals (option B, with BN and the fc bias): 11,689,512 / 21,797,672 / 25,557,032 / 44,549,160 / 60,192,808 parameters; 1.81 / 3.66 / 3.86 / 7.57 / 11.28 G multiply-adds, against the paper’s 1.8 / 3.6 / 3.8 / 7.6 / 11.3. (The small gaps come from rounding and from what one counts, e.g. projections and the fc layer; the paper does not spell out its convention.)</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“50-layer ResNet: We replace each 2-layer block in the 34-layer net with this 3-layer bottleneck block … This model has 3.8 billion FLOPs. 101-layer and 152-layer ResNets: We construct 101-layer and 152-layer ResNets by using more 3-layer blocks (Table 1). Remarkably, although the depth is significantly increased, the 152-layer ResNet (11.3 billion FLOPs) still has lower complexity than VGG-16/19 nets (15.3/19.6 billion FLOPs)” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §4.1, Table 1</a>.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>torchvision’s constructors (<a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py#L684-L827">resnet.py L684–827</a>) and published <code>num_params</code> (L318, L340, L362, L405, L448), which this book’s count reproduces exactly. Its listed GFLOPS for ResNet-50/101/152 (4.09, 7.80, 11.51) are higher than the paper’s because of the V1.5 stride placement.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"ResNet-101 has blocks [3, 4, 23, 3] of 3 layers each. Check its depth.","o":["99","101","104"],"a":1,"e":"3 × 33 = 99 layers in blocks, + conv1 + fc = 101.","h":"Sum the blocks, multiply by 3, add 2."},
+    {"q":"Which stage grows most from ResNet-50 to ResNet-152?","o":["conv2_x","conv4_x (6 → 36 blocks)","conv5_x"],"a":1,"e":"conv4_x goes from 6 to 23 (101) to 36 (152) blocks, on 14×14 maps.","h":"Read the ×n column."},
+    {"q":"ResNet-152 vs VGG-19 multiply-adds?","o":["11.3 G vs 19.6 G","19.6 G vs 11.3 G","Equal"],"a":0,"e":"8× deeper, still about 58% of VGG-19’s work (abstract: “lower complexity”).","h":"Table 1 and §4.1."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-recipe" data-title="The training recipe" data-part="Part V · The ResNet architectures">
+  <header>
+    <div class="kicker">The ResNet architectures</div>
+    <h2 class="title">The training recipe</h2>
+    <p class="lede">Augmented crops, BN after every convolution, He initialization, SGD at 0.1 divided by 10, no dropout; ten crops at test time.</p>
+  </header>
+  <p><strong>Data augmentation</strong> shows the network a slightly different version of every image at every step, so it cannot memorize pixels. ImageNet: <strong>scale augmentation</strong> (resize so the shorter side is a random number in [256, 480]), a random 224 × 224 crop, a random horizontal flip, the per-pixel mean subtracted, and AlexNet’s “standard colour augmentation”:</p>
+  <div class="widget" data-widget="augmentDemo"></div>
+  <p>The <strong>learning-rate schedule</strong> starts high and drops in steps; each drop shows up as a cliff in the training curves (Fig. 1, 4, 6):</p>
+  <div class="widget" data-widget="lrSchedule"></div>
+  <p>At test time, the comparison tables use <strong>10-crop testing</strong>; the best results use the network <strong>fully-convolutionally</strong> on whole images at several scales:</p>
+  <div class="widget" data-widget="tenCrop"></div>
+  <div class="callout math"><div class="ct">∑ The math (one place)</div>
+    <p>ImageNet: batch 256, \(\eta_0 = 0.1\), \(\eta \leftarrow \eta/10\) on plateaus, up to \(60\times10^4\) iterations, momentum 0.9, weight decay \(10^{-4}\), no dropout. CIFAR-10: batch 128, \(\eta = 0.1 \to 0.01\) at 32k \(\to 0.001\) at 48k, stop at 64k iterations. Epochs: \(64{,}000 \times 128 / 50{,}000 \approx 164\) on CIFAR; \(600{,}000 \times 256 / 1{,}281{,}167 \approx 120\) on ImageNet at most.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>All of the above is §3.4 (ImageNet) and §4.2 (CIFAR-10) <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §3.4, §4.2</a>: “In testing, for comparison studies we adopt the standard 10-crop testing. For best results, we adopt the fully-convolutional form … and average the scores at multiple scales (images are resized such that the shorter side is in {224, 256, 384, 480, 640})”. CIFAR-10 testing uses only “the single view of the original 32×32 image”.</p></div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>The official repository has no training code; its README lists what to watch when re-training: mini-batch 256 on 8 GPUs (32 per GPU), data shuffled every epoch, the SGD form of Chapter 2, and BN statistics averaged after training (<a href="https://github.com/KaimingHe/deep-residual-networks#disclaimer-and-known-issues">README, “Disclaimer and known issues”</a>). This book’s toys follow the same recipe in miniature: SGD with momentum 0.9 and weight decay 10⁻⁴, learning rate 0.1 divided by 10 twice, BN after every convolution, He initialization (<code>trainer</code> and <code>cnnJob</code> in <a href="rn.js">rn.js</a>); no augmentation.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Which of these is NOT part of ResNet’s ImageNet recipe?","o":["Weight decay 0.0001","Dropout","Momentum 0.9"],"a":1,"e":"“We do not use dropout”, following the BN paper.","h":"§3.4, last sentence of training."},
+    {"q":"In 10-crop testing, which crops are used?","o":["10 random crops","4 corners + centre, and the same 5 from the mirrored image","10 different scales"],"a":1,"e":"5 positions × 2 (original and flipped); predictions are averaged.","h":"Five positions, two orientations."},
+    {"q":"On CIFAR-10, when is the learning rate first divided by 10?","o":["At 32k iterations","When the error plateaus","At 64k iterations"],"a":0,"e":"0.1 → 0.01 at 32k, → 0.001 at 48k, stop at 64k.","h":"CIFAR uses fixed points."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-code" data-title="Reading the official models" data-part="Part V · The ResNet architectures">
+  <header>
+    <div class="kicker">The ResNet architectures</div>
+    <h2 class="title">Reading the official models</h2>
+    <p class="lede">The released Caffe files spell out every layer, and show one detail torchvision changed: where the stride sits.</p>
+  </header>
+  <p>The authors released ResNet-50, 101 and 152 as Caffe <strong>prototxt</strong> files: plain-text lists of layers, each with a name, a type, its inputs (“bottom”) and output (“top”). Names follow a pattern: <code>res4b7_branch2b</code> is stage 4, block b7, residual branch (branch 2), second layer; <code>branch1</code> is the projection shortcut. Browse a block:</p>
+  <div class="widget" data-widget="layerNames"></div>
+  <div class="callout math"><div class="ct">∑ The math (why the stride’s position changes the cost)</div>
+    <p>In the first block of conv3_x of ResNet-50, input 256 × 56 × 56. Stride on the first 1×1 (paper): the 3×3 runs on 28×28: \(28^2 \cdot 9 \cdot 128^2 \approx 115.6\)M multiply-adds. Stride on the 3×3 (torchvision V1.5): the first 1×1 runs on 56×56 (\(56^2\cdot 256\cdot128 \approx 102.8\)M instead of \(25.7\)M) and the 3×3 reads a 56×56 map but writes 28×28 (same 115.6M). Over the three stride-2 blocks this adds about 0.23 G, taking ResNet-50 from 3.86 G to 4.09 G. The 1×1 with stride 2 simply ignores three quarters of its inputs; V1.5 is reported to be slightly more accurate.</p>
+  </div>
+  <div class="callout code"><div class="ct">⌨ In the code</div><p>Official: <code>res3a_branch2a</code> is a 1×1, 128 filters, <code>stride: 2</code> (<a href="https://github.com/KaimingHe/deep-residual-networks/blob/a7026cb6d478e131b765b898c312e25f9f6dc031/prototxt/ResNet-50-deploy.prototxt#L522-L534">ResNet-50-deploy.prototxt L522–534</a>); the file has 53 convolutions for ResNet-50 (49 + 4 projections, plus the fc layer). torchvision: “Bottleneck in torchvision places the stride for downsampling at 3x3 convolution(self.conv2) while original implementation places the stride at the first 1x1 convolution(self.conv1) … This variant is also known as ResNet V1.5” (<a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py#L108-L113">resnet.py L108–113</a>). The README also gives the released models’ ImageNet results, matching the paper’s 10-crop numbers.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What is res5c_branch2c in ResNet-50?","o":["Stage 5, third block, residual branch, third layer (1×1, 2048)","Stage 5’s projection shortcut","The final fully-connected layer"],"a":0,"e":"res5 = conv5_x, c = third block, branch2 = residual branch, c = third layer.","h":"Decode the name piece by piece."},
+    {"q":"Where does the paper’s ResNet-50 put the stride-2 in a downsampling bottleneck?","o":["On the first 1×1","On the 3×3","On the last 1×1"],"a":0,"e":"The Caffe files show stride 2 on branch2a, the first 1×1; torchvision V1.5 moves it to the 3×3.","h":"Look at res3a_branch2a."},
+    {"q":"Why are there 4 projection convolutions in ResNet-50?","o":["One per stage: the first block of each stage changes the channel count (64→256 in conv2_x, then the stride-2 transitions)","One per block","Only for conv5_x"],"a":0,"e":"Even conv2_x’s first block needs one: its input has 64 channels, its output 256.","h":"Where do dimensions change?"}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ PART VI · EVIDENCE -->
+<section class="chapter" id="ch-metrics" data-title="Measuring image classifiers" data-part="Part VI · The evidence">
+  <header>
+    <div class="kicker">The evidence</div>
+    <h2 class="title">Measuring image classifiers</h2>
+    <p class="lede">ImageNet results are reported as top-1 and top-5 error, on validation or test images, from one crop, ten crops or many scales.</p>
+  </header>
+  <p><strong>Top-1 error</strong> is the fraction of images whose most likely predicted class is wrong. <strong>Top-5 error</strong> counts an image as correct if the true class is anywhere among the five most likely; ImageNet’s 1,000 classes include near-duplicates (dozens of dog breeds), so top-5 was the competition’s headline metric. An <strong>ensemble</strong> averages the predictions of several separately trained networks.</p>
+  <div class="widget" data-widget="topK"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \text{top-}k\text{ error} = \frac{1}{N}\sum_{n=1}^{N} \mathbf{1}\big[\, y_n \notin \text{top}_k(p_n) \,\big]. \]
+    <p>\(N\) images, \(y_n\) the true class of image \(n\), \(p_n\) its predicted probabilities, \(\text{top}_k\) the \(k\) most likely classes, and \(\mathbf{1}[\cdot]\) is 1 when the condition holds, 0 otherwise. A “relative improvement” compares errors as a ratio: from 21.2 to 27.2 mAP is \(6.0/21.2 \approx 28\%\).</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“We evaluate our method on the ImageNet 2012 classification dataset that consists of 1000 classes. The models are trained on the 1.28 million training images, and evaluated on the 50k validation images. We also obtain a final result on the 100k test images, reported by the test server. We evaluate both top-1 and top-5 error rates” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §4.1</a>. Tables 2 and 3 use 10-crop testing on validation; Table 4 the best single models (multi-scale); Table 5 ensembles on the test set.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"The true class is ranked 3rd by the network. Is the image a top-1 error? A top-5 error?","o":["Top-1 error, not top-5 error","Both","Neither"],"a":0,"e":"Not first → top-1 error; within the first five → correct for top-5.","h":"Rank 3 vs k = 1 and k = 5."},
+    {"q":"Can a network’s top-5 error be higher than its top-1 error?","o":["Yes","No","Only on the test set"],"a":1,"e":"Every top-1 hit is also a top-5 hit, so top-5 error ≤ top-1 error.","h":"A bigger set of guesses."},
+    {"q":"Why are Table 5’s numbers lower than Table 4’s?","o":["Table 5 uses ensembles of several networks","Table 5 uses fewer classes","Table 5 uses training images"],"a":0,"e":"Averaging several models reduces error; the ResNet entry combines six.","h":"Single model vs. combined."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-imagenet" data-title="Plain vs residual on ImageNet (Table 2, Fig. 4)" data-part="Part VI · The evidence">
+  <header>
+    <div class="kicker">The evidence</div>
+    <h2 class="title">Plain vs residual on ImageNet (Table 2, Fig. 4)</h2>
+    <p class="lede">With shortcuts the 34-layer network beats the 18-layer one; without them it loses.</p>
+  </header>
+  <p>The central experiment: plain-18, plain-34, ResNet-18 and ResNet-34 (option A, so no extra parameters), trained identically on ImageNet.</p>
+  <div class="widget" data-widget="fig4"></div>
+  <p>Three observations, in the paper’s words: the situation is reversed with residual learning; ResNet-34 has considerably lower training error and generalizes; and at 18 layers the two are equally accurate, but the ResNet converges faster. The same experiment on this book’s miniature CIFAR-style toy:</p>
+  <div class="widget" data-widget="toyRace"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Table 2 (top-1 error, 10-crop): plain 27.94 (18) / 28.54 (34); ResNet 27.88 (18) / 25.03 (34) <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper Table 2</a>. “The 34-layer plain net has higher training error throughout the whole training procedure, even though the solution space of the 18-layer plain network is a subspace of that of the 34-layer one” <a class="cite" href="https://arxiv.org/abs/1512.03385">§4.1, Fig. 4</a>. “The 34-layer ResNet is better than the 18-layer ResNet (by 2.8%) … compared to its plain counterpart, the 34-layer ResNet reduces the top-1 error by 3.5% … When the net is ‘not overly deep’ (18 layers here), the current SGD solver is still able to find good solutions to the plain net. In this case, the ResNet eases the optimization by providing faster convergence at the early stage.”</p></div>
+  <div class="callout warn"><div class="ct">⚠ Two kinds of numbers</div><p>Fig. 4 plots the error of the <em>centre crop</em> during training (around 28–33% at the end, ≈, read by eye). Table 2 reports the final networks with <em>10-crop</em> testing (25–29%). Both tell the same story; do not mix them. The toy curves are our own runs (“toy”), not the paper’s.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"By how much does ResNet-34 beat plain-34 in top-1 error (Table 2)?","o":["0.6 points","3.5 points","2.8 points"],"a":1,"e":"28.54 − 25.03 = 3.51 ≈ 3.5 points. (2.8 is ResNet-34 vs ResNet-18.)","h":"Subtract the 34-layer numbers."},
+    {"q":"At 18 layers, what advantage does the ResNet have over the plain net?","o":["Much lower final error","Faster convergence early in training","Fewer parameters"],"a":1,"e":"27.88 vs 27.94 is nearly equal; the ResNet gets there faster (Fig. 4).","h":"Compare the curves’ beginnings."},
+    {"q":"Why use option A shortcuts in this comparison?","o":["They are the most accurate","They add no parameters, so the residual nets match the plain nets exactly in size","They are required for 18 layers"],"a":1,"e":"Zero-padding keeps parameters identical, so the only difference is the shortcuts.","h":"A fair comparison."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-abc" data-title="Identity vs projection shortcuts (Table 3)" data-part="Part VI · The evidence">
+  <header>
+    <div class="kicker">The evidence</div>
+    <h2 class="title">Identity vs projection shortcuts (Table 3)</h2>
+    <p class="lede">Projections help a little; identity shortcuts already solve the degradation problem.</p>
+  </header>
+  <p>Do the shortcuts need learnable projections? Table 3 compares options A (zero-padding), B (projections only where dimensions increase) and C (projections everywhere) on ResNet-34:</p>
+  <div class="widget" data-widget="abcBars"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Table 3 shows that all three options are considerably better than the plain counterpart. B is slightly better than A. We argue that this is because the zero-padded dimensions in A indeed have no residual learning. C is marginally better than B, and we attribute this to the extra parameters introduced by many (thirteen) projection shortcuts. But the small differences among A/B/C indicate that projection shortcuts are not essential for addressing the degradation problem. So we do not use option C in the rest of this paper, to reduce memory/time complexity and model sizes” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §4.1, Table 3</a>. Top-1/top-5: plain-34 28.54/10.02; A 25.03/7.76; B 24.52/7.46; C 24.19/7.40.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What is the gap between options A and C in top-1 error?","o":["0.84 points","3.5 points","4.35 points"],"a":0,"e":"25.03 − 24.19 = 0.84, small next to the 3.5-point gap to plain-34.","h":"Subtract the A and C rows."},
+    {"q":"Why does the paper think B beats A?","o":["B has more layers","A’s zero-padded channels get no residual learning","A is trained less"],"a":1,"e":"The padded channels carry no shortcut signal, so those channels learn a plain mapping.","h":"What is in the padded channels?"},
+    {"q":"Why is option C not used for the deeper networks?","o":["It is worse","Its gain is marginal while it adds memory, time and parameters, especially costly for bottlenecks","It cannot be trained"],"a":1,"e":"Projections on the wide ends of bottlenecks would roughly double their cost.","h":"Cost vs benefit."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-sota" data-title="Deeper nets and the state of the art (Tables 3–5)" data-part="Part VI · The evidence">
+  <header>
+    <div class="kicker">The evidence</div>
+    <h2 class="title">Deeper nets and the state of the art (Tables 3–5)</h2>
+    <p class="lede">From 34 to 152 layers the error keeps falling, and a single ResNet-152 beats every previous ensemble.</p>
+  </header>
+  <p>With bottleneck blocks the paper goes to 50, 101 and 152 layers, and sees no degradation at all: every extra block helps.</p>
+  <div class="widget" data-widget="resultsExplorer"></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“The 50/101/152-layer ResNets are more accurate than the 34-layer ones by considerable margins (Table 3 and 4). We do not observe the degradation problem and thus enjoy significant accuracy gains from considerably increased depth” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §4.1</a>. “Our 152-layer ResNet has a single-model top-5 validation error of 4.49%. This single-model result outperforms all previous ensemble results (Table 5). We combine six models of different depth to form an ensemble (only with two 152-layer ones at the time of submitting). This leads to 3.57% top-5 error on the test set (Table 5). This entry won the 1st place in ILSVRC 2015.” Single models (Table 4): ResNet-152 19.38/4.49; ResNet-101 19.87/4.60; ResNet-50 20.74/5.25; best earlier: PReLU-net 21.59/5.71, BN-inception 21.99/5.81.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Top-5 errors of ResNet-50, 101, 152 in Table 3 (10-crop)?","o":["6.71, 6.05, 5.71","5.25, 4.60, 4.49","7.76, 7.46, 7.40"],"a":0,"e":"Table 3: 6.71 / 6.05 / 5.71. (Table 4’s 5.25 / 4.60 / 4.49 use multi-scale testing.)","h":"Table 3, not Table 4."},
+    {"q":"What was ResNet’s ILSVRC 2015 ensemble top-5 test error?","o":["4.49%","3.57%","4.82%"],"a":1,"e":"3.57% (Table 5), from six models of different depths.","h":"Table 5."},
+    {"q":"Does ResNet-152 show degradation relative to ResNet-50?","o":["Yes","No: it is more accurate on every metric","Only in top-1"],"a":1,"e":"21.43 vs 22.85 top-1, 5.71 vs 6.71 top-5 (Table 3).","h":"Compare the rows."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-cifar" data-title="The CIFAR-10 study (Table 6, Fig. 6)" data-part="Part VI · The evidence">
+  <header>
+    <div class="kicker">The evidence</div>
+    <h2 class="title">The CIFAR-10 study (Table 6, Fig. 6)</h2>
+    <p class="lede">A simple family of thin networks shows the same pattern from 20 to 110 layers: plain nets degrade, ResNets improve.</p>
+  </header>
+  <p>To study extreme depth cheaply, the paper uses CIFAR-10 and deliberately simple networks: inputs 32×32, a first 3×3 convolution, then three stages of \(2n\) 3×3 layers on 32, 16 and 8-pixel maps with 16, 32 and 64 filters, global average pooling, a 10-way layer. Residual versions put a shortcut around every pair of layers (\(3n\) shortcuts, all option A), so plain and residual nets have exactly the same parameters.</p>
+  <div class="widget" data-widget="cifarFamily"></div>
+  <div class="widget" data-widget="fig6"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \text{depth} = 6n + 2, \qquad \text{params}(n) = \underbrace{3\cdot 9\cdot 16}_{\text{first conv}} + \sum_{\text{3×3 layers}} 9\, C_{\text{in}} C_{\text{out}} + \underbrace{2\sum C}_{\text{BN } \gamma, \beta} + \underbrace{64\cdot 10 + 10}_{\text{fc}}. \]
+    <p>\(n = 3, 5, 7, 9\) give 20, 32, 44, 56 layers; \(n = 18\) gives 110; \(n = 200\) gives 1202. This book’s count for \(n = 3\) is 269,722 ≈ 0.27M, matching Table 6, and likewise 0.46M, 0.66M, 0.85M, 1.7M and 19.4M.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“The deep plain nets suffer from increased depth, and exhibit higher training error when going deeper. This phenomenon is similar to that on ImageNet (Fig. 4, left) and on MNIST, suggesting that such an optimization difficulty is a fundamental problem … our ResNets manage to overcome the optimization difficulty and demonstrate accuracy gains when the depth increases” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §4.2, Fig. 6</a>. Table 6 (test error): ResNet-20 8.75, 32 7.51, 44 7.17, 56 6.97, 110 6.43 (best of 5 runs; mean 6.61 ± 0.16), 1202 7.93. Fig. 6 caption: “The error of plain-110 is higher than 60% and not displayed.”</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"What depth does n = 7 give, and how many shortcuts?","o":["44 layers, 21 shortcuts","42 layers, 14 shortcuts","44 layers, 7 shortcuts"],"a":0,"e":"6·7 + 2 = 44 layers; 3n = 21 shortcuts.","h":"6n + 2 and 3n."},
+    {"q":"Why do CIFAR plain and residual nets have exactly the same parameters?","o":["The paper uses option A (identity/zero-padding) everywhere","CIFAR nets have no shortcuts","Projections are free"],"a":0,"e":"Option A adds no parameters, so the comparison is exact.","h":"Which option, and what does it cost?"},
+    {"q":"ResNet-110 has 1.7M parameters and 6.43% error; Highway-19 2.3M and 7.54%. What does this show?","o":["More parameters always win","A deeper, thinner ResNet can beat a wider gated network with fewer parameters","Highway networks are deeper"],"a":1,"e":"The paper notes ResNet-110 has “fewer parameters than other deep and thin networks” yet is among the state of the art.","h":"Compare size and error."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-1202" data-title="110 and 1202 layers" data-part="Part VI · The evidence">
+  <header>
+    <div class="kicker">The evidence</div>
+    <h2 class="title">110 and 1202 layers</h2>
+    <p class="lede">A 110-layer net needs a short warm-up; a 1202-layer net trains perfectly but overfits.</p>
+  </header>
+  <p>At \(n = 18\) (110 layers), a learning rate of 0.1 is “slightly too large to start converging”, so the paper <strong>warms up</strong>: 0.01 until the training error drops below 80% (about 400 iterations), then the normal schedule (see the 110-layer option in <a href="#ch-recipe">Chapter 28</a>’s schedule widget). At \(n = 200\), 1202 layers, there is no optimization difficulty at all: training error below 0.1%. But its test error is worse than the 110-layer net’s:</p>
+  <div class="widget" data-widget="paramsVsError"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    <p>Parameters per training image: ResNet-110: \(1.7\text{M} / 50{,}000 \approx 34\); ResNet-1202: \(19.4\text{M}/50{,}000 \approx 388\). The paper’s overfitting argument is qualitative: the network “may be unnecessarily large (19.4M) for this small dataset”.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Our method shows no optimization difficulty, and this \(10^3\)-layer network is able to achieve training error &lt;0.1% (Fig. 6, right). Its test error is still fairly good (7.93%, Table 6). But there are still open problems on such aggressively deep models. The testing result of this 1202-layer network is worse than that of our 110-layer network, although both have similar training error. We argue that this is because of overfitting … Strong regularization such as maxout or dropout is applied to obtain the best results on this dataset. In this paper, we use no maxout/dropout … combining with stronger regularization may improve results, which we will study in the future” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §4.2</a>. Footnote 5: with 0.1 from the start, the 110-layer net “starts converging (&lt;90% error) after several epochs, but still reaches similar accuracy”.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Why is the 1202-layer net’s worse test error NOT degradation?","o":["Its training error is as low as the 110-layer net’s; the gap is on test data, i.e. overfitting","It uses projections","It has no BN"],"a":0,"e":"Degradation means higher training error; here training error is &lt;0.1% for both.","h":"Which error differs?"},
+    {"q":"How does the 110-layer net warm up?","o":["lr 0.01 until training error &lt; 80% (~400 iterations), then 0.1","lr 0.1 then 0.01","Smaller batches first"],"a":0,"e":"§4.2; footnote 5 adds that 0.1 from the start also works, just slower to start.","h":"Small first, then normal."},
+    {"q":"What does the paper suggest might improve the 1202-layer result?","o":["Fewer shortcuts","Stronger regularization such as maxout or dropout","A higher learning rate"],"a":1,"e":"It deliberately uses none, and leaves this to future work.","h":"What fights overfitting?"}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-responses" data-title="Layer responses (Fig. 7)" data-part="Part VI · The evidence">
+  <header>
+    <div class="kicker">The evidence</div>
+    <h2 class="title">Layer responses (Fig. 7)</h2>
+    <p class="lede">Residual layers respond more weakly than plain layers, and more weakly still in deeper ResNets: each makes a small correction.</p>
+  </header>
+  <p>If residual functions are “closer to zero” (Chapter 19), the layers inside the residual branches should produce small outputs. The paper measures the <strong>standard deviation of each 3×3 layer’s response</strong>, after BN and before the ReLU or the addition, on CIFAR-10. In ResNets this is the strength of the residual function itself. The same measurement on the toy networks:</p>
+  <div class="widget" data-widget="responses"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ s_l = \sqrt{\frac{1}{M}\sum_{m=1}^{M} \big(r_{l,m} - \bar r_l\big)^2}. \]
+    <p>\(r_{l,m}\) are the \(M\) numbers in layer \(l\)’s response (all images, channels and positions), \(\bar r_l\) their mean. Because each response comes straight out of BN, its scale is set mostly by the learned \(\gamma\): a small \(s_l\) means the network chose to turn that layer’s contribution down.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>“Fig. 7 shows that ResNets have generally smaller responses than their plain counterparts. These results support our basic motivation (Sec.3.1) that the residual functions might be generally closer to zero than the non-residual functions. We also notice that the deeper ResNet has smaller magnitudes of responses, as evidenced by the comparisons among ResNet-20, 56, and 110 in Fig. 7. When there are more layers, an individual layer of ResNets tends to modify the signal less” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §4.2, Fig. 7</a>. Read off Fig. 7 (≈): plain-56 mostly between 1 and 2.3; ResNet-56 around 1; ResNet-110 mostly around 0.8–1.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Where exactly is a ResNet layer’s “response” measured in Fig. 7?","o":["After the addition","After BN, before ReLU or addition","On the input image"],"a":1,"e":"So that, in a ResNet, it measures the residual branch alone.","h":"Before anything is added."},
+    {"q":"What does a smaller response in deeper ResNets suggest?","o":["The layers are broken","Each layer modifies the signal less when there are more layers","Deeper ResNets are plain"],"a":1,"e":"The paper’s reading: “an individual layer of ResNets tends to modify the signal less”.","h":"Small correction per block."},
+    {"q":"Which idea of §3.1 does Fig. 7 support?","o":["That residual functions might be closer to zero than non-residual ones","That identity shortcuts need projections","That BN is unnecessary"],"a":0,"e":"It is the paper’s evidence for the preconditioning argument.","h":"Chapter 19."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-detect" data-title="Beyond classification: object detection" data-part="Part VI · The evidence">
+  <header>
+    <div class="kicker">The evidence</div>
+    <h2 class="title">Beyond classification: object detection</h2>
+    <p class="lede">Swapping VGG-16 for ResNet-101 inside the same detector improves COCO results by 28% relative.</p>
+  </header>
+  <p><strong>Object detection</strong> asks for every object in an image: a class and a <strong>bounding box</strong>. A predicted box counts if its <strong>intersection over union</strong> (IoU) with a true box is high enough. <strong>Average precision</strong> (AP) summarizes how precise the detections are as more of the objects are found; <strong>mAP</strong> averages it over classes. PASCAL VOC uses an IoU threshold of 0.5 (mAP@.5); COCO’s main metric, mAP@[.5, .95], averages over the thresholds 0.5, 0.55, …, 0.95, rewarding precise boxes.</p>
+  <div class="widget" data-widget="iouDemo"></div>
+  <p>The detector is <strong>Faster R-CNN</strong> (Ren, He, Girshick &amp; Sun, 2015): a backbone network computes feature maps, a <strong>region proposal network</strong> suggests about 300 candidate boxes, and a head classifies and refines each. ResNet-101 replaces VGG-16 as the backbone: conv1 to conv4_x are shared (91 convolutional layers), regions are pooled before conv5_1, and conv5_x serves as the per-region head; BN statistics are frozen (arXiv appendix A).</p>
+  <div class="widget" data-widget="detectResults"></div>
+  <div class="callout math"><div class="ct">∑ The math</div>
+    \[ \text{IoU}(A, B) = \frac{|A \cap B|}{|A \cup B|} = \frac{|A\cap B|}{|A| + |B| - |A\cap B|}, \] \[ \text{mAP@}[.5, .95] = \frac{1}{10}\sum_{t \in \{0.5,\, 0.55,\, \dots,\, 0.95\}} \text{mAP@}t. \]
+    <p>\(|A|\) is a box’s area. Two 10×10 boxes overlapping in a 5×10 strip: IoU \(= 50/(100 + 100 - 50) = 1/3\): a miss even at 0.5.</p>
+  </div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>Table 7 (VOC): VGG-16 73.2 / 70.4, ResNet-101 76.4 / 73.8 (VOC 2007 / 2012 test). Table 8 (COCO val): mAP@.5 41.5 → 48.4, mAP@[.5,.95] 21.2 → 27.2. “The detection implementation of using both models is the same, so the gains can only be attributed to better networks … we obtain a 6.0% increase in COCO’s standard metric (mAP@[.5, .95]), which is a 28% relative improvement” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §4.3</a>. The appendix (arXiv v1 only) adds box refinement, global context and multi-scale testing (COCO test-dev 55.7 / 34.9 single model, 59.0 / 37.4 ensemble), VOC 85.6 / 83.8, ImageNet detection 62.1 mAP (ensemble, 1st place, 8.5 points ahead of the runner-up) and ImageNet localization 9.0% top-5 error (1st place) <a class="cite" href="https://arxiv.org/abs/1512.03385">arXiv Appendix A–C, Tables 9–14</a>.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"A prediction overlaps a true box with IoU 0.62. At how many of COCO’s 10 thresholds is it a hit?","o":["3","10","1"],"a":0,"e":"0.50, 0.55, 0.60 ≤ 0.62; 0.65 and above are not.","h":"Count the thresholds ≤ 0.62."},
+    {"q":"Why can the COCO gain be attributed to the backbone alone?","o":["The detector, data and training are identical; only VGG-16 is replaced by ResNet-101","ResNet-101 is trained on COCO only","The metric changed"],"a":0,"e":"§4.3: “the gains can only be attributed to better networks”.","h":"What changed between the two rows?"},
+    {"q":"Check the 28% relative improvement.","o":["(27.2 − 21.2) / 21.2 ≈ 0.28","27.2 / 100","48.4 − 41.5"],"a":0,"e":"6.0 / 21.2 ≈ 0.283.","h":"Gain divided by the old value."}
+  ]</script></div>
+</section>
+
+<section class="chapter" id="ch-limits" data-title="Limits and where this leads" data-part="Part VI · The evidence">
+  <header>
+    <div class="kicker">The evidence</div>
+    <h2 class="title">Limits and where this leads</h2>
+    <p class="lede">The paper leaves open why plain nets degrade and how to regularize huge ResNets; its shortcut became part of almost every later network.</p>
+  </header>
+  <p><b>What the paper leaves open.</b> It does not explain <em>why</em> deep plain networks are hard to optimize, only conjectures “exponentially low convergence rates”. The preconditioning argument is a hypothesis supported by Fig. 7, not a proof. The 1202-layer network overfits, and the remedy (stronger regularization) is left for later. Footnote 2 notes that even the premise that stacked nonlinear layers can approximate complicated functions is “still an open question”.</p>
+  <p><b>What came next.</b> The same authors’ <em>Identity Mappings in Deep Residual Networks</em> (2016) moved BN and ReLU <em>before</em> the weights (“pre-activation”), making the shortcut a pure identity, and trained a 1001-layer CIFAR network to 4.62% error (the code linked from the official README). Wide ResNets (Zagoruyko &amp; Komodakis, 2016) traded depth for width; ResNeXt (Xie et al., 2017) split the bottleneck into groups; DenseNet (Huang et al., 2017) concatenated instead of adding. And the shortcut left vision: every Transformer layer computes \(x + \text{Sublayer}(x)\).</p>
+  <div class="widget" data-widget="residualEverywhere"></div>
+  <div class="callout intuition"><div class="ct">💡 The one-sentence summary</div><p>Making “do nothing” the default for every few layers turns very deep networks from hard to optimize into easy to optimize, at the cost of one addition per block.</p></div>
+  <div class="callout paper"><div class="ct">📄 In the paper</div><p>The paper ends its introduction expecting that the residual learning principle “is applicable in other vision and non-vision problems” <a class="cite" href="https://arxiv.org/abs/1512.03385">Paper §1</a>. In this collection, residual connections return in <a href="../transformer/">the Transformer (lesson 8)</a>, <a href="../bert/">BERT</a>, <a href="../gpt3/">GPT-3</a>, <a href="../vit/">the Vision Transformer</a>, whose image classifier competes with ResNets, and <a href="../ddpm/">diffusion models</a>, whose U-Nets are built from residual blocks. Next in the learning order: <a href="../seq2seq/">Sequence to Sequence (lesson 6)</a>, which opens Part B.</p></div>
+  <div class="quiz"><script type="application/json">[
+    {"q":"Does the paper explain why deep plain networks degrade?","o":["Yes, completely","No; it rules out overfitting and vanishing gradients and conjectures very slow convergence","Yes: vanishing gradients"],"a":1,"e":"§4.1: “The reason for such optimization difficulties will be studied in the future.”","h":"What does §4.1 say?"},
+    {"q":"A Transformer encoder of 6 layers has 2 residual sub-layers per layer. How many residual additions?","o":["6","12","2"],"a":1,"e":"6 × 2 = 12 (attention and feed-forward each get x + Sublayer(x)).","h":"Layers × sub-layers."},
+    {"q":"What did the 2016 follow-up change about the block?","o":["Removed the shortcut","Moved BN and ReLU before the weight layers so the shortcut path is a pure identity","Replaced addition by multiplication"],"a":1,"e":"“Pre-activation” blocks keep nothing on the shortcut path, matching the clean gradient argument of Chapter 21.","h":"Pre-activation."}
+  ]</script></div>
+</section>
+
+<!-- ============================================================ BACK MATTER -->
+<section class="chapter" id="ch-cheat" data-title="Equation cheat sheet" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Equation cheat sheet</h2>
+    <p class="lede">Every formula in the book, in plain words, with the chapter where it is unpacked.</p>
+  </header>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Where</th><th>Formula</th><th>In words</th><th>Ch.</th></tr>
+    <tr><td>§3.1</td><td>\( \mathcal{F}(x) := H(x) - x \)</td><td>the layers learn the change to their input, not the whole mapping</td><td><a href="#ch-bigidea">18</a></td></tr>
+    <tr><td>Eq. 1</td><td>\( y = \mathcal{F}(x, \{W_i\}) + x \)</td><td>identity shortcut: add the input to the block’s output</td><td><a href="#ch-block">20</a></td></tr>
+    <tr><td>§3.2</td><td>\( \mathcal{F} = W_2\,\sigma(W_1 x),\ \text{output } \sigma(y) \)</td><td>two-layer residual function; ReLU after the addition</td><td><a href="#ch-block">20</a></td></tr>
+    <tr><td>§3.2</td><td>\( y = W_1 x + x \)</td><td>a one-layer F is just a linear layer: no advantage observed</td><td><a href="#ch-block">20</a></td></tr>
+    <tr><td>Eq. 2</td><td>\( y = \mathcal{F}(x, \{W_i\}) + W_s x \)</td><td>projection shortcut (1×1 conv) when dimensions change</td><td><a href="#ch-proj">22</a></td></tr>
+    <tr><td>book</td><td>\( \partial y/\partial x = I + \partial\mathcal{F}/\partial x \)</td><td>each block passes the gradient back through an identity term</td><td><a href="#ch-gradflow">21</a></td></tr>
+    <tr><td>later work</td><td>\( 2^n = \sum_k \binom{n}{k} \)</td><td>an n-block ResNet unrolls into 2ⁿ paths</td><td><a href="#ch-paths">23</a></td></tr>
+    <tr><td>§2</td><td>\( y = H(x)\,T(x) + x\,(1 - T(x)) \)</td><td>highway layer with a learned, closable gate</td><td><a href="#ch-related">24</a></td></tr>
+    <tr><td>§3.3</td><td>\( k^2 C_{\text{in}} C_{\text{out}},\ H_{\text{out}}W_{\text{out}} k^2 C_{\text{in}} C_{\text{out}} \)</td><td>weights and multiply-adds (FLOPs) of a convolution</td><td><a href="#ch-channels">10</a></td></tr>
+    <tr><td>Table 1</td><td>\( 2 + b\,\textstyle\sum_s n_s \)</td><td>depth of a ResNet: b = 2 (basic) or 3 (bottleneck) layers per block</td><td><a href="#ch-table1">27</a></td></tr>
+    <tr><td>§4.2</td><td>\( 6n + 2 \)</td><td>depth of the CIFAR-10 family; 3n shortcuts</td><td><a href="#ch-cifar">34</a></td></tr>
+    <tr><td>conv</td><td>\( n_{\text{out}} = \lfloor (n + 2p - k)/s \rfloor + 1 \)</td><td>output size of a convolution or pooling</td><td><a href="#ch-stride">9</a></td></tr>
+    <tr><td>conv</td><td>\( r_L = 1 + \sum_l (k_l - 1)\prod_{i&lt;l} s_i \)</td><td>receptive field of a stack of layers</td><td><a href="#ch-rf">13</a></td></tr>
+    <tr><td>§3.4 [12]</td><td>\( w \sim \mathcal{N}(0, 2/n) \)</td><td>He initialization for ReLU networks</td><td><a href="#ch-init">5</a></td></tr>
+    <tr><td>§3.4 [16]</td><td>\( y = \gamma\,(x - \mu)/\sqrt{\sigma^2 + \epsilon} + \beta \)</td><td>batch normalization, after every convolution</td><td><a href="#ch-bn">6</a></td></tr>
+    <tr><td>§3.4</td><td>\( v \leftarrow \mu v + g + \lambda w,\ w \leftarrow w - \eta v \)</td><td>SGD with momentum 0.9 and weight decay 0.0001</td><td><a href="#ch-sgd">2</a></td></tr>
+    <tr><td>backprop</td><td>\( \partial\ell/\partial h_l = \partial\ell/\partial h_L \prod_i \partial h_{i+1}/\partial h_i \)</td><td>gradients through depth are products: they can vanish or explode</td><td><a href="#ch-backprop">3</a></td></tr>
+    <tr><td>§4.3</td><td>\( \text{IoU} = |A\cap B| / |A\cup B| \)</td><td>overlap of a predicted and a true box</td><td><a href="#ch-detect">37</a></td></tr>
+  </table></div>
+</section>
+
+<section class="chapter" id="ch-glossary" data-title="Glossary" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Glossary</h2>
+  </header>
+  <dl class="glossary" data-terms="Activation function; Backpropagation; Batch; Bias; Classification; Cross-entropy; Dataset; Epoch; Generalization; Gradient; Gradient descent; Hidden layer; Hyperparameter; Learning rate; Loss; Matrix; Neural network; Neuron; Optimizer; Overfitting; Parameter; ReLU; Sigmoid; Softmax; Stochastic gradient descent (SGD); Test set; Training; Vector; Weight">
+    <dt>10-crop testing</dt><dd>Classifying the four corner crops, the centre crop and their mirror images, and averaging the ten predictions.</dd>
+    <dt>Average precision (AP), mAP</dt><dd>A detection score summarizing precision as more objects are found; mAP averages it over classes (and, for COCO, over IoU thresholds 0.5–0.95).</dd>
+    <dt>Basic block</dt><dd>The two-layer residual block of ResNet-18/34: 3×3 conv, BN, ReLU, 3×3 conv, BN, add the shortcut, ReLU.</dd>
+    <dt>Batch normalization (BN)</dt><dd>Standardizing each channel with its minibatch mean and variance, then scaling by γ and shifting by β (Ioffe &amp; Szegedy, 2015).</dd>
+    <dt>Bottleneck block</dt><dd>The three-layer residual block of ResNet-50/101/152: 1×1 (reduce), 3×3, 1×1 (restore).</dd>
+    <dt>Bounding box</dt><dd>The rectangle a detector draws around an object.</dd>
+    <dt>Building block</dt><dd>The paper’s name for a few layers with a shortcut around them (Fig. 2).</dd>
+    <dt>Channel</dt><dd>One of the grids of a picture or of a layer’s output (red, green, blue; or one feature map).</dd>
+    <dt>CIFAR-10</dt><dd>A data set of 60,000 colour photos of 32 × 32 pixels in 10 classes (50,000 for training, 10,000 for testing).</dd>
+    <dt>Convolutional layer</dt><dd>A layer that slides small learned filters over its input, computing the same weighted sum at every position.</dd>
+    <dt>Convolutional neural network (CNN)</dt><dd>A network built mainly from convolutional layers.</dd>
+    <dt>Degradation problem</dt><dd>Adding layers to a deep plain network raising its training error, not only its test error.</dd>
+    <dt>Depth</dt><dd>The number of layers with weights.</dd>
+    <dt>Downsampling</dt><dd>Shrinking feature maps, in ResNet by stride-2 convolutions (and one max pool).</dd>
+    <dt>Element-wise addition</dt><dd>Adding two equally shaped blocks of numbers entry by entry.</dd>
+    <dt>Ensemble</dt><dd>Several separately trained models whose predictions are averaged.</dd>
+    <dt>Exploding gradient</dt><dd>A gradient that grows layer after layer during backpropagation.</dd>
+    <dt>Fan-in</dt><dd>The number of inputs summed by one neuron; k²·C<sub>in</sub> for a convolution.</dd>
+    <dt>Faster R-CNN</dt><dd>The object detector used in §4.3: a backbone network, a region proposal network and a per-region classifier.</dd>
+    <dt>Feature map</dt><dd>One channel of a layer’s output: a grid saying where a feature was found.</dd>
+    <dt>Filter (kernel)</dt><dd>The small table of weights a convolution slides over its input.</dd>
+    <dt>FLOPs</dt><dd>In this paper, the number of multiply-adds needed to process one image.</dd>
+    <dt>Global average pooling</dt><dd>Averaging each whole feature map into one number per channel.</dd>
+    <dt>He initialization</dt><dd>Random starting weights with variance 2/fan-in, which keeps signals the same size through ReLU layers.</dd>
+    <dt>Highway network</dt><dd>A concurrent architecture whose shortcuts are controlled by learned, data-dependent gates (Srivastava et al., 2015).</dd>
+    <dt>Identity mapping</dt><dd>A function that returns its input unchanged.</dd>
+    <dt>ImageNet (ILSVRC)</dt><dd>The image-classification benchmark with 1.28 million training photos in 1,000 classes, 50,000 validation and 100,000 test photos.</dd>
+    <dt>Intersection over union (IoU)</dt><dd>The overlap area of two boxes divided by the area they cover together.</dd>
+    <dt>Jacobian</dt><dd>The table of slopes of every output of a layer with respect to every input.</dd>
+    <dt>Max pooling</dt><dd>Keeping the largest value in each window.</dd>
+    <dt>Minibatch</dt><dd>The small random group of examples used for one SGD step.</dd>
+    <dt>Momentum</dt><dd>An SGD variant that keeps a running velocity of past gradients (μ = 0.9 in the paper).</dd>
+    <dt>Multi-scale testing</dt><dd>Running the network on the image resized to several sizes and averaging the scores.</dd>
+    <dt>Option A / B / C</dt><dd>Shortcuts at dimension changes: A zero-pads the identity, B projects only there, C projects every shortcut.</dd>
+    <dt>Padding</dt><dd>Zeros added around an input so the kernel can be centred on border pixels.</dd>
+    <dt>Per-pixel mean</dt><dd>The average training image, subtracted from every input.</dd>
+    <dt>Plain network</dt><dd>A network of stacked layers without shortcuts; the paper’s baseline.</dd>
+    <dt>Pooling</dt><dd>Summarizing each neighbourhood of a feature map by its maximum or average.</dd>
+    <dt>Preconditioning</dt><dd>Reformulating a problem so that a solver starts closer to the solution.</dd>
+    <dt>Projection shortcut</dt><dd>A shortcut with a 1×1 convolution W<sub>s</sub> that changes the number of channels (Eq. 2).</dd>
+    <dt>Receptive field</dt><dd>The patch of the input that can influence one output of a layer.</dd>
+    <dt>Residual function</dt><dd>F(x) = H(x) − x: what the layers of a residual block learn.</dd>
+    <dt>Residual network (ResNet)</dt><dd>A network built from building blocks with shortcut connections.</dd>
+    <dt>Scale augmentation</dt><dd>Resizing training images to a random size (shorter side in [256, 480]) before cropping.</dd>
+    <dt>Shortcut connection</dt><dd>A connection that skips one or more layers; in ResNet it carries the input to be added to the layers’ output.</dd>
+    <dt>Stage</dt><dd>A group of blocks working on the same feature-map size (conv2_x … conv5_x).</dd>
+    <dt>Stride</dt><dd>How many pixels a kernel moves between positions; stride 2 halves the map.</dd>
+    <dt>Top-1 / top-5 error</dt><dd>The fraction of images whose true class is not the first guess / not among the five best guesses.</dd>
+    <dt>Underfitting</dt><dd>A model that cannot fit even its training data.</dd>
+    <dt>Validation set</dt><dd>Held-out examples used to measure a model during development.</dd>
+    <dt>Vanishing gradient</dt><dd>A gradient that shrinks layer after layer during backpropagation until lower layers barely learn.</dd>
+    <dt>VGG</dt><dd>The 16- and 19-layer networks of 3×3 convolutions (Simonyan &amp; Zisserman, 2015) that inspired the plain baselines.</dd>
+    <dt>Warm-up</dt><dd>Training with a small learning rate for a short time before switching to the normal one.</dd>
+    <dt>Weight decay</dt><dd>A small pull of every weight towards zero added to the gradient (λ = 0.0001 in the paper).</dd>
+    <dt>Weight sharing</dt><dd>Using the same kernel weights at every position of a convolution.</dd>
+  </dl>
+</section>
+
+<section class="chapter" id="ch-refs" data-title="Sources and further reading" data-part="Back matter" data-nonum>
+  <header>
+    <div class="kicker">Back matter</div>
+    <h2 class="title">Sources and further reading</h2>
+  </header>
+  <ul>
+    <li><b>The paper:</b> Kaiming He, Xiangyu Zhang, Shaoqing Ren and Jian Sun. <a href="https://arxiv.org/abs/1512.03385">Deep Residual Learning for Image Recognition</a>. Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2016, pages 770–778. arXiv:1512.03385 (v1, 10 December 2015). Main-text numbers are quoted from the CVPR open-access version; Tables 1–8 are identical in arXiv v1. The appendix (A: object detection baselines, B: object detection improvements, C: ImageNet localization; Tables 9–14) appears only in the arXiv version and is quoted from it.</li>
+    <li><b>Official models:</b> <a href="https://github.com/KaimingHe/deep-residual-networks/tree/a7026cb6d478e131b765b898c312e25f9f6dc031">KaimingHe/deep-residual-networks</a> (commit a7026cb, MIT licence, © 2016 Shaoqing Ren): Caffe deploy files <a href="https://github.com/KaimingHe/deep-residual-networks/blob/a7026cb6d478e131b765b898c312e25f9f6dc031/prototxt/ResNet-50-deploy.prototxt">ResNet-50-deploy.prototxt</a> (BN + Scale L20–37; res2a Eltwise L210–224; res3a_branch1 L488–500; res3a_branch2a with stride 2, L522–534; pool5 L2293–2302), ResNet-101 and ResNet-152; and the <a href="https://github.com/KaimingHe/deep-residual-networks#disclaimer-and-known-issues">README</a> (training notes, results). No training code was released.</li>
+    <li><b>Reference implementation:</b> torchvision v0.20.0, <a href="https://github.com/pytorch/vision/blob/v0.20.0/torchvision/models/resnet.py">torchvision/models/resnet.py</a> (BSD-3-Clause): conv3x3 / conv1x1 L40–56; BasicBlock L59–105; Bottleneck L108–163 (V1.5 stride note L109–113); ResNet stem and stages L197–206; initialization L208–224; _make_layer and the projection shortcut L225–243; constructors L684–827 and published parameter counts. Cited because it is the most widely used faithful re-implementation with training code; it uses option B at every depth and moves the bottleneck stride to the 3×3.</li>
+    <li><b>In this book:</b> <a href="rn.js">rn.js</a> (convolution, BN for feature maps, pooling, option-A shortcuts, the toy CNN and MLP, training, Table 1 arithmetic), <a href="toy-results.js">toy-results.js</a> (stored toy CNN runs, reproducible with the “Re-run live” button), and the widget files. Shared: <a href="../shared/lib/nn.js">shared/lib/nn.js</a> (autograd, <code>NN.batchNorm</code>, <code>NN.SGD</code>) and <a href="../shared/lib/math.js">shared/lib/math.js</a>.</li>
+    <li><b>Background cited by the paper:</b> Krizhevsky, Sutskever &amp; Hinton (2012), AlexNet; Simonyan &amp; Zisserman (2015), VGG; Szegedy et al. (2015), GoogLeNet; He et al. (2015), PReLU-net and the initialization; Ioffe &amp; Szegedy (2015), batch normalization; Srivastava, Greff &amp; Schmidhuber (2015), highway networks; Glorot &amp; Bengio (2010); Bengio, Simard &amp; Frasconi (1994); Hochreiter (1991); Saxe, McClelland &amp; Ganguli (2013); Jégou et al., VLAD and product quantization; Perronnin &amp; Dance (2007), Fisher vectors; Briggs et al. (2000), multigrid; Szeliski (1990, 2006), hierarchical basis preconditioning; Montúfar et al. (2014); Lee et al. (2014), deeply supervised nets; Romero et al. (2015), FitNets; Goodfellow et al. (2013), maxout; Lin et al. (2013), network in network; Ren, He, Girshick &amp; Sun (2015), Faster R-CNN; Everingham et al. (2010), PASCAL VOC; Lin et al. (2014), COCO; Krizhevsky (2009), CIFAR-10; Russakovsky et al. (2014), ImageNet.</li>
+    <li><b>Later work discussed:</b> He, Zhang, Ren &amp; Sun. <a href="https://arxiv.org/abs/1603.05027">Identity Mappings in Deep Residual Networks</a>. ECCV 2016. Veit, Wilber &amp; Belongie. <a href="https://arxiv.org/abs/1605.06431">Residual Networks Behave Like Ensembles of Relatively Shallow Networks</a>. NeurIPS 2016. Balduzzi et al. <a href="https://arxiv.org/abs/1702.08591">The Shattered Gradients Problem</a>. ICML 2017. Zagoruyko &amp; Komodakis, Wide Residual Networks (2016); Xie et al., ResNeXt (CVPR 2017); Huang et al., DenseNet (CVPR 2017); Goyal et al., Accurate, Large Minibatch SGD (2017), zero-initialized residual γ.</li>
+    <li><b>In this collection:</b> earlier, <a href="../word2vec/">Word2Vec (1)</a>, <a href="../dropout/">Dropout (2)</a>, <a href="../adam/">Adam (3)</a> and <a href="../batchnorm/">Batch Normalization (4)</a>; later lessons that use residual connections: <a href="../transformer/">the Transformer (8)</a>, <a href="../bert/">BERT</a>, <a href="../gpt3/">GPT-3</a>, <a href="../vit/">ViT</a>, <a href="../ddpm/">DDPM</a>.</li>
+  </ul>
+  <p class="small">Figures: the paper is distributed on arXiv under its non-exclusive distribution licence, which does not allow reuse, so none of its figures are reproduced. Fig. 1, 4, 6 and 7 are redrawn from values read by eye (marked ≈, approximate) or rebuilt as live toy experiments; Fig. 2, 3 and 5 are redrawn as widgets; Tables 1–14 are quoted as numbers. All diagrams and charts are original and computed in the page. Toy numbers (marked “toy”) come from small networks trained in your browser with seeded randomness; they show mechanisms, not the paper’s results.</p>
+</section>
+
+<nav class="lesson-pager" id="lessonPager" aria-label="Previous and next lessons"></nav>
+
+<footer class="book-foot">ResNet Interactive Web Book, lesson 5 of <a href="../">Modern AI in 49 Papers</a>. An independent educational companion to He, Zhang, Ren &amp; Sun (CVPR 2016), not an official publication of the authors; all interactive models run locally in your browser.</footer>
+
+</main>
+</div>
+
+<!-- Order matters: catalogue + glossary + lesson-nav (fill the page) → core (engine) → shared libraries → refreshers → this book's toy, stored toy results, helpers and widgets. -->
+<script src="../collection.js"></script>
+<script src="../shared/glossary.js"></script>
+<script src="../shared/lesson-nav.js"></script>
+<script src="../shared/core.js"></script>
+<script src="../shared/lib/math.js"></script>
+<script src="../shared/lib/nn.js"></script>
+<script src="../shared/widgets/refreshers.js"></script>
+<script src="rn.js"></script>
+<script src="toy-results.js"></script>
+<script src="ui.js"></script>
+<script src="widgets-found.js"></script>
+<script src="widgets-conv.js"></script>
+<script src="widgets-degrade.js"></script>
+<script src="widgets-residual.js"></script>
+<script src="widgets-arch.js"></script>
+<script src="widgets-evidence.js"></script>
+</body>
+</html>
